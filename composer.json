@@ -1,0 +1,55 @@
+{
+    "name": "xlited/laravel-flow",
+    "description": "Visual Workflow Builder for Filament PHP",
+    "keywords": [
+        "laravel",
+        "filament",
+        "workflow",
+        "flowchart",
+        "automation"
+    ],
+    "homepage": "https://github.com/ioncaliman/laravel-flow",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ion Caliman",
+            "email": "ion@example.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "filament/filament": "^4.0",
+        "spatie/laravel-package-tools": "^1.16"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Xlited\\LaravelFlow\\": "src/",
+            "Xlited\\LaravelFlow\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Xlited\\LaravelFlow\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Xlited\\LaravelFlow\\LaravelFlowServiceProvider"
+            ],
+            "aliases": {
+                "LaravelFlow": "Xlited\\LaravelFlow\\Facades\\LaravelFlow"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
