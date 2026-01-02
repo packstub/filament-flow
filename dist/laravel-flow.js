@@ -9996,10 +9996,18 @@ function gp(e, t) {
     $$slots: { default: !0 }
   }), J(e, s), he();
 }
-window.mountFlowBuilder = (e, t, n) => Hf(gp, {
-  target: e,
-  props: {
-    nodes: t || [],
-    edges: n || []
-  }
+document.addEventListener("alpine:init", () => {
+  window.Alpine.data("flowBuilder", ({ state: e }) => ({
+    state: e,
+    init() {
+      var t, n;
+      Hf(gp, {
+        target: this.$refs.canvas,
+        props: {
+          nodes: ((t = this.state) == null ? void 0 : t.nodes) || [],
+          edges: ((n = this.state) == null ? void 0 : n.edges) || []
+        }
+      });
+    }
+  }));
 });
