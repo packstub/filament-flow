@@ -23,7 +23,15 @@ class LaravelFlowServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews($this->viewNamespace)
             ->hasAssets()
-            ->hasMigration('create_workflow_tables');
+            ->hasMigration('create_workflow_tables')
+            ->hasCommand(\Xlited\LaravelFlow\Commands\TestWorkflowCommand::class);
+    }
+
+    public function packageRegistered(): void
+    {
+        $this->app->singleton('laravel-flow', function () {
+            return new \Xlited\LaravelFlow\Engines\WorkflowDispatcher();
+        });
     }
 
     public function packageBooted(): void
