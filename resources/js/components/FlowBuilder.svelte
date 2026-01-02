@@ -1,18 +1,9 @@
 <script>
-    import {
-        SvelteFlow,
-        Controls,
-        Background,
-        MiniMap,
-        useSvelteFlow,
-        SvelteFlowProvider,
-    } from "@xyflow/svelte";
-    import "@xyflow/svelte/dist/style.css";
-
+    import { SvelteFlowProvider } from "@xyflow/svelte";
+    import FlowCanvas from "./FlowCanvas.svelte";
     import TriggerNode from "./nodes/TriggerNode.svelte";
     import ActionNode from "./nodes/ActionNode.svelte";
     import ConditionNode from "./nodes/ConditionNode.svelte";
-    import NodeSidebar from "./NodeSidebar.svelte";
 
     const nodeTypes = {
         trigger: TriggerNode,
@@ -20,41 +11,10 @@
         condition: ConditionNode,
     };
 
-    const { screenToFlowPosition } = useSvelteFlow();
-
     let { nodes: incomingNodes = [], edges: incomingEdges = [] } = $props();
 
     let nodes = $state.raw([]);
     let edges = $state.raw([]);
-
-    function onDragOver(event) {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = "move";
-    }
-
-    function onDrop(event) {
-        event.preventDefault();
-
-        const rawData = event.dataTransfer.getData("application/svelteflow");
-        if (!rawData) return;
-
-        const { type, data } = JSON.parse(rawData);
-
-        // Get position relative to canvas
-        const position = screenToFlowPosition({
-            x: event.clientX,
-            y: event.clientY,
-        });
-
-        const newNode = {
-            id: `${type}-${Date.now()}`,
-            type,
-            position,
-            data,
-        };
-
-        nodes = [...nodes, newNode];
-    }
 
     $effect.pre(() => {
         if (nodes.length === 0) {
@@ -111,28 +71,29 @@
             edges =
                 incomingEdges.length > 0
                     ? incomingEdges
-                    : [{ id: "e1-2", source: "1", target: "2" }];
+                    : [
+                          {
+                              id: "e1-2",
+                              source: "trigger-1",
+                              target: "condition-1",
+                          },
+                          {
+                              id: "e2-3",
+                              source: "condition-1",
+                              sourceHandle: "true",
+                              target: "action-1",
+                          },
+                          {
+                              id: "e2-4",
+                              source: "condition-1",
+                              sourceHandle: "false",
+                              target: "action-2",
+                          },
+                      ];
         }
     });
 </script>
 
 <SvelteFlowProvider>
-    <div
-        class="flex h-[600px] w-full border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xl"
-    >
-        <NodeSidebar />
-
-        <div
-            class="flex-grow relative h-full"
-            role="presentation"
-            ondragover={onDragOver}
-            ondrop={onDrop}
-        >
-            <SvelteFlow {nodeTypes} bind:nodes bind:edges fitView>
-                <Controls />
-                <Background variant="lines" gap={20} size={1} color="#f1f5f9" />
-                <MiniMap />
-            </SvelteFlow>
-        </div>
-    </div>
+    <FlowCanvas bind:nodes bind:edges {nodeTypes} />
 </SvelteFlowProvider>
