@@ -41,8 +41,8 @@ class LaravelFlowServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         $manager = app('laravel-flow-manager');
-        $manager->registerTrigger(\Xlited\LaravelFlow\Triggers\UserRegistered::class);
-        $manager->registerAction(\Xlited\LaravelFlow\Actions\SendEmail::class);
+        $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\UserRegistered::class);
+        $manager->registerAction(\Xlited\LaravelFlow\Nodes\Actions\SendEmail::class);
 
         FilamentAsset::register(
             [

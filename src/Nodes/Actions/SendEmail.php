@@ -1,6 +1,6 @@
 <?php
 
-namespace Xlited\LaravelFlow\Actions;
+namespace Xlited\LaravelFlow\Nodes\Actions;
 
 use Xlited\LaravelFlow\Base\Action;
 

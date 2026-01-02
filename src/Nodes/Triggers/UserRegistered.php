@@ -1,6 +1,6 @@
 <?php
 
-namespace Xlited\LaravelFlow\Triggers;
+namespace Xlited\LaravelFlow\Nodes\Triggers;
 
 use Xlited\LaravelFlow\Base\Trigger;
 
