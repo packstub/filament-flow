@@ -30,7 +30,7 @@ class LaravelFlowServiceProvider extends PackageServiceProvider
     {
         FilamentAsset::register(
             [
-                Css::make('laravel-flow-styles', __DIR__ . '/../dist/style.css'),
+                Css::make('laravel-flow-styles', __DIR__ . '/../dist/laravel-flow.css'),
                 Js::make('laravel-flow-scripts', __DIR__ . '/../dist/laravel-flow.js'),
             ],
             'xlited/laravel-flow'
