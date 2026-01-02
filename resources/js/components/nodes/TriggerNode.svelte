@@ -9,10 +9,9 @@
 <BaseNode {data} {selected} type="trigger" {outputs}>
     {#if data.event}
         <div
-            class="mt-2 p-2 bg-orange-100 rounded text-xs border border-orange-200"
+            class="px-2 py-1 bg-amber-100/50 rounded border border-amber-200 text-[10px] break-all font-mono"
         >
-            <strong>Event:</strong>
-            {data.event}
+            {data.event.split("\\").pop()}
         </div>
     {/if}
 </BaseNode>

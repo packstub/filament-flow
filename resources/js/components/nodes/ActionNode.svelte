@@ -10,9 +10,9 @@
 <BaseNode {data} {selected} type="action" {inputs} {outputs}>
     {#if data.action}
         <div
-            class="mt-2 p-2 bg-blue-100 rounded text-xs border border-blue-200"
+            class="flex items-center gap-2 px-2 py-1 bg-blue-100/50 rounded border border-blue-200 text-[10px] font-semibold"
         >
-            <strong>Action:</strong>
+            <span>⚡</span>
             {data.action}
         </div>
     {/if}

@@ -11,35 +11,35 @@
     <BaseNode {data} {selected} type="condition" {inputs}>
         {#if data.condition}
             <div
-                class="mt-2 p-2 bg-purple-100 rounded text-xs border border-purple-200"
+                class="px-2 py-1 bg-purple-100/50 rounded border border-purple-200 text-[10px] font-mono mb-6"
             >
-                <strong>If:</strong>
                 {data.condition}
             </div>
         {/if}
 
         <!-- Custom outputs for True/False -->
-        <div class="flex flex-col gap-4 mt-2">
-            <div class="relative flex items-center justify-end h-6">
-                <span class="text-[10px] font-bold text-green-600 mr-2"
-                    >TRUE</span
+        <div class="absolute -right-1.5 top-[60px] flex flex-col gap-6">
+            <div class="relative flex items-center justify-end h-3">
+                <span
+                    class="text-[8px] font-black text-emerald-600 mr-2 uppercase"
+                    >True</span
                 >
                 <Handle
                     type="source"
                     position={Position.Right}
                     id="true"
-                    style="top: 50%; right: -21px; width: 10px; height: 10px; background: #10b981;"
+                    class="!w-3 !h-3 !bg-emerald-500 !border-2 !border-white"
                 />
             </div>
-            <div class="relative flex items-center justify-end h-6">
-                <span class="text-[10px] font-bold text-red-600 mr-2"
-                    >FALSE</span
+            <div class="relative flex items-center justify-end h-3">
+                <span class="text-[8px] font-black text-rose-600 mr-2 uppercase"
+                    >False</span
                 >
                 <Handle
                     type="source"
                     position={Position.Right}
                     id="false"
-                    style="top: 50%; right: -21px; width: 10px; height: 10px; background: #ef4444;"
+                    class="!w-3 !h-3 !bg-rose-500 !border-2 !border-white"
                 />
             </div>
         </div>
