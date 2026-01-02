@@ -29,6 +29,10 @@ class LaravelFlowServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
+        $this->app->singleton('laravel-flow-manager', function () {
+            return new \Xlited\LaravelFlow\FlowManager();
+        });
+
         $this->app->singleton('laravel-flow', function () {
             return new \Xlited\LaravelFlow\Engines\WorkflowDispatcher();
         });
@@ -36,6 +40,10 @@ class LaravelFlowServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
+        $manager = app('laravel-flow-manager');
+        $manager->registerTrigger(\Xlited\LaravelFlow\Triggers\UserRegistered::class);
+        $manager->registerAction(\Xlited\LaravelFlow\Actions\SendEmail::class);
+
         FilamentAsset::register(
             [
                 Css::make('laravel-flow-styles', __DIR__ . '/../dist/laravel-flow.css'),

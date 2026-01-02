@@ -8,7 +8,12 @@
     } from "@xyflow/svelte";
     import NodeSidebar from "./NodeSidebar.svelte";
 
-    let { nodes = $bindable([]), edges = $bindable([]), nodeTypes } = $props();
+    let {
+        nodes = $bindable([]),
+        edges = $bindable([]),
+        nodeTypes,
+        onNodeClick,
+    } = $props();
 
     const { screenToFlowPosition } = useSvelteFlow();
 
@@ -52,7 +57,15 @@
         ondragover={onDragOver}
         ondrop={onDrop}
     >
-        <SvelteFlow {nodeTypes} bind:nodes bind:edges fitView>
+        <SvelteFlow
+            {nodeTypes}
+            bind:nodes
+            bind:edges
+            fitView
+            onnodeclick={({ event, node }) => {
+                onNodeClick && onNodeClick(event, node);
+            }}
+        >
             <Controls />
             <Background variant="lines" gap={20} size={1} color="#f1f5f9" />
             <MiniMap />

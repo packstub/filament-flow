@@ -14,4 +14,9 @@ class FlowBuilder extends Field
 
         $this->default([]);
     }
+
+    public function getAvailableComponents(): array
+    {
+        return app('laravel-flow-manager')->getAvailableComponents();
+    }
 }

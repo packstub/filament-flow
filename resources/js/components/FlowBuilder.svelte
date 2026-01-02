@@ -1,6 +1,7 @@
 <script>
     import { SvelteFlowProvider } from "@xyflow/svelte";
     import FlowCanvas from "./FlowCanvas.svelte";
+    import NodeSettings from "./NodeSettings.svelte";
     import TriggerNode from "./nodes/TriggerNode.svelte";
     import ActionNode from "./nodes/ActionNode.svelte";
     import ConditionNode from "./nodes/ConditionNode.svelte";
@@ -11,10 +12,35 @@
         condition: ConditionNode,
     };
 
-    let { nodes: incomingNodes = [], edges: incomingEdges = [] } = $props();
+    let {
+        nodes: incomingNodes = [],
+        edges: incomingEdges = [],
+        availableComponents = {},
+        updateState,
+    } = $props();
 
     let nodes = $state.raw([]);
     let edges = $state.raw([]);
+    let selectedNodeId = $state(null);
+
+    let selectedNode = $derived(nodes.find((n) => n.id === selectedNodeId));
+
+    function onNodeClick(event, node) {
+        selectedNodeId = node.id;
+    }
+
+    function closeSettings() {
+        selectedNodeId = null;
+    }
+
+    $effect(() => {
+        if (updateState) {
+            updateState({
+                nodes: JSON.parse(JSON.stringify(nodes)),
+                edges: JSON.parse(JSON.stringify(edges)),
+            });
+        }
+    });
 
     $effect.pre(() => {
         if (nodes.length === 0) {
@@ -95,5 +121,17 @@
 </script>
 
 <SvelteFlowProvider>
-    <FlowCanvas bind:nodes bind:edges {nodeTypes} />
+    <div class="flex h-full w-full overflow-hidden">
+        <FlowCanvas bind:nodes bind:edges {nodeTypes} {onNodeClick} />
+
+        {#if selectedNode}
+            <NodeSettings
+                bind:node={
+                    nodes[nodes.findIndex((n) => n.id === selectedNodeId)]
+                }
+                {availableComponents}
+                onClose={closeSettings}
+            />
+        {/if}
+    </div>
 </SvelteFlowProvider>

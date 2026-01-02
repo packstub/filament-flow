@@ -120,23 +120,44 @@ class WorkflowRunner
 
     protected function evaluateCondition(array $data): bool
     {
-        // Simple PHP evaluation for now - THIS IS DANGEROUS IN PROD
-        // In a real app, use a proper expression language (e.g. symfony/expression-language)
-        $condition = $data['condition'] ?? 'true';
+        $identifier = $data['identifier'] ?? null;
+        $config = $data['config'] ?? [];
 
-        $this->recordStep('condition_eval', "Evaluating condition: {$condition}");
+        if (!$identifier) {
+            return true;
+        }
 
-        // Placeholder for real logic
-        return true;
+        $condition = app('laravel-flow-manager')->getCondition($identifier);
+
+        if (!$condition) {
+            $this->recordStep('condition_error', "Condition component not found: {$identifier}");
+            return true;
+        }
+
+        $this->recordStep('condition_eval', "Evaluating condition: {$condition->getName()}");
+
+        return $condition->evaluate($config, $this->payload);
     }
 
     protected function performAction(array $data): void
     {
-        $action = $data['action'] ?? 'None';
-        $this->recordStep('action_exec', "Performing action: {$action}");
+        $identifier = $data['identifier'] ?? null;
+        $config = $data['config'] ?? [];
 
-        // Placeholder for actual action dispatching
-        Log::info("Workflow Action Executed: " . json_encode($data));
+        if (!$identifier) {
+            return;
+        }
+
+        $action = app('laravel-flow-manager')->getAction($identifier);
+
+        if (!$action) {
+            $this->recordStep('action_error', "Action component not found: {$identifier}");
+            return;
+        }
+
+        $this->recordStep('action_exec', "Performing action: {$action->getName()}");
+
+        $action->handle($config, $this->payload);
     }
 
     protected function recordStep(string $id, string $message): void
