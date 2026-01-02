@@ -1,4 +1,5 @@
 import { mount } from 'svelte';
+import '../css/plugin.css';
 import FlowBuilder from './components/FlowBuilder.svelte';
 
 const init = () => {

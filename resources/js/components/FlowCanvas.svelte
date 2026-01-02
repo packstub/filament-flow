@@ -6,7 +6,6 @@
         MiniMap,
         useSvelteFlow,
     } from "@xyflow/svelte";
-    import "@xyflow/svelte/dist/style.css";
     import NodeSidebar from "./NodeSidebar.svelte";
 
     let { nodes = $bindable([]), edges = $bindable([]), nodeTypes } = $props();

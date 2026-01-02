@@ -23,6 +23,9 @@ class WorkflowResource extends Resource
     {
         return $schema
             ->schema([
+                FlowBuilder::make('payload')
+                    ->hiddenLabel()
+                    ->columnSpanFull(),
                 SchemaComponents\Section::make('General Information')
                     ->schema([
                         Forms\Components\TextInput::make('name')
@@ -40,12 +43,8 @@ class WorkflowResource extends Resource
                             ->required(),
                         Forms\Components\Toggle::make('is_active')
                             ->required(),
-                    ]),
-                SchemaComponents\Section::make('Visual Builder')
-                    ->schema([
-                        FlowBuilder::make('payload')
-                            ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->columnSpanFull(),
             ]);
     }
 
