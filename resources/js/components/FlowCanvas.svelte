@@ -13,6 +13,7 @@
         edges = $bindable([]),
         nodeTypes,
         onNodeClick,
+        availableComponents = {},
     } = $props();
 
     const { screenToFlowPosition } = useSvelteFlow();
@@ -49,7 +50,7 @@
 <div
     class="flex h-[600px] w-full border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xl"
 >
-    <NodeSidebar />
+    <NodeSidebar {availableComponents} />
 
     <div
         class="flex-grow relative h-full"

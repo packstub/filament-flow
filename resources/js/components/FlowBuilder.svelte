@@ -69,6 +69,7 @@
 
     function onNodeClick(event, node) {
         selectedNodeId = node.id;
+        console.log(node);
         window.dispatchEvent(
             new CustomEvent("open-node-settings", {
                 detail: {
@@ -139,6 +140,12 @@
 
 <SvelteFlowProvider>
     <div class="flex h-full w-full overflow-hidden">
-        <FlowCanvas bind:nodes bind:edges {nodeTypes} {onNodeClick} />
+        <FlowCanvas
+            bind:nodes
+            bind:edges
+            {nodeTypes}
+            {onNodeClick}
+            {availableComponents}
+        />
     </div>
 </SvelteFlowProvider>
