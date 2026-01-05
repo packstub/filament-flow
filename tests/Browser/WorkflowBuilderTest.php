@@ -17,4 +17,4 @@ test('can access workflow builder and see new nodes', function () {
         ->assertSee('Model Created')
         ->assertSee('Send Slack Notification')
         ->assertSee('Time of Day');
-})->todo();
+});

@@ -2,12 +2,13 @@
 
 namespace Xlited\LaravelFlow\Tests;
 
-use Orchestra\Testbench\TestCase as Orchestra;
+use Orchestra\Testbench\TestCase as BaseTestCase;
+// use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Xlited\LaravelFlow\LaravelFlowServiceProvider;
 use Filament\FilamentServiceProvider;
 use Livewire\LivewireServiceProvider;
 
-class TestCase extends Orchestra
+class TestCase extends BaseTestCase
 {
     protected function setUp(): void
     {
