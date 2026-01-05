@@ -10916,7 +10916,12 @@ function ep(e, t) {
       detail: {
         id: g.id,
         identifier: g.data.identifier,
-        config: g.data.config || {}
+        // Merge label/description with config for the form
+        config: {
+          label: g.data.label,
+          description: g.data.description,
+          ...g.data.config || {}
+        }
       }
     }));
   }
@@ -10936,10 +10941,10 @@ function ep(e, t) {
     const f = (g) => {
       const { id: v, config: w } = g.detail, p = u(a).findIndex((_) => _.id === v);
       if (p !== -1) {
-        const _ = { ...u(a)[p] };
-        _.data = { ..._.data, config: { ...w } };
-        const C = [...u(a)];
-        C[p] = _, O(a, C);
+        const { label: _, description: C, ...k } = w, b = { ...u(a)[p] };
+        b.data = { ...b.data, label: _, description: C, config: k };
+        const A = [...u(a)];
+        A[p] = b, O(a, A);
       }
     };
     return window.addEventListener("update-node-config", f), () => {

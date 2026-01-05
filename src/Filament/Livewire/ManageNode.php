@@ -4,6 +4,7 @@ namespace Xlited\LaravelFlow\Filament\Livewire;
 
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Livewire\Component;
 use Filament\Forms\Form;
 use Filament\Forms\Contracts\HasForms;
@@ -20,38 +21,29 @@ class ManageNode extends Component implements HasForms, HasActions
 
     public ?string $nodeId = null;
     public ?string $nodeClass = null;
-    public array $data = [];
-    public bool $visible = false;
 
-    protected $listeners = ['open-node-settings' => 'open'];
+    protected $listeners = ['open-manage-node-modal' => 'open'];
 
     public function open(string $id, string $identifier, array $config)
     {
         $this->nodeId = $id;
         $this->nodeClass = $identifier;
-        $this->form->fill($config);
-        $this->visible = true;
+        $this->mountAction('manageNode', ['nodeId' => $id, 'nodeClass' => $identifier, 'data' => $config]);
     }
 
     public function close()
     {
-        $this->visible = false;
         $this->nodeId = null;
         $this->nodeClass = null;
-        $this->reset('data');
     }
 
-    public function save()
+    public function save(array $data)
     {
-        $data = $this->form->getState();
-
         $this->dispatch(
             'node-updated',
             id: $this->nodeId,
             config: $data
         );
-
-        $this->close();
     }
 
     public function form(Schema $form): Schema
@@ -61,9 +53,8 @@ class ManageNode extends Component implements HasForms, HasActions
         }
 
         // Resolve the node class to get its schema
-        $manager = app('laravel-flow-manager');
+        // $manager = app('laravel-flow-manager');
         // We need a way to get the instance or class. Accessing static method if possible or creating instance.
-        // The previous implementation used new $class().
 
         $schema = [];
         if (class_exists($this->nodeClass)) {
@@ -73,7 +64,20 @@ class ManageNode extends Component implements HasForms, HasActions
             }
         }
 
-        return $form->schema($schema)->statePath('data');
+        return $form
+            ->schema([
+                Section::make('General Settings')
+                    ->schema([
+                        \Filament\Forms\Components\TextInput::make('label')
+                            ->label('Node Label')
+                            ->required(),
+                        \Filament\Forms\Components\Textarea::make('description')
+                            ->label('Description')
+                            ->rows(2),
+                    ]),
+                Section::make('Configuration')
+                    ->schema($schema),
+            ]);
     }
 
     public function render()
@@ -81,18 +85,13 @@ class ManageNode extends Component implements HasForms, HasActions
         return view('laravel-flow::livewire.manage-node');
     }
 
-    public function saveAction(): Action
+    public function manageNodeAction(): Action
     {
-        return Action::make('save')
-            ->label('Save Changes')
-            ->action(fn() => $this->save());
-    }
-
-    public function cancelAction(): Action
-    {
-        return Action::make('cancel')
-            ->label('Cancel')
-            ->color('gray')
-            ->action(fn() => $this->close());
+        return Action::make('manageNode')
+            ->slideOver()
+            ->modalWidth(Width::Medium)
+            ->form(fn(Schema $form) => $this->form($form))
+            ->fillForm(fn(array $arguments) => $arguments['data'] ?? [])
+            ->action(fn($data) => $this->save($data));
     }
 }

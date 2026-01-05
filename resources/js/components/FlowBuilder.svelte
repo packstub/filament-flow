@@ -74,7 +74,12 @@
                 detail: {
                     id: node.id,
                     identifier: node.data.identifier,
-                    config: node.data.config || {},
+                    // Merge label/description with config for the form
+                    config: {
+                        label: node.data.label,
+                        description: node.data.description,
+                        ...(node.data.config || {}),
+                    },
                 },
             }),
         );
@@ -105,11 +110,16 @@
             const { id, config } = e.detail;
             const index = nodes.findIndex((n) => n.id === id);
             if (index !== -1) {
+                // Extract label/description from the form result
+                const { label, description, ...restConfig } = config;
+
                 // Create a new object to trigger reactivity
                 const updatedNode = { ...nodes[index] };
                 updatedNode.data = {
                     ...updatedNode.data,
-                    config: { ...config },
+                    label: label,
+                    description: description,
+                    config: restConfig,
                 };
 
                 // Update the nodes array
