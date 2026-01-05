@@ -62,5 +62,7 @@ class LaravelFlowServiceProvider extends PackageServiceProvider
             ],
             'xlited/laravel-flow'
         );
+
+        \Livewire\Livewire::component('laravel-flow::manage-node', \Xlited\LaravelFlow\Filament\Livewire\ManageNode::class);
     }
 }

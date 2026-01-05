@@ -1,7 +1,6 @@
 <script>
     import { SvelteFlowProvider } from "@xyflow/svelte";
     import FlowCanvas from "./FlowCanvas.svelte";
-    import NodeSettings from "./NodeSettings.svelte";
     import TriggerNode from "./nodes/TriggerNode.svelte";
     import ActionNode from "./nodes/ActionNode.svelte";
     import ConditionNode from "./nodes/ConditionNode.svelte";
@@ -27,111 +26,92 @@
 
     function onNodeClick(event, node) {
         selectedNodeId = node.id;
+        window.dispatchEvent(
+            new CustomEvent("open-node-settings", {
+                detail: {
+                    id: node.id,
+                    identifier: node.data.identifier,
+                    config: node.data.config || {},
+                },
+            }),
+        );
     }
 
-    function closeSettings() {
-        selectedNodeId = null;
-    }
+    let updateTimeout;
 
     $effect(() => {
+        // Track dependencies by reading them
+        const currentNodes = nodes;
+        const currentEdges = edges;
+
         if (updateState) {
-            updateState({
-                nodes: JSON.parse(JSON.stringify(nodes)),
-                edges: JSON.parse(JSON.stringify(edges)),
-            });
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(() => {
+                updateState({
+                    nodes: JSON.parse(JSON.stringify(currentNodes)),
+                    edges: JSON.parse(JSON.stringify(currentEdges)),
+                });
+            }, 500); // 500ms debounce
         }
+
+        return () => clearTimeout(updateTimeout);
     });
 
-    $effect.pre(() => {
-        if (nodes.length === 0) {
-            nodes =
-                incomingNodes.length > 0
-                    ? incomingNodes
-                    : [
-                          {
-                              id: "trigger-1",
-                              type: "trigger",
-                              position: { x: 50, y: 50 },
-                              data: {
-                                  label: "User Registered",
-                                  event: "App\\Events\\UserRegistered",
-                                  description:
-                                      "Triggers when a new user signs up.",
-                              },
-                          },
-                          {
-                              id: "condition-1",
-                              type: "condition",
-                              position: { x: 300, y: 50 },
-                              data: {
-                                  label: "Check Email",
-                                  condition: "user.email_verified_at != null",
-                                  description: "Check if email is verified.",
-                              },
-                          },
-                          {
-                              id: "action-1",
-                              type: "action",
-                              position: { x: 550, y: 0 },
-                              data: {
-                                  label: "Send Welcome Email",
-                                  action: "SendMail",
-                                  description:
-                                      "Send the official welcome package.",
-                              },
-                          },
-                          {
-                              id: "action-2",
-                              type: "action",
-                              position: { x: 550, y: 150 },
-                              data: {
-                                  label: "Log Unverified",
-                                  action: "LogMessage",
-                                  description:
-                                      "Log a warning about unverified user.",
-                              },
-                          },
-                      ];
-        }
-        if (edges.length === 0) {
-            edges =
-                incomingEdges.length > 0
-                    ? incomingEdges
-                    : [
-                          {
-                              id: "e1-2",
-                              source: "trigger-1",
-                              target: "condition-1",
-                          },
-                          {
-                              id: "e2-3",
-                              source: "condition-1",
-                              sourceHandle: "true",
-                              target: "action-1",
-                          },
-                          {
-                              id: "e2-4",
-                              source: "condition-1",
-                              sourceHandle: "false",
-                              target: "action-2",
-                          },
-                      ];
-        }
+    $effect(() => {
+        const handleUpdate = (e) => {
+            const { id, config } = e.detail;
+            const index = nodes.findIndex((n) => n.id === id);
+            if (index !== -1) {
+                // Create a new object to trigger reactivity
+                const updatedNode = { ...nodes[index] };
+                updatedNode.data = {
+                    ...updatedNode.data,
+                    config: { ...config },
+                };
+
+                // Update the nodes array
+                const newNodes = [...nodes];
+                newNodes[index] = updatedNode;
+                nodes = newNodes;
+            }
+        };
+
+        window.addEventListener("update-node-config", handleUpdate);
+
+        return () => {
+            window.removeEventListener("update-node-config", handleUpdate);
+        };
     });
+
+    // $effect.pre(() => {
+    //     if (nodes.length === 0) {
+    //         nodes =
+    //             incomingNodes.length > 0
+    //                 ? incomingNodes
+    //                 : [
+    //                       {
+    //                           id: "trigger-1",
+    //                           type: "trigger",
+    //                           position: { x: 50, y: 50 },
+    //                           data: {
+    //                               label: "User Registered",
+    //                               identifier:
+    //                                   "Xlited\\LaravelFlow\\Nodes\\Triggers\\UserRegistered",
+    //                               description:
+    //                                   "Triggers when a new user signs up.",
+    //                           },
+    //                       },
+    //                       // ... (rest of default nodes can stay, but ensuring they have identifiers is good practice if possible, though not strictly required for this refactor unless defaults are used)
+    //                   ];
+    //     }
+    //     if (edges.length === 0) {
+    //         edges = incomingEdges.length > 0 ? incomingEdges : [];
+    //     }
+    // });
 </script>
 
 <SvelteFlowProvider>
     <div class="flex h-full w-full overflow-hidden">
         <FlowCanvas bind:nodes bind:edges {nodeTypes} {onNodeClick} />
-
-        {#if selectedNode}
-            <NodeSettings
-                bind:node={
-                    nodes[nodes.findIndex((n) => n.id === selectedNodeId)]
-                }
-                {availableComponents}
-                onClose={closeSettings}
-            />
-        {/if}
     </div>
 </SvelteFlowProvider>

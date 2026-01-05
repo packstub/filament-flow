@@ -13,7 +13,7 @@ abstract class Trigger
         return null; // Can return SVG string or icon name
     }
 
-    public function getSchema(): array
+    public function getFormSchema(): array
     {
         return [];
     }
@@ -25,7 +25,6 @@ abstract class Trigger
             'name' => $this->getName(),
             'description' => $this->getDescription(),
             'icon' => $this->getIcon(),
-            'schema' => $this->getSchema(),
             'type' => 'trigger',
         ];
     }

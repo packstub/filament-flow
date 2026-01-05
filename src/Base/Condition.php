@@ -15,7 +15,7 @@ abstract class Condition
         return null;
     }
 
-    public function getSchema(): array
+    public function getFormSchema(): array
     {
         return [];
     }
@@ -27,7 +27,6 @@ abstract class Condition
             'name' => $this->getName(),
             'description' => $this->getDescription(),
             'icon' => $this->getIcon(),
-            'schema' => $this->getSchema(),
             'type' => 'condition',
         ];
     }
