@@ -162,9 +162,7 @@
                 title={node.label}
             >
                 <div
-                    class="w-10 h-10 {node.color} rounded-lg flex items-center justify-center text-white shadow-lg shadow-{node.color.split(
-                        '-',
-                    )[1]}-200/50 group-hover:scale-110 transition-transform flex-shrink-0"
+                    class="w-10 h-10 {node.color} mr-auto p-1.5 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform flex-shrink-0"
                 >
                     {@html node.icon || "<span>?</span>"}
                 </div>
