@@ -23,43 +23,32 @@ class ModelPropertyCheck extends Condition
         return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>';
     }
 
-    public function getSchema(): array
+    public function getFormSchema(): array
     {
         return [
-            [
-                'name' => 'model_class',
-                'label' => 'Model Type',
-                'type' => 'searchable-select',
-                'options' => ModelFinder::all(),
-                'required' => true,
-            ],
-            [
-                'name' => 'property',
-                'label' => 'Property',
-                'type' => 'text',
-                'placeholder' => 'status',
-                'required' => true,
-            ],
-            [
-                'name' => 'operator',
-                'label' => 'Operator',
-                'type' => 'select',
-                'options' => [
+            \Filament\Forms\Components\Select::make('model_class')
+                ->label('Model Type')
+                ->options(ModelFinder::all())
+                ->searchable()
+                ->required(),
+            \Filament\Forms\Components\TextInput::make('property')
+                ->label('Property')
+                ->placeholder('status')
+                ->required(),
+            \Filament\Forms\Components\Select::make('operator')
+                ->label('Operator')
+                ->options([
                     'equals' => 'Equals',
                     'not_equals' => 'Not Equals',
                     'greater_than' => 'Greater Than',
                     'less_than' => 'Less Than',
                     'contains' => 'Contains',
-                ],
-                'required' => true,
-            ],
-            [
-                'name' => 'value',
-                'label' => 'Value',
-                'type' => 'text',
-                'placeholder' => 'active',
-                'required' => true,
-            ],
+                ])
+                ->required(),
+            \Filament\Forms\Components\TextInput::make('value')
+                ->label('Value')
+                ->placeholder('active')
+                ->required(),
         ];
     }
 
