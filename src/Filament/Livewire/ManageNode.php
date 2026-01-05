@@ -2,10 +2,10 @@
 
 namespace Xlited\LaravelFlow\Filament\Livewire;
 
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Livewire\Component;
 use Filament\Forms\Form;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -73,12 +73,7 @@ class ManageNode extends Component implements HasForms, HasActions
             }
         }
 
-        return $form
-            ->schema([
-                Section::make('Configuration')
-                    ->schema($schema)
-                    ->statePath('data')
-            ]);
+        return $form->schema($schema)->statePath('data');
     }
 
     public function render()

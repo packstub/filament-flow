@@ -1,5 +1,5 @@
-<script>
-    import { SvelteFlowProvider } from "@xyflow/svelte";
+<script lang="ts">
+    import { SvelteFlowProvider, type Node, type Edge } from "@xyflow/svelte";
     import FlowCanvas from "./FlowCanvas.svelte";
     import TriggerNode from "./nodes/TriggerNode.svelte";
     import ActionNode from "./nodes/ActionNode.svelte";
@@ -11,15 +11,58 @@
         condition: ConditionNode,
     };
 
+    const defaultNodes = [
+        {
+            id: "trigger-1",
+            type: "trigger",
+            position: { x: 50, y: 50 },
+            data: {
+                label: "User Registered",
+                identifier:
+                    "Xlited\\LaravelFlow\\Nodes\\Triggers\\UserRegistered",
+                description: "Triggers when a new user signs up.",
+            },
+        },
+        {
+            id: "action-1",
+            type: "action",
+            position: { x: 350, y: 50 },
+            data: {
+                label: "Send Welcome Email",
+                identifier:
+                    "Xlited\\LaravelFlow\\Nodes\\Actions\\SendWelcomeEmail",
+                description: "Sends a welcome email to the user.",
+            },
+        },
+    ];
+
+    const defaultEdges = [
+        {
+            id: "edge-1",
+            source: "trigger-1",
+            target: "action-1",
+        },
+    ];
+
     let {
-        nodes: incomingNodes = [],
-        edges: incomingEdges = [],
+        nodes: incomingNodes,
+        edges: incomingEdges,
         availableComponents = {},
         updateState,
     } = $props();
 
-    let nodes = $state.raw([]);
-    let edges = $state.raw([]);
+    if (incomingNodes.length === 0) {
+        incomingNodes = defaultNodes;
+    }
+
+    if (incomingEdges.length === 0) {
+        incomingEdges = defaultEdges;
+    }
+
+    console.log(defaultNodes, incomingNodes, incomingEdges);
+
+    let nodes = $state.raw<Node[]>(incomingNodes);
+    let edges = $state.raw<Edge[]>(incomingEdges);
     let selectedNodeId = $state(null);
 
     let selectedNode = $derived(nodes.find((n) => n.id === selectedNodeId));
@@ -82,32 +125,6 @@
             window.removeEventListener("update-node-config", handleUpdate);
         };
     });
-
-    // $effect.pre(() => {
-    //     if (nodes.length === 0) {
-    //         nodes =
-    //             incomingNodes.length > 0
-    //                 ? incomingNodes
-    //                 : [
-    //                       {
-    //                           id: "trigger-1",
-    //                           type: "trigger",
-    //                           position: { x: 50, y: 50 },
-    //                           data: {
-    //                               label: "User Registered",
-    //                               identifier:
-    //                                   "Xlited\\LaravelFlow\\Nodes\\Triggers\\UserRegistered",
-    //                               description:
-    //                                   "Triggers when a new user signs up.",
-    //                           },
-    //                       },
-    //                       // ... (rest of default nodes can stay, but ensuring they have identifiers is good practice if possible, though not strictly required for this refactor unless defaults are used)
-    //                   ];
-    //     }
-    //     if (edges.length === 0) {
-    //         edges = incomingEdges.length > 0 ? incomingEdges : [];
-    //     }
-    // });
 </script>
 
 <SvelteFlowProvider>

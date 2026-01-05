@@ -2,12 +2,12 @@
 
 namespace Xlited\LaravelFlow\Filament\Resources;
 
+use Filament\Schemas\Components\Section;
 use Xlited\LaravelFlow\Filament\Resources\WorkflowResource\Pages;
 use Xlited\LaravelFlow\Models\Workflow;
 use Xlited\LaravelFlow\Filament\Forms\Components\FlowBuilder;
 use Filament\Forms;
 use Filament\Schemas\Schema;
-use Filament\Schemas\Components as SchemaComponents;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -26,7 +26,7 @@ class WorkflowResource extends Resource
                 FlowBuilder::make('payload')
                     ->hiddenLabel()
                     ->columnSpanFull(),
-                SchemaComponents\Section::make('General Information')
+                Section::make('General Information')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->required()

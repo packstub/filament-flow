@@ -10886,64 +10886,86 @@ function ep(e, t) {
     trigger: W0,
     action: G0,
     condition: Q0
-  };
-  L(t, "nodes", 19, () => []), L(t, "edges", 19, () => []), L(t, "availableComponents", 19, () => ({}));
-  let r = /* @__PURE__ */ se([]), o = /* @__PURE__ */ se([]), i = /* @__PURE__ */ se(null);
-  function s(l, c) {
-    O(i, c.id, !0), window.dispatchEvent(new CustomEvent("open-node-settings", {
+  }, r = [
+    {
+      id: "trigger-1",
+      type: "trigger",
+      position: { x: 50, y: 50 },
+      data: {
+        label: "User Registered",
+        identifier: "Xlited\\LaravelFlow\\Nodes\\Triggers\\UserRegistered",
+        description: "Triggers when a new user signs up."
+      }
+    },
+    {
+      id: "action-1",
+      type: "action",
+      position: { x: 350, y: 50 },
+      data: {
+        label: "Send Welcome Email",
+        identifier: "Xlited\\LaravelFlow\\Nodes\\Actions\\SendWelcomeEmail",
+        description: "Sends a welcome email to the user."
+      }
+    }
+  ], o = [{ id: "edge-1", source: "trigger-1", target: "action-1" }];
+  let i = L(t, "nodes", 7), s = L(t, "edges", 7);
+  L(t, "availableComponents", 19, () => ({})), i().length === 0 && i(r), s().length === 0 && s(o), console.log(r, i(), s());
+  let a = /* @__PURE__ */ se(i()), l = /* @__PURE__ */ se(s()), c = /* @__PURE__ */ se(null);
+  function d(f, g) {
+    O(c, g.id, !0), window.dispatchEvent(new CustomEvent("open-node-settings", {
       detail: {
-        id: c.id,
-        identifier: c.data.identifier,
-        config: c.data.config || {}
+        id: g.id,
+        identifier: g.data.identifier,
+        config: g.data.config || {}
       }
     }));
   }
-  let a;
+  let h;
   qe(() => {
-    const l = u(r), c = u(o);
-    return t.updateState && (clearTimeout(a), a = setTimeout(
+    const f = u(a), g = u(l);
+    return t.updateState && (clearTimeout(h), h = setTimeout(
       () => {
         t.updateState({
-          nodes: JSON.parse(JSON.stringify(l)),
-          edges: JSON.parse(JSON.stringify(c))
+          nodes: JSON.parse(JSON.stringify(f)),
+          edges: JSON.parse(JSON.stringify(g))
         });
       },
       500
-    )), () => clearTimeout(a);
+    )), () => clearTimeout(h);
   }), qe(() => {
-    const l = (c) => {
-      const { id: d, config: h } = c.detail, f = u(r).findIndex((g) => g.id === d);
-      if (f !== -1) {
-        const g = { ...u(r)[f] };
-        g.data = { ...g.data, config: { ...h } };
-        const v = [...u(r)];
-        v[f] = g, O(r, v);
+    const f = (g) => {
+      const { id: v, config: w } = g.detail, p = u(a).findIndex((_) => _.id === v);
+      if (p !== -1) {
+        const _ = { ...u(a)[p] };
+        _.data = { ..._.data, config: { ...w } };
+        const C = [...u(a)];
+        C[p] = _, O(a, C);
       }
     };
-    return window.addEventListener("update-node-config", l), () => {
-      window.removeEventListener("update-node-config", l);
+    return window.addEventListener("update-node-config", f), () => {
+      window.removeEventListener("update-node-config", f);
     };
   }), s0(e, {
-    children: (l, c) => {
-      var d = $0(), h = q(d);
-      B0(h, {
+    children: (f, g) => {
+      var v = $0(), w = q(v);
+      B0(w, {
         get nodeTypes() {
           return n;
         },
-        onNodeClick: s,
+        onNodeClick: d,
         get nodes() {
-          return u(r);
+          return u(a);
         },
-        set nodes(f) {
-          O(r, f);
+        set nodes(p) {
+          O(a, p);
         },
         get edges() {
-          return u(o);
+          return u(l);
         },
-        set edges(f) {
-          O(o, f);
+        set edges(p) {
+          O(l, p);
         }
-      }), V(l, d);
+      }), V(f, v);
     },
     $$slots: { default: !0 }
   }), te();
