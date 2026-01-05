@@ -1,3 +1,5 @@
+@reference "tailwindcss";
+
 @import "@xyflow/svelte/dist/style.css";
 
 .svelte-flow__node {
