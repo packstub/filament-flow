@@ -18,13 +18,15 @@
         }
     ],
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "filament/filament": "^4.0",
         "spatie/laravel-package-tools": "^1.16"
     },
     "require-dev": {
-        "orchestra/testbench": "^9.0",
-        "phpunit/phpunit": "^11.0"
+        "orchestra/testbench": "^10.0",
+        "pestphp/pest": "^4.3",
+        "pestphp/pest-plugin-laravel": "^4.0",
+        "pestphp/pest-plugin-browser": "^4.1"
     },
     "autoload": {
         "psr-4": {
@@ -48,7 +50,10 @@
         }
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true

@@ -152,6 +152,57 @@
                                             )}
                                         class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                     ></textarea>
+                                {:else if field.type === "select" || field.type === "searchable-select"}
+                                    {#if field.type === "searchable-select"}
+                                        <input
+                                            list="list-{field.name}"
+                                            id="field-{field.name}"
+                                            placeholder={field.placeholder}
+                                            value={node.data.config?.[
+                                                field.name
+                                            ] || ""}
+                                            onchange={(e) =>
+                                                updateConfig(
+                                                    field.name,
+                                                    e.target.value,
+                                                )}
+                                            class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                        />
+                                        <datalist id="list-{field.name}">
+                                            {#if field.options}
+                                                {#each Object.entries(field.options) as [value, label]}
+                                                    <option {value}
+                                                        >{label}</option
+                                                    >
+                                                {/each}
+                                            {/if}
+                                        </datalist>
+                                    {:else}
+                                        <select
+                                            id="field-{field.name}"
+                                            value={node.data.config?.[
+                                                field.name
+                                            ] || ""}
+                                            onchange={(e) =>
+                                                updateConfig(
+                                                    field.name,
+                                                    e.target.value,
+                                                )}
+                                            class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                        >
+                                            <option value="" disabled selected
+                                                >{field.placeholder ||
+                                                    "Select an option..."}</option
+                                            >
+                                            {#if field.options}
+                                                {#each Object.entries(field.options) as [value, label]}
+                                                    <option {value}
+                                                        >{label}</option
+                                                    >
+                                                {/each}
+                                            {/if}
+                                        </select>
+                                    {/if}
                                 {:else}
                                     <input
                                         id="field-{field.name}"

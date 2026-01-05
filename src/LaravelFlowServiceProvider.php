@@ -42,7 +42,18 @@ class LaravelFlowServiceProvider extends PackageServiceProvider
     {
         $manager = app('laravel-flow-manager');
         $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\UserRegistered::class);
+        $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\ModelCreated::class);
+        $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\ModelUpdated::class);
+        $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\ModelDeleted::class);
+        $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\WorkflowChained::class);
         $manager->registerAction(\Xlited\LaravelFlow\Nodes\Actions\SendEmail::class);
+        $manager->registerAction(\Xlited\LaravelFlow\Nodes\Actions\SendSlackNotification::class);
+        $manager->registerAction(\Xlited\LaravelFlow\Nodes\Actions\UpdateModel::class);
+        $manager->registerAction(\Xlited\LaravelFlow\Nodes\Actions\HttpRequest::class);
+        $manager->registerAction(\Xlited\LaravelFlow\Nodes\Actions\Delay::class);
+
+        $manager->registerCondition(\Xlited\LaravelFlow\Nodes\Conditions\ModelPropertyCheck::class);
+        $manager->registerCondition(\Xlited\LaravelFlow\Nodes\Conditions\TimeOfDay::class);
 
         FilamentAsset::register(
             [

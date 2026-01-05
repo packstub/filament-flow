@@ -13,6 +13,7 @@
         "vite": "^7.3.0"
     },
     "dependencies": {
-        "@xyflow/svelte": "^1.5.0"
+        "@xyflow/svelte": "^1.5.0",
+        "playwright": "^1.57.0"
     }
 }
