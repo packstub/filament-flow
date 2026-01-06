@@ -2,6 +2,8 @@
 
 namespace Xlited\LaravelFlow\Nodes\Actions;
 
+use Filament\Forms\Components\Repeater\TableColumn;
+use Filament\Forms\Components\TextInput;
 use Xlited\LaravelFlow\Base\Action;
 use Xlited\LaravelFlow\Support\ModelFinder;
 use Illuminate\Database\Eloquent\Model;
@@ -26,26 +28,14 @@ class UpdateModel extends Action
     public function getFormSchema(): array
     {
         return [
-            \Filament\Forms\Components\Select::make('model_class')
-                ->label('Model Type')
-                ->options(ModelFinder::all())
-                ->searchable()
-                ->required(),
-            \Filament\Forms\Components\Textarea::make('attributes')
-                ->label('Attributes (JSON)')
-                ->placeholder('{"status": "active"}')
+            \Filament\Forms\Components\KeyValue::make('attributes')
                 ->required(),
         ];
     }
 
     public function handle(array $data, array $payload): void
     {
-        $attributes = json_decode($data['attributes'] ?? '{}', true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            // Should probably log this or throw exception
-            return;
-        }
+        $attributes = $data['attributes'] ?? [];
 
         // Use model from payload
         if (isset($payload['model']) && $payload['model'] instanceof Model) {

@@ -30,9 +30,13 @@
             position: { x: 350, y: 50 },
             data: {
                 label: "Send Welcome Email",
-                identifier:
-                    "Xlited\\LaravelFlow\\Nodes\\Actions\\SendWelcomeEmail",
+                identifier: "Xlited\\LaravelFlow\\Nodes\\Actions\\SendEmail",
                 description: "Sends a welcome email to the user.",
+                config: {
+                    to: "{{model.email}}",
+                    subject: "Welcome to our platform",
+                    body: "Hi {{model.name}}!\nThank you for signing up!",
+                },
             },
         },
     ];

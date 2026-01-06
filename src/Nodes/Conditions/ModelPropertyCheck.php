@@ -26,11 +26,6 @@ class ModelPropertyCheck extends Condition
     public function getFormSchema(): array
     {
         return [
-            \Filament\Forms\Components\Select::make('model_class')
-                ->label('Model Type')
-                ->options(ModelFinder::all())
-                ->searchable()
-                ->required(),
             \Filament\Forms\Components\TextInput::make('property')
                 ->label('Property')
                 ->placeholder('status')

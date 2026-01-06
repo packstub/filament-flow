@@ -24,24 +24,26 @@ class SendEmail extends Action
     public function getFormSchema(): array
     {
         return [
+            \Filament\Forms\Components\TextInput::make('recipient')
+                ->placeholder('user@example.com')
+                ->default('{{ model.email }}')
+                ->required(),
             \Filament\Forms\Components\TextInput::make('subject')
-                ->label('Subject')
                 ->placeholder('Welcome to our app!')
                 ->required(),
             \Filament\Forms\Components\Textarea::make('body')
-                ->label('Email Body')
-                ->placeholder('Hi {{ user.name }},...')
+                ->label('Message')
+                ->placeholder('Hi {{ model.name }}, ...')
                 ->required(),
         ];
     }
 
     public function handle(array $data, array $payload): void
     {
-        $recipient = $data['recipient'] ?? null; // Assuming recipient is in config or derived
+        $recipient = $this->interpolate($data['recipient'] ?? '', $payload);
         $subject = $this->interpolate($data['subject'] ?? '', $payload);
         $body = $this->interpolate($data['body'] ?? '', $payload);
 
-        // If recipient is not in config, try to get it from payload model
         if (!$recipient && isset($payload['model']) && isset($payload['model']->email)) {
             $recipient = $payload['model']->email;
         }
@@ -58,10 +60,10 @@ class SendEmail extends Action
     protected function interpolate(string $text, array $payload): string
     {
         if (isset($payload['model'])) {
-            // Simple regex to replace {{ model.attribute }}
+            // Replace all {{ model.attribute.nested.key }}
             $text = preg_replace_callback('/\{\{\s*model\.(\w+)\s*\}\}/', function ($matches) use ($payload) {
                 $attribute = $matches[1];
-                return $payload['model']->$attribute ?? '';
+                return data_get($payload['model'], $attribute, '');
             }, $text);
         }
         return $text;

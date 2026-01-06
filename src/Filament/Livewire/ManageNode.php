@@ -89,7 +89,7 @@ class ManageNode extends Component implements HasForms, HasActions
     {
         return Action::make('manageNode')
             ->slideOver()
-            ->modalWidth(Width::Medium)
+            ->modalWidth(Width::TwoExtraLarge)
             ->form(fn(Schema $form) => $this->form($form))
             ->fillForm(fn(array $arguments) => $arguments['data'] ?? [])
             ->action(fn($data) => $this->save($data));
