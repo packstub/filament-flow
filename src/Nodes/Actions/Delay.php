@@ -3,8 +3,9 @@
 namespace Xlited\LaravelFlow\Nodes\Actions;
 
 use Xlited\LaravelFlow\Base\Action;
+use Xlited\LaravelFlow\Contracts\DelayableAction;
 
-class Delay extends Action
+class Delay extends Action implements DelayableAction
 {
     public function getName(): string
     {
@@ -32,12 +33,21 @@ class Delay extends Action
         ];
     }
 
-    public function handle(array $data, array $payload): void
+    public function getDelaySeconds(array $data, array $payload): ?int
     {
         $duration = (int) ($data['duration'] ?? 0);
+        return $duration > 0 ? $duration : null;
+    }
 
-        if ($duration > 0) {
-            sleep($duration);
-        }
+    public function handle(array $data, array $payload): void
+    {
+        // When using queue-based delays, this method is called after the delay.
+        // Nothing to do here - the delay was handled by the queue system.
+        // For synchronous fallback (if needed), uncomment the sleep below:
+        // $duration = (int) ($data['duration'] ?? 0);
+        // if ($duration > 0) {
+        //     sleep($duration);
+        // }
     }
 }
+

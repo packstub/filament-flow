@@ -11058,7 +11058,7 @@ function pp(e, t) {
     }
   ], o = [{ id: "edge-1", source: "trigger-1", target: "action-1" }];
   let i = H(t, "nodes", 7), s = H(t, "edges", 7), a = H(t, "availableComponents", 19, () => ({}));
-  i().length === 0 && i(r), s().length === 0 && s(o), console.log(r, i(), s());
+  i().length === 0 && i(r), s().length === 0 && s(o);
   let l = /* @__PURE__ */ ie(i()), c = /* @__PURE__ */ ie(s()), d = /* @__PURE__ */ ie(null);
   function h(g, v) {
     O(d, v.id, !0), console.log(v), window.dispatchEvent(new CustomEvent("open-node-settings", {

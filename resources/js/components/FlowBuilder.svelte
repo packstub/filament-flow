@@ -59,8 +59,6 @@
         incomingEdges = defaultEdges;
     }
 
-    console.log(defaultNodes, incomingNodes, incomingEdges);
-
     let nodes = $state.raw<Node[]>(incomingNodes);
     let edges = $state.raw<Edge[]>(incomingEdges);
     let selectedNodeId = $state(null);
