@@ -34,18 +34,10 @@ return new class extends Migration {
             $table->json('output')->nullable();
             $table->timestamps();
         });
-
-        Schema::create('workflow_variables', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('key')->unique();
-            $table->text('value')->nullable();
-            $table->timestamps();
-        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('workflow_variables');
         Schema::dropIfExists('workflow_logs');
         Schema::dropIfExists('workflow_triggers');
         Schema::dropIfExists('workflows');
