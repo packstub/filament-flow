@@ -1,5 +1,6 @@
 <script lang="ts">
     import { SvelteFlowProvider, type Node, type Edge } from "@xyflow/svelte";
+    import { untrack } from "svelte";
     import FlowCanvas from "./FlowCanvas.svelte";
     import TriggerNode from "./nodes/TriggerNode.svelte";
     import ActionNode from "./nodes/ActionNode.svelte";
@@ -45,22 +46,22 @@
     ];
 
     let {
-        nodes: incomingNodes,
-        edges: incomingEdges,
+        nodes: incomingNodes = [],
+        edges: incomingEdges = [],
         availableComponents = {},
         updateState,
     } = $props();
 
-    if (incomingNodes.length === 0) {
-        incomingNodes = defaultNodes;
-    }
-
-    if (incomingEdges.length === 0) {
-        incomingEdges = defaultEdges;
-    }
-
-    let nodes = $state.raw<Node[]>(incomingNodes);
-    let edges = $state.raw<Edge[]>(incomingEdges);
+    let nodes = $state.raw<Node[]>(
+        untrack(() =>
+            incomingNodes.length > 0 ? incomingNodes : defaultNodes,
+        ),
+    );
+    let edges = $state.raw<Edge[]>(
+        untrack(() =>
+            incomingEdges.length > 0 ? incomingEdges : defaultEdges,
+        ),
+    );
     let selectedNodeId = $state(null);
 
     let selectedNode = $derived(nodes.find((n) => n.id === selectedNodeId));

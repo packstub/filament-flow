@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { Handle, Position } from "@xyflow/svelte";
 
     let {
@@ -82,6 +82,7 @@
             <!-- Settings Button -->
             <button
                 onclick={openSettings}
+                type="button"
                 class="text-white/70 hover:text-white hover:bg-white/20 rounded p-0.5 transition-all opacity-0 group-hover:opacity-100"
                 title="Edit Settings"
             >

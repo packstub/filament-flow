@@ -3,6 +3,7 @@
 namespace Xlited\LaravelFlow\Filament\Resources;
 
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
 use Xlited\LaravelFlow\Filament\Resources\WorkflowResource\Pages;
 use Xlited\LaravelFlow\Models\Workflow;
 use Xlited\LaravelFlow\Filament\Forms\Components\FlowBuilder;
@@ -22,21 +23,32 @@ class WorkflowResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
-            ->schema([
-                Section::make()
-                    ->schema([
-                        Forms\Components\TextInput::make('name')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\Textarea::make('description')
-                            ->maxLength(65535)
-                            ->columnSpanFull(),
-                        // trigger_type removed from form, handled via FlowBuilder graph
-                        Forms\Components\Toggle::make('is_active')
-                            ->required(),
-                    ]),
-                FlowBuilder::make('payload')
-                    ->hiddenLabel()
+            ->components([
+                Tabs::make()
+                    ->tabs([
+                        Tabs\Tab::make('General')
+                            ->schema([
+                                Section::make()
+                                    ->schema([
+                                        Forms\Components\TextInput::make('name')
+                                            ->required()
+                                            ->maxLength(255),
+                                        Forms\Components\Textarea::make('description')
+                                            ->maxLength(65535)
+                                            ->columnSpanFull(),
+                                        // trigger_type removed from form, handled via FlowBuilder graph
+                                        Forms\Components\Toggle::make('is_active')
+                                            ->required(),
+                                    ]),
+                            ]),
+                        Tabs\Tab::make('Flow')
+                            ->schema([
+                                FlowBuilder::make('payload')
+                                    ->hiddenLabel()
+                                    ->columnSpanFull(),
+                            ]),
+                    ])
+                    ->contained(false)
                     ->columnSpanFull(),
             ]);
     }
