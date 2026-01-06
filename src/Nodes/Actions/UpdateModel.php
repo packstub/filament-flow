@@ -40,15 +40,14 @@ class UpdateModel extends Action
 
     public function handle(array $data, array $payload): void
     {
-        // Requires payload to contain the model instance or ID.
-        // For generic update, we assume payload has 'model' key or similar,
-        // OR the trigger context passed the model.
-        // Implementation depends on how payload is structured.
-        // For now, simple logging/placeholder logic.
-
-        $modelClass = $data['model_class'] ?? null;
         $attributes = json_decode($data['attributes'] ?? '{}', true);
 
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            // Should probably log this or throw exception
+            return;
+        }
+
+        // Use model from payload
         if (isset($payload['model']) && $payload['model'] instanceof Model) {
             $payload['model']->update($attributes);
         }

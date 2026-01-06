@@ -40,6 +40,11 @@ class LaravelFlowServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
+        \Illuminate\Support\Facades\Event::listen(
+            \Illuminate\Auth\Events\Registered::class,
+            \Xlited\LaravelFlow\Listeners\TriggerWorkflowsListener::class
+        );
+
         $manager = app('laravel-flow-manager');
         $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\UserRegistered::class);
         $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\ModelCreated::class);

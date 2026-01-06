@@ -24,8 +24,45 @@ class WorkflowDispatcher
         }
 
         foreach ($workflows as $workflow) {
-            $this->runWorkflow($workflow, $payload);
+            if ($this->shouldRun($workflow, $triggerType, $payload)) {
+                $this->runWorkflow($workflow, $payload);
+            }
         }
+    }
+
+    /**
+     * Check if the workflow should run based on its trigger configuration.
+     */
+    protected function shouldRun(Workflow $workflow, string $triggerType, array $payload): bool
+    {
+        // Decode payload to find trigger node
+        $graph = $workflow->payload ?? [];
+        $nodes = $graph['nodes'] ?? [];
+        $triggerNode = collect($nodes)->firstWhere('type', 'trigger');
+
+        if (!$triggerNode) {
+            return false;
+        }
+
+        $config = $triggerNode['data']['config'] ?? [];
+
+        // Specific logic for Model triggers
+        if (
+            in_array($triggerType, [
+                \Xlited\LaravelFlow\Nodes\Triggers\ModelCreated::class,
+                \Xlited\LaravelFlow\Nodes\Triggers\ModelUpdated::class,
+                \Xlited\LaravelFlow\Nodes\Triggers\ModelDeleted::class,
+            ])
+        ) {
+            $configuredModel = $config['model_class'] ?? null;
+            $startModel = $payload['model'] ?? null;
+
+            if ($configuredModel && $startModel && !($startModel instanceof $configuredModel)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

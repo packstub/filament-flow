@@ -37,6 +37,34 @@ class SendEmail extends Action
 
     public function handle(array $data, array $payload): void
     {
-        // Logic to send email
+        $recipient = $data['recipient'] ?? null; // Assuming recipient is in config or derived
+        $subject = $this->interpolate($data['subject'] ?? '', $payload);
+        $body = $this->interpolate($data['body'] ?? '', $payload);
+
+        // If recipient is not in config, try to get it from payload model
+        if (!$recipient && isset($payload['model']) && isset($payload['model']->email)) {
+            $recipient = $payload['model']->email;
+        }
+
+        if (!$recipient) {
+            return;
+        }
+
+        \Illuminate\Support\Facades\Mail::raw($body, function ($message) use ($recipient, $subject) {
+            $message->to($recipient)
+                ->subject($subject);
+        });
+    }
+
+    protected function interpolate(string $text, array $payload): string
+    {
+        if (isset($payload['model'])) {
+            // Simple regex to replace {{ model.attribute }}
+            $text = preg_replace_callback('/\{\{\s*model\.(\w+)\s*\}\}/', function ($matches) use ($payload) {
+                $attribute = $matches[1];
+                return $payload['model']->$attribute ?? '';
+            }, $text);
+        }
+        return $text;
     }
 }

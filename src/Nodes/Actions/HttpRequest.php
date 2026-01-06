@@ -49,8 +49,16 @@ class HttpRequest extends Action
         $headers = json_decode($data['headers'] ?? '{}', true);
         $body = json_decode($data['body'] ?? '{}', true);
 
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return;
+        }
+
         if ($url) {
-            Http::withHeaders($headers)->send($method, $url, ['json' => $body]);
+            // Note: 'json' option is for request body, 'query' for query params
+            // We assume body is for POST/PUT
+            Http::withHeaders($headers)->send($method, $url, [
+                'json' => $body,
+            ]);
         }
     }
 }

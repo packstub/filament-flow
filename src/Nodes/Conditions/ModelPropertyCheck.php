@@ -61,6 +61,7 @@ class ModelPropertyCheck extends Condition
         $model = $payload['model'] ?? null;
 
         if (!($model instanceof Model) || !$property) {
+            // Cannot evaluate without model or property
             return false;
         }
 
