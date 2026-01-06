@@ -49,7 +49,15 @@ class UpdateModel extends Action
 
         // Use model from payload
         if (isset($payload['model']) && $payload['model'] instanceof Model) {
-            $payload['model']->update($attributes);
+            // Prevent infinite loops by updating without firing events
+            // if the workflow is triggered by an update event.
+            // Best practice: use withoutEvents.
+            $model = $payload['model'];
+            $class = get_class($model);
+
+            $class::withoutEvents(function () use ($model, $attributes) {
+                $model->update($attributes);
+            });
         }
     }
 }

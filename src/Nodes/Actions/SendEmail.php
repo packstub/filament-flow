@@ -50,10 +50,9 @@ class SendEmail extends Action
             return;
         }
 
-        \Illuminate\Support\Facades\Mail::raw($body, function ($message) use ($recipient, $subject) {
-            $message->to($recipient)
-                ->subject($subject);
-        });
+        \Illuminate\Support\Facades\Mail::to($recipient)->send(
+            new \Xlited\LaravelFlow\Mail\GenericEmail($subject, $body)
+        );
     }
 
     protected function interpolate(string $text, array $payload): string

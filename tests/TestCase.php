@@ -28,9 +28,18 @@ class TestCase extends BaseTestCase
     {
         config()->set('database.default', 'testing');
 
-        /*
-        $migration = include __DIR__.'/../database/migrations/create_workflow_tables.php.stub';
+        $migration = include __DIR__ . '/../database/migrations/2026_01_01_000000_create_workflow_tables.php';
         $migration->up();
-        */
+
+        // Create users table for testing
+        \Illuminate\Support\Facades\Schema::create('users', function (\Illuminate\Database\Schema\Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->rememberToken();
+            $table->timestamps();
+        });
     }
 }

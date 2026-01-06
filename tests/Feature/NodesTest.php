@@ -15,7 +15,7 @@ test('ModelCreated trigger has correct metadata', function () {
     $trigger = new ModelCreated();
     expect($trigger->getName())->toBe('Model Created')
         ->and($trigger->getDescription())->not->toBeEmpty()
-        ->and($trigger->getSchema())->toBeArray();
+        ->and($trigger->getFormSchema())->toBeArray();
 });
 
 test('SendSlackNotification action sends request', function () {

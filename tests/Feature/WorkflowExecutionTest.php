@@ -1,0 +1,198 @@
+<?php
+
+namespace Xlited\LaravelFlow\Tests\Feature;
+
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Xlited\LaravelFlow\Models\Workflow;
+use Xlited\LaravelFlow\Nodes\Actions\HttpRequest;
+use Xlited\LaravelFlow\Nodes\Actions\SendEmail;
+use Xlited\LaravelFlow\Nodes\Actions\UpdateModel;
+use Xlited\LaravelFlow\Nodes\Conditions\ModelPropertyCheck;
+use Xlited\LaravelFlow\Nodes\Triggers\ModelCreated;
+use Xlited\LaravelFlow\Nodes\Triggers\ModelUpdated;
+use Xlited\LaravelFlow\Nodes\Triggers\UserRegistered;
+use Xlited\LaravelFlow\Tests\TestCase;
+use Xlited\LaravelFlow\Tests\User;
+
+uses(TestCase::class, RefreshDatabase::class);
+
+test('workflow sends email when user registers', function () {
+    Mail::fake();
+
+    // Create Workflow
+    Workflow::create([
+        'name' => 'Welcome Email',
+        'is_active' => true,
+        'trigger_type' => UserRegistered::class,
+        'payload' => [
+            'nodes' => [
+                [
+                    'id' => 'trigger-1',
+                    'type' => 'trigger',
+                    'data' => [
+                        'identifier' => UserRegistered::class,
+                        'config' => [],
+                        'label' => 'User Registered',
+                    ],
+                ],
+                [
+                    'id' => 'action-1',
+                    'type' => 'action',
+                    'data' => [
+                        'identifier' => SendEmail::class,
+                        'config' => [
+                            'subject' => 'Welcome {{ model.name }}',
+                            'body' => 'Hello {{ model.email }}',
+                        ],
+                        'label' => 'Send Email',
+                    ],
+                ],
+            ],
+            'edges' => [
+                ['id' => 'edge-1', 'source' => 'trigger-1', 'target' => 'action-1'],
+            ],
+        ],
+    ]);
+
+    // Create User (simulating registration)
+    $user = User::create([
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+        'password' => 'password',
+    ]);
+
+    // Manually fire the Registered event
+    event(new Registered($user));
+
+    // Assert GenericEmail Sent
+    Mail::assertSent(function (\Xlited\LaravelFlow\Mail\GenericEmail $mail) use ($user) {
+        return $mail->hasTo($user->email) &&
+            $mail->subject === 'Welcome Test User' &&
+            $mail->body === 'Hello test@example.com';
+    });
+});
+
+test('workflow updates model when condition met', function () {
+    Workflow::create([
+        'name' => 'Update VIP Status',
+        'is_active' => true,
+        'trigger_type' => ModelUpdated::class,
+        'payload' => [
+            'nodes' => [
+                [
+                    'id' => 'trigger',
+                    'type' => 'trigger',
+                    'data' => [
+                        'identifier' => ModelUpdated::class,
+                        'config' => ['model_class' => User::class],
+                        'label' => 'User Updated',
+                    ],
+                ],
+                [
+                    'id' => 'condition',
+                    'type' => 'condition',
+                    'data' => [
+                        'identifier' => ModelPropertyCheck::class,
+                        'config' => [
+                            'model_class' => User::class,
+                            'property' => 'name',
+                            'operator' => 'contains',
+                            'value' => 'VIP',
+                        ],
+                        'label' => 'Check Name',
+                    ],
+                ],
+                [
+                    'id' => 'action',
+                    'type' => 'action',
+                    'data' => [
+                        'identifier' => UpdateModel::class,
+                        'config' => [
+                            'model_class' => User::class,
+                            'attributes' => json_encode(['email' => 'vip@example.com']),
+                        ],
+                        'label' => 'Update Email',
+                    ],
+                ],
+            ],
+            'edges' => [
+                ['id' => 'e1', 'source' => 'trigger', 'target' => 'condition'],
+                ['id' => 'e2', 'source' => 'condition', 'sourceHandle' => 'true', 'target' => 'action'],
+            ],
+        ],
+    ]);
+
+    // Create User
+    $user = User::create([
+        'name' => 'Normal User',
+        'email' => 'normal@example.com',
+        'password' => 'password',
+    ]);
+
+    // Update User (should trigger workflow)
+    $user->update(['name' => 'Super VIP User']);
+
+    // Assert Logic
+    $user->refresh();
+    expect($user->email)->toBe('vip@example.com');
+});
+
+test('workflow sends http request on model creation', function () {
+    Http::fake();
+
+    Workflow::create([
+        'name' => 'Webhook Trigger',
+        'is_active' => true,
+        'trigger_type' => ModelCreated::class,
+        'payload' => [
+            'nodes' => [
+                [
+                    'id' => 'trigger',
+                    'type' => 'trigger',
+                    'data' => [
+                        'identifier' => ModelCreated::class,
+                        'config' => ['model_class' => User::class],
+                        'label' => 'User Created',
+                    ],
+                ],
+                [
+                    'id' => 'action',
+                    'type' => 'action',
+                    'data' => [
+                        'identifier' => HttpRequest::class,
+                        'config' => [
+                            'method' => 'POST',
+                            'url' => 'https://api.example.com/webhook',
+                            'body' => json_encode(['id' => '{{ model.id }}', 'name' => '{{ model.name }}']),
+                        ],
+                        'label' => 'Call Webhook',
+                    ],
+                ],
+            ],
+            'edges' => [
+                ['id' => 'e1', 'source' => 'trigger', 'target' => 'action'],
+            ],
+        ],
+    ]);
+
+    // Create User
+    $user = User::create([
+        'name' => 'Webhook User',
+        'email' => 'webhook@example.com',
+        'password' => 'password',
+    ]);
+
+    Http::assertSentCount(1);
+
+    Http::assertSent(function (\Illuminate\Http\Client\Request $request) use ($user) {
+        $data = $request->data();
+        return $request->url() === 'https://api.example.com/webhook' &&
+            $request->method() === 'POST' &&
+            ($data['id'] ?? null) == (string) $user->id &&
+            ($data['name'] ?? null) == 'Webhook User';
+    });
+});
