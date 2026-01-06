@@ -67,21 +67,6 @@
 
     function onNodeClick(event, node) {
         selectedNodeId = node.id;
-        console.log(node);
-        window.dispatchEvent(
-            new CustomEvent("open-node-settings", {
-                detail: {
-                    id: node.id,
-                    identifier: node.data.identifier,
-                    // Merge label/description with config for the form
-                    config: {
-                        label: node.data.label,
-                        description: node.data.description,
-                        ...(node.data.config || {}),
-                    },
-                },
-            }),
-        );
     }
 
     let updateTimeout;

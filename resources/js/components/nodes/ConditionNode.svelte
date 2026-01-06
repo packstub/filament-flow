@@ -2,13 +2,13 @@
     import BaseNode from "./BaseNode.svelte";
     import { Handle, Position } from "@xyflow/svelte";
 
-    let { data, selected } = $props();
+    let { id, data, selected } = $props();
 
     const inputs = [{ id: "input" }];
 </script>
 
 <div class="relative">
-    <BaseNode {data} {selected} type="condition" {inputs}>
+    <BaseNode {id} {data} {selected} type="condition" {inputs}>
         {#if data.condition}
             <div
                 class="px-2 py-1 bg-purple-100/50 rounded border border-purple-200 text-[10px] font-mono mb-6"
