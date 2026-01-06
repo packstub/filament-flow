@@ -26,6 +26,12 @@ class WorkflowResource extends Resource
             ->components([
                 Tabs::make()
                     ->tabs([
+                        Tabs\Tab::make('Flow')
+                            ->schema([
+                                FlowBuilder::make('payload')
+                                    ->hiddenLabel()
+                                    ->columnSpanFull(),
+                            ]),
                         Tabs\Tab::make('General')
                             ->schema([
                                 Section::make()
@@ -40,12 +46,6 @@ class WorkflowResource extends Resource
                                         Forms\Components\Toggle::make('is_active')
                                             ->required(),
                                     ]),
-                            ]),
-                        Tabs\Tab::make('Flow')
-                            ->schema([
-                                FlowBuilder::make('payload')
-                                    ->hiddenLabel()
-                                    ->columnSpanFull(),
                             ]),
                     ])
                     ->contained(false)
