@@ -26,9 +26,16 @@ class TestWorkflowCommand extends Command
             return;
         }
 
-        $this->info("Testing workflow: {$workflow->name} ({$workflow->id})");
+        $trigger = $workflow->triggers()->first();
 
-        LaravelFlow::dispatch($workflow->trigger_type, ['debug' => true]);
+        if (!$trigger) {
+            $this->error("Workflow has no triggers configured.");
+            return;
+        }
+
+        $this->info("Testing workflow: {$workflow->name} ({$workflow->id}) with trigger: {$trigger->type}");
+
+        LaravelFlow::dispatch($trigger->type, ['debug' => true]);
 
         $this->info("Workflow dispatched. Check workflow_logs for results.");
     }

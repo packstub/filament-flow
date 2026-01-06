@@ -24,10 +24,9 @@ test('workflow sends email when user registers', function () {
     Mail::fake();
 
     // Create Workflow
-    Workflow::create([
+    $workflow = Workflow::create([
         'name' => 'Welcome Email',
         'is_active' => true,
-        'trigger_type' => UserRegistered::class,
         'payload' => [
             'nodes' => [
                 [
@@ -58,6 +57,8 @@ test('workflow sends email when user registers', function () {
         ],
     ]);
 
+    // triggers automatically synced via observer
+
     // Create User (simulating registration)
     $user = User::create([
         'name' => 'Test User',
@@ -77,10 +78,9 @@ test('workflow sends email when user registers', function () {
 });
 
 test('workflow updates model when condition met', function () {
-    Workflow::create([
+    $workflow = Workflow::create([
         'name' => 'Update VIP Status',
         'is_active' => true,
-        'trigger_type' => ModelUpdated::class,
         'payload' => [
             'nodes' => [
                 [
@@ -126,6 +126,8 @@ test('workflow updates model when condition met', function () {
         ],
     ]);
 
+    // triggers automatically synced via observer
+
     // Create User
     $user = User::create([
         'name' => 'Normal User',
@@ -144,10 +146,9 @@ test('workflow updates model when condition met', function () {
 test('workflow sends http request on model creation', function () {
     Http::fake();
 
-    Workflow::create([
+    $workflow = Workflow::create([
         'name' => 'Webhook Trigger',
         'is_active' => true,
-        'trigger_type' => ModelCreated::class,
         'payload' => [
             'nodes' => [
                 [
@@ -178,6 +179,9 @@ test('workflow sends http request on model creation', function () {
             ],
         ],
     ]);
+
+    // triggers automatically synced via observer
+
 
     // Create User
     $user = User::create([

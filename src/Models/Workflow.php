@@ -13,7 +13,7 @@ class Workflow extends Model
     protected $fillable = [
         'name',
         'description',
-        'trigger_type',
+        // 'trigger_type', // Removed
         'payload',
         'is_active',
     ];
@@ -22,6 +22,11 @@ class Workflow extends Model
         'payload' => 'array',
         'is_active' => 'boolean',
     ];
+
+    public function triggers(): HasMany
+    {
+        return $this->hasMany(WorkflowTrigger::class);
+    }
 
     public function logs(): HasMany
     {

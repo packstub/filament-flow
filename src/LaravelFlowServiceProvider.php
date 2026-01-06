@@ -45,6 +45,8 @@ class LaravelFlowServiceProvider extends PackageServiceProvider
             \Xlited\LaravelFlow\Listeners\TriggerWorkflowsListener::class
         );
 
+        \Xlited\LaravelFlow\Models\Workflow::observe(\Xlited\LaravelFlow\Observers\WorkflowObserver::class);
+
         $manager = app('laravel-flow-manager');
         $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\UserRegistered::class);
         $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\ModelCreated::class);

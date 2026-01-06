@@ -11,9 +11,17 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->string('trigger_type');
+            // $table->string('trigger_type'); // Moved to workflow_triggers
             $table->json('payload')->nullable();
             $table->boolean('is_active')->default(false);
+            $table->timestamps();
+        });
+
+        Schema::create('workflow_triggers', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('workflow_id')->constrained('workflows')->cascadeOnDelete();
+            $table->string('type')->index();
+            $table->json('config')->nullable();
             $table->timestamps();
         });
 
@@ -39,6 +47,7 @@ return new class extends Migration {
     {
         Schema::dropIfExists('workflow_variables');
         Schema::dropIfExists('workflow_logs');
+        Schema::dropIfExists('workflow_triggers');
         Schema::dropIfExists('workflows');
     }
 };

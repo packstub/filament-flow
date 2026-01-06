@@ -7,11 +7,11 @@ use Xlited\LaravelFlow\Filament\Resources\WorkflowResource\Pages;
 use Xlited\LaravelFlow\Models\Workflow;
 use Xlited\LaravelFlow\Filament\Forms\Components\FlowBuilder;
 use Filament\Forms;
-use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Actions;
+use Filament\Schemas\Schema;
 
 class WorkflowResource extends Resource
 {
@@ -23,10 +23,7 @@ class WorkflowResource extends Resource
     {
         return $schema
             ->schema([
-                FlowBuilder::make('payload')
-                    ->hiddenLabel()
-                    ->columnSpanFull(),
-                Section::make('General Information')
+                Section::make()
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->required()
@@ -34,16 +31,12 @@ class WorkflowResource extends Resource
                         Forms\Components\Textarea::make('description')
                             ->maxLength(65535)
                             ->columnSpanFull(),
-                        Forms\Components\Select::make('trigger_type')
-                            ->options([
-                                'event' => 'Eloquent Event',
-                                'schedule' => 'Schedule Trigger',
-                                'webhook' => 'Webhook Trigger',
-                            ])
-                            ->required(),
+                        // trigger_type removed from form, handled via FlowBuilder graph
                         Forms\Components\Toggle::make('is_active')
                             ->required(),
-                    ])
+                    ]),
+                FlowBuilder::make('payload')
+                    ->hiddenLabel()
                     ->columnSpanFull(),
             ]);
     }
@@ -54,14 +47,7 @@ class WorkflowResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('trigger_type')
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'event' => 'info',
-                        'schedule' => 'warning',
-                        'webhook' => 'success',
-                        default => 'gray',
-                    }),
+                // trigger_type removed from table display for now
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
