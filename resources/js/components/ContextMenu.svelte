@@ -1,5 +1,4 @@
 <script>
-    import { useSvelteFlow } from "@xyflow/svelte";
     import { Pencil, Copy, Trash2, Plus } from "lucide-svelte";
 
     let {
@@ -12,10 +11,9 @@
         onAddNode,
         onRenameNode,
         onDeleteNode,
+        onDuplicateNode,
         onclick,
     } = $props();
-
-    const { getNodes, setNodes, deleteElements } = useSvelteFlow();
 
     function handleRename() {
         if (onRenameNode) {
@@ -25,7 +23,9 @@
     }
 
     function handleDelete() {
-        deleteElements({ nodes: [{ id }] });
+        if (onDeleteNode) {
+            onDeleteNode(id);
+        }
         onclick();
     }
 
@@ -37,19 +37,8 @@
     }
 
     function duplicateNode() {
-        const nodes = getNodes();
-        const node = nodes.find((n) => n.id === id);
-        if (node) {
-            const newNode = {
-                ...node,
-                id: `${node.type}-${Date.now()}`,
-                position: {
-                    x: node.position.x + 20,
-                    y: node.position.y + 20,
-                },
-                selected: false,
-            };
-            setNodes([...nodes, newNode]);
+        if (onDuplicateNode) {
+            onDuplicateNode(id);
         }
         onclick();
     }

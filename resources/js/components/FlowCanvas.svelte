@@ -18,7 +18,7 @@
         availableComponents = {},
     } = $props();
 
-    const { screenToFlowPosition, setNodes } = useSvelteFlow();
+    const { screenToFlowPosition, getNodes } = useSvelteFlow();
 
     let container = $state();
     let menu = $state(null);
@@ -30,6 +30,27 @@
     function onDragOver(event) {
         event.preventDefault();
         event.dataTransfer.dropEffect = "move";
+    }
+
+    function addNode(newNode) {
+        nodes = [...nodes, newNode];
+    }
+
+    function duplicateNode(id) {
+        const currentNodes = getNodes();
+        const node = currentNodes.find((n) => n.id === id);
+        if (node) {
+            const newNode = {
+                ...node,
+                id: `${node.type}-${Date.now()}`,
+                position: {
+                    x: node.position.x + 20,
+                    y: node.position.y + 20,
+                },
+                selected: false,
+            };
+            addNode(newNode);
+        }
     }
 
     function onDrop(event) {
@@ -52,7 +73,7 @@
             data,
         };
 
-        nodes = [...nodes, newNode];
+        addNode(newNode);
     }
 
     function handleContextMenu({ event, node }) {
@@ -154,7 +175,11 @@
             data,
         };
 
-        nodes = [...nodes, newNode];
+        addNode(newNode);
+    }
+
+    function handleDeleteNode(id) {
+        nodes = nodes.filter((n) => n.id !== id);
     }
 
     function handleRenameNode(id) {
@@ -165,17 +190,15 @@
                 node.data.label,
             );
             if (newLabel !== null) {
-                setNodes(
-                    nodes.map((n) => {
-                        if (n.id === id) {
-                            return {
-                                ...n,
-                                data: { ...n.data, label: newLabel },
-                            };
-                        }
-                        return n;
-                    }),
-                );
+                nodes = nodes.map((n) => {
+                    if (n.id === id) {
+                        return {
+                            ...n,
+                            data: { ...n.data, label: newLabel },
+                        };
+                    }
+                    return n;
+                });
             }
         }
     }
@@ -228,6 +251,8 @@
                 onclick={closeMenu}
                 onAddNode={handleAddNode}
                 onRenameNode={handleRenameNode}
+                onDuplicateNode={duplicateNode}
+                onDeleteNode={handleDeleteNode}
             />
         {/if}
     </div>
