@@ -281,13 +281,17 @@
             }
         };
 
-        const handleHandleClick = (e) => {
+        const handleNodeHandleClick = (e) => {
             pendingConnection = e.detail;
             isNodeSidebarOpen = true;
+            addNodePosition = {
+                x: e.detail.clientX + 40,
+                y: e.detail.clientY - 40, // Calculate position relative to the node handle
+            };
         };
 
         window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("handle-click", handleHandleClick);
+        window.addEventListener("handle-click", handleNodeHandleClick);
 
         // Theme detection for Filament
         const observer = new MutationObserver(() => {
