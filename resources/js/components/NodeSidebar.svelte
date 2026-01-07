@@ -120,6 +120,19 @@
     function selectCategory(id) {
         selectedCategory = id;
     }
+
+    $effect(() => {
+        if (!isOpen) return;
+
+        const handleKeyDown = (e) => {
+            if (e.key === "Escape") {
+                closeSidebar();
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    });
 </script>
 
 {#if isOpen}
