@@ -10887,21 +10887,21 @@ function pp(e, t) {
       id: "triggers",
       label: "Triggers",
       icon: "⚡️",
-      color: "bg-amber-500",
+      color: "bg-gray-100",
       description: "Events that start your workflow"
     },
     {
       id: "actions",
       label: "Actions",
       icon: "🚀",
-      color: "bg-blue-600",
+      color: "bg-gray-100",
       description: "Operations your workflow performs"
     },
     {
       id: "conditions",
       label: "Conditions",
       icon: "⚖️",
-      color: "bg-purple-600",
+      color: "bg-gray-100",
       description: "Logic to branch your workflow"
     }
   ];
@@ -11031,7 +11031,7 @@ function pp(e, t) {
               c(u).length === 0 && X(J);
             });
           }
-          mr(1, Z, () => Cr, () => ({ x: 20, duration: 300, delay: 150 })), mr(2, Z, () => Cr, () => ({ x: -20, duration: 200 })), V(L, Z);
+          mr(1, Z, () => Cr, () => ({ x: 20, duration: 300, delay: 150 })), mr(2, Z, () => Cr, () => ({ x: 20, duration: 200 })), V(L, Z);
         }, F = (L) => {
           var Z = gp();
           Vt(Z, 21, () => s, Hr, (G, K) => {
@@ -11041,7 +11041,7 @@ function pp(e, t) {
             ce(() => {
               De(W, 1, `w-8 h-8 ${c(K).color ?? ""} rounded-lg flex items-center justify-center text-white text-sm`), we(U, c(K).icon), we(me, c(K).label), we(ge, c(K).description);
             }), V(G, J);
-          }), mr(1, Z, () => Cr, () => ({ x: -20, duration: 300, delay: 150 })), mr(2, Z, () => Cr, () => ({ x: 20, duration: 200 })), V(L, Z);
+          }), mr(1, Z, () => Cr, () => ({ x: -20, duration: 300, delay: 150 })), mr(2, Z, () => Cr, () => ({ x: -20, duration: 200 })), V(L, Z);
         };
         se(R, (L) => {
           c(o) || c(i) ? L(O) : L(F, !1);

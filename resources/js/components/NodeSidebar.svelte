@@ -15,21 +15,21 @@
             id: "triggers",
             label: "Triggers",
             icon: "⚡️",
-            color: "bg-amber-500",
+            color: "bg-gray-100",
             description: "Events that start your workflow",
         },
         {
             id: "actions",
             label: "Actions",
             icon: "🚀",
-            color: "bg-blue-600",
+            color: "bg-gray-100",
             description: "Operations your workflow performs",
         },
         {
             id: "conditions",
             label: "Conditions",
             icon: "⚖️",
-            color: "bg-purple-600",
+            color: "bg-gray-100",
             description: "Logic to branch your workflow",
         },
     ];
@@ -224,7 +224,7 @@
             {#if searchQuery || selectedCategory}
                 <div
                     in:fly={{ x: 20, duration: 300, delay: 150 }}
-                    out:fly={{ x: -20, duration: 200 }}
+                    out:fly={{ x: 20, duration: 200 }}
                     class="flex flex-col gap-3"
                 >
                     {#each filteredNodes as node}
@@ -267,7 +267,7 @@
             {:else}
                 <div
                     in:fly={{ x: -20, duration: 300, delay: 150 }}
-                    out:fly={{ x: 20, duration: 200 }}
+                    out:fly={{ x: -20, duration: 200 }}
                     class="flex flex-col gap-3"
                 >
                     {#each categories as category}
