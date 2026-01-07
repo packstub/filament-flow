@@ -152,7 +152,7 @@
     <div
         in:fly={{ x: 20, duration: 200 }}
         out:fly={{ x: 20, duration: 200 }}
-        class="absolute top-4 right-4 bottom-4 w-80 bg-white dark:bg-gray-900 border border-transparent ring-1 ring-gray-950/5 dark:ring-white/10 flex flex-col overflow-hidden transition-all duration-300 z-40 rounded-2xl shadow-2xl p-0"
+        class="absolute top-2 right-2 bottom-2 w-80 bg-white dark:bg-gray-900 border border-transparent ring-1 ring-gray-950/5 dark:ring-white/10 flex flex-col overflow-hidden transition-all duration-300 z-40 rounded-2xl shadow-2xl p-0"
     >
         <!-- Sticky Header Section -->
         <div

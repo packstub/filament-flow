@@ -100,7 +100,7 @@ test('workflow updates model when condition met', function () {
                         'config' => [
                             'model_class' => User::class,
                             'property' => 'name',
-                            'operator' => 'contains',
+                            'operator' => '*',
                             'value' => 'VIP',
                         ],
                         'label' => 'Check Name',
@@ -113,7 +113,7 @@ test('workflow updates model when condition met', function () {
                         'identifier' => UpdateModel::class,
                         'config' => [
                             'model_class' => User::class,
-                            'attributes' => json_encode(['email' => 'vip@example.com']),
+                            'attributes' => ['email' => 'vip@example.com'],
                         ],
                         'label' => 'Update Email',
                     ],

@@ -57,7 +57,7 @@ test('ModelPropertyCheck evaluates correctly', function () {
         protected $fillable = ['status'];
     };
 
-    $data = ['property' => 'status', 'operator' => 'equals', 'value' => 'active'];
+    $data = ['property' => 'status', 'operator' => '=', 'value' => 'active'];
     expect($condition->evaluate($data, ['model' => $model]))->toBeTrue();
 
     $data['value'] = 'inactive';

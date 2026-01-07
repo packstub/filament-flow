@@ -74,11 +74,7 @@
         <!-- Header -->
         <div class="{theme.header} px-3 py-1.5 flex items-center gap-2">
             <span class="text-white">
-                <svelte:component
-                    this={theme.icon}
-                    size={12}
-                    strokeWidth={2.5}
-                />
+                <theme.icon size={12} strokeWidth={2.5} />
             </span>
             <span
                 class="text-[10px] font-bold uppercase tracking-wider text-white flex-1"
@@ -114,7 +110,7 @@
 
     <!-- Inputs (Left) -->
     <div
-        class="absolute -left-1.5 top-0 bottom-0 flex flex-col justify-center gap-4"
+        class="absolute -left-2 top-0 bottom-0 flex flex-col justify-center gap-4"
     >
         {#each inputs as input}
             <div class="relative w-3 h-3" role="presentation">
@@ -131,7 +127,7 @@
 
     <!-- Outputs (Right) -->
     <div
-        class="absolute -right-1.5 top-0 bottom-0 flex flex-col justify-center gap-4"
+        class="absolute -right-2 top-0 bottom-0 flex flex-col justify-center gap-4"
     >
         {#each outputs as output}
             <div class="relative w-3 h-3" role="presentation">
