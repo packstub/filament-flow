@@ -2,32 +2,9 @@
 
 namespace Xlited\LaravelFlow\Base;
 
-abstract class Action
+abstract class Action extends Node
 {
-    abstract public function getName(): string;
-
-    abstract public function getDescription(): string;
+    protected string $type = 'action';
 
     abstract public function handle(array $data, array $payload): void;
-
-    public function getIcon(): ?string
-    {
-        return null;
-    }
-
-    public function getFormSchema(): array
-    {
-        return [];
-    }
-
-    public function toArray(): array
-    {
-        return [
-            'identifier' => static::class,
-            'name' => $this->getName(),
-            'description' => $this->getDescription(),
-            'icon' => $this->getIcon(),
-            'type' => 'action',
-        ];
-    }
 }

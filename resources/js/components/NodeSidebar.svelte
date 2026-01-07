@@ -1,5 +1,14 @@
 <script>
     import { fly } from "svelte/transition";
+    import {
+        Zap,
+        Rocket,
+        Scale,
+        ChevronLeft,
+        X,
+        Search,
+        ChevronRight,
+    } from "lucide-svelte";
 
     let {
         availableComponents = {},
@@ -14,27 +23,28 @@
         {
             id: "triggers",
             label: "Triggers",
-            icon: "⚡️",
-            color: "bg-gray-100",
+            icon: Zap,
+            color: "text-amber-500",
             description: "Events that start your workflow",
         },
         {
             id: "actions",
             label: "Actions",
-            icon: "🚀",
-            color: "bg-gray-100",
+            icon: Rocket,
+            color: "text-blue-500",
             description: "Operations your workflow performs",
         },
         {
             id: "conditions",
             label: "Conditions",
-            icon: "⚖️",
-            color: "bg-gray-100",
+            icon: Scale,
+            color: "text-purple-500",
             description: "Logic to branch your workflow",
         },
     ];
 
     function createNodeList(components) {
+        console.log(components);
         const triggers = (components.triggers || []).map((t) => ({
             category: "triggers",
             type: "trigger",
@@ -152,20 +162,7 @@
                             title="Go back"
                             class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
                         >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="2.5"
-                                stroke="currentColor"
-                                class="w-4 h-4"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M15.75 19.5L8.25 12l7.5-7.5"
-                                />
-                            </svg>
+                            <ChevronLeft size={16} />
                         </button>
                     {/if}
                     <div>
@@ -190,20 +187,7 @@
                     title="Close"
                     class="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
                 >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="2.5"
-                        stroke="currentColor"
-                        class="w-4 h-4"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M6 18L18 6M6 6l12 12"
-                        />
-                    </svg>
+                    <X size={16} />
                 </button>
             </div>
 
@@ -215,20 +199,10 @@
                     bind:value={searchQuery}
                     class="w-full text-sm px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all pl-9 bg-slate-50/50"
                 />
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="2.5"
-                    stroke="currentColor"
-                    class="w-4 h-4 absolute left-3 top-3 text-slate-400"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                    />
-                </svg>
+                <Search
+                    size={16}
+                    class="absolute left-3 top-3 text-slate-400"
+                />
             </div>
         </div>
 
@@ -291,27 +265,17 @@
                         >
                             <div class="flex items-center gap-3 mb-1">
                                 <div
-                                    class="w-8 h-8 {category.color} rounded-lg flex items-center justify-center text-white text-sm"
+                                    class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center {category.color}"
                                 >
-                                    {category.icon}
+                                    <category.icon size={16} />
                                 </div>
                                 <span class="text-sm font-bold text-slate-800"
                                     >{category.label}</span
                                 >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke-width="2.5"
-                                    stroke="currentColor"
-                                    class="w-4 h-4 ml-auto text-slate-300 group-hover:text-blue-500 transition-colors"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                                    />
-                                </svg>
+                                <ChevronRight
+                                    size={16}
+                                    class="ml-auto text-slate-300 group-hover:text-blue-500 transition-colors"
+                                />
                             </div>
                             <p
                                 class="text-[11px] text-slate-500 leading-relaxed"

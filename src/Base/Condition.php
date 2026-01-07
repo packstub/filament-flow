@@ -2,32 +2,9 @@
 
 namespace Xlited\LaravelFlow\Base;
 
-abstract class Condition
+abstract class Condition extends Node
 {
-    abstract public function getName(): string;
-
-    abstract public function getDescription(): string;
+    protected string $type = 'condition';
 
     abstract public function evaluate(array $data, array $payload): bool;
-
-    public function getIcon(): ?string
-    {
-        return null;
-    }
-
-    public function getFormSchema(): array
-    {
-        return [];
-    }
-
-    public function toArray(): array
-    {
-        return [
-            'identifier' => static::class,
-            'name' => $this->getName(),
-            'description' => $this->getDescription(),
-            'icon' => $this->getIcon(),
-            'type' => 'condition',
-        ];
-    }
 }

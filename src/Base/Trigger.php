@@ -2,30 +2,7 @@
 
 namespace Xlited\LaravelFlow\Base;
 
-abstract class Trigger
+abstract class Trigger extends Node
 {
-    abstract public function getName(): string;
-
-    abstract public function getDescription(): string;
-
-    public function getIcon(): ?string
-    {
-        return null; // Can return SVG string or icon name
-    }
-
-    public function getFormSchema(): array
-    {
-        return [];
-    }
-
-    public function toArray(): array
-    {
-        return [
-            'identifier' => static::class,
-            'name' => $this->getName(),
-            'description' => $this->getDescription(),
-            'icon' => $this->getIcon(),
-            'type' => 'trigger',
-        ];
-    }
+    protected string $type = 'trigger';
 }
