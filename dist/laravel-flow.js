@@ -11083,7 +11083,6 @@ function pp(e, t) {
           to: "{{model.email}}",
           subject: "Welcome to our platform",
           body: `Hi {{model.name}}!
-
 Thank you for signing up!`
         }
       }
