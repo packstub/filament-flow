@@ -1,10 +1,15 @@
-<script>
+<script lang="ts">
     import {
         SvelteFlow,
         Controls,
         Background,
         MiniMap,
         useSvelteFlow,
+        type Node,
+        type Edge,
+        type NodeTypes,
+        type ColorMode,
+        BackgroundVariant,
     } from "@xyflow/svelte";
     import NodeSidebar from "./NodeSidebar.svelte";
     import ContextMenu from "./ContextMenu.svelte";
@@ -16,18 +21,37 @@
         nodeTypes,
         onNodeClick,
         availableComponents = {},
+    }: {
+        nodes?: Node[];
+        edges?: Edge[];
+        nodeTypes: NodeTypes;
+        onNodeClick?: (event: MouseEvent | TouchEvent, node: Node) => void;
+        availableComponents?: Record<string, any>;
     } = $props();
 
     const { screenToFlowPosition, getNodes } = useSvelteFlow();
 
-    let container = $state();
-    let menu = $state(null);
+    let container = $state<HTMLDivElement>();
+    let menu = $state<{
+        id: string;
+        type: string;
+        top?: number;
+        left?: number;
+        right?: number;
+        bottom?: number;
+        clientX: number;
+        clientY: number;
+    } | null>(null);
     let isNodeSidebarOpen = $state(false);
     let clientWidth = $state(0);
     let clientHeight = $state(0);
-    let addNodePosition = $state(null);
-    let colorMode = $state("light");
-    let pendingConnection = $state(null);
+    let addNodePosition = $state<{ x: number; y: number } | null>(null);
+    let colorMode = $state<ColorMode>("light");
+    let pendingConnection = $state<{
+        nodeId: string;
+        handleId: string;
+        type: "source" | "target";
+    } | null>(null);
 
     function onDragOver(event) {
         event.preventDefault();
@@ -229,19 +253,19 @@
         nodes = nodes.filter((n) => n.id !== id);
     }
 
-    function handleRenameNode(id) {
+    function handleRenameNode(id: string) {
         const node = nodes.find((n) => n.id === id);
         if (node) {
             const newLabel = window.prompt(
                 "Enter new node name:",
-                node.data.label,
+                (node.data as any).label as string,
             );
             if (newLabel !== null) {
                 nodes = nodes.map((n) => {
                     if (n.id === id) {
                         return {
                             ...n,
-                            data: { ...n.data, label: newLabel },
+                            data: { ...(n.data as any), label: newLabel },
                         };
                     }
                     return n;
@@ -317,7 +341,7 @@
             onpaneclick={closeOverlays}
         >
             <Controls />
-            <Background variant="lines" gap={20} size={1} />
+            <Background variant={BackgroundVariant.Lines} gap={20} size={1} />
             <MiniMap />
         </SvelteFlow>
 

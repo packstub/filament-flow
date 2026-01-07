@@ -2,12 +2,30 @@
     import { Handle, Position, useNodeConnections } from "@xyflow/svelte";
     import { Plus } from "lucide-svelte";
 
-    let { type, position, id, nodeId, class: className = "" } = $props();
+    let {
+        type,
+        position,
+        id,
+        nodeId,
+        class: className = "",
+    }: {
+        type: "source" | "target";
+        position: Position;
+        id: string;
+        nodeId: string;
+        class?: string;
+    } = $props();
 
     const connections = useNodeConnections({
-        id: nodeId,
-        handleType: type,
-        handleId: id,
+        get id() {
+            return nodeId;
+        },
+        get handleType() {
+            return type;
+        },
+        get handleId() {
+            return id;
+        },
     });
 
     const isConnected = $derived(connections.current.length > 0);

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { fly } from "svelte/transition";
     import {
         Zap,
@@ -14,6 +14,10 @@
         availableComponents = {},
         isOpen = $bindable(false),
         onSelectNode,
+    }: {
+        availableComponents?: Record<string, any>;
+        isOpen: boolean;
+        onSelectNode: (type: string, data: any) => void;
     } = $props();
 
     let searchQuery = $state("");
@@ -44,7 +48,6 @@
     ];
 
     function createNodeList(components) {
-        console.log(components);
         const triggers = (components.triggers || []).map((t) => ({
             category: "triggers",
             type: "trigger",

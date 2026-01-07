@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { Pencil, Copy, Trash2, Plus } from "lucide-svelte";
 
     let {
@@ -13,6 +13,18 @@
         onDeleteNode,
         onDuplicateNode,
         onclick,
+    }: {
+        id: string;
+        top?: number;
+        left?: number;
+        right?: number;
+        bottom?: number;
+        type?: "node" | "canvas";
+        onAddNode?: () => void;
+        onRenameNode?: (id: string) => void;
+        onDeleteNode?: (id: string) => void;
+        onDuplicateNode?: (id: string) => void;
+        onclick: () => void;
     } = $props();
 
     function handleRename() {
