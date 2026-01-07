@@ -14,7 +14,7 @@ class WorkflowChained extends Trigger
 
     public function getDescription(): string
     {
-        return 'Triggers when another specific workflow completes successfully.';
+        return 'Triggers when another specific workflow completes successfully or is explicitly dispatched.';
     }
 
     public function getIcon(): ?string
@@ -29,8 +29,7 @@ class WorkflowChained extends Trigger
                 ->label('Parent Workflow')
                 ->options(Workflow::query()->pluck('name', 'id')->toArray())
                 ->searchable()
-                ->placeholder('Select a workflow...')
-                ->required(),
+                ->placeholder('Select a workflow...'),
         ];
     }
 }

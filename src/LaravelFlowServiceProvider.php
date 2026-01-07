@@ -63,6 +63,7 @@ class LaravelFlowServiceProvider extends PackageServiceProvider
         $manager->registerAction(\Xlited\LaravelFlow\Nodes\Actions\UpdateModel::class);
         $manager->registerAction(\Xlited\LaravelFlow\Nodes\Actions\HttpRequest::class);
         $manager->registerAction(\Xlited\LaravelFlow\Nodes\Actions\Delay::class);
+        $manager->registerAction(\Xlited\LaravelFlow\Nodes\Actions\DispatchWorkflow::class);
 
         $manager->registerCondition(\Xlited\LaravelFlow\Nodes\Conditions\ModelPropertyCheck::class);
         $manager->registerCondition(\Xlited\LaravelFlow\Nodes\Conditions\TimeOfDay::class);

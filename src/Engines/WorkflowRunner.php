@@ -50,6 +50,14 @@ class WorkflowRunner
                 'status' => 'success',
                 'finished_at' => now(),
             ]);
+
+            // Dispatch workflows chained to this one
+            app('laravel-flow')->dispatch(
+                \Xlited\LaravelFlow\Nodes\Triggers\WorkflowChained::class,
+                array_merge($this->payload, [
+                    'parent_workflow_id' => $this->workflow->id,
+                ])
+            );
         } catch (\Exception $e) {
             Log::error("Workflow execution failed: " . $e->getMessage());
 

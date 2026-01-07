@@ -80,6 +80,21 @@ class WorkflowDispatcher
             }
         }
 
+        if ($triggerType === \Xlited\LaravelFlow\Nodes\Triggers\WorkflowChained::class) {
+            // 1. Check if automatically triggered by a parent workflow completing
+            // We prioritize this to avoid infinite loops if target_workflow_id is also in payload
+            if (isset($payload['parent_workflow_id'])) {
+                return (string) $payload['parent_workflow_id'] === (string) ($config['workflow_id'] ?? null);
+            }
+
+            // 2. Check if explicitly dispatched to a specific workflow
+            if (isset($payload['target_workflow_id'])) {
+                return (string) $payload['target_workflow_id'] === (string) $trigger->workflow_id;
+            }
+
+            return false;
+        }
+
         return true;
     }
 
