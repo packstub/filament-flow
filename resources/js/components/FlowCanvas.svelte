@@ -24,6 +24,7 @@
     let isSidebarOpen = $state(false);
     let clientWidth = $state(0);
     let clientHeight = $state(0);
+    let sidebarPosition = $state(null);
 
     function onDragOver(event) {
         event.preventDefault();
@@ -92,7 +93,53 @@
     }
 
     function handleAddNode() {
+        if (menu) {
+            sidebarPosition = {
+                x: menu.left ?? clientWidth - menu.right,
+                y: menu.top ?? clientHeight - menu.bottom,
+            };
+        } else {
+            sidebarPosition = null;
+        }
         isSidebarOpen = true;
+    }
+
+    function onSelectNodeFromSidebar(type, data) {
+        let position;
+        if (sidebarPosition) {
+            position = screenToFlowPosition(sidebarPosition);
+        } else {
+            // Find a spot or use center
+            const center = { x: clientWidth / 2, y: clientHeight / 2 };
+            // Simple heuristic: offset a bit from existing nodes if they are in the center
+            position = screenToFlowPosition(center);
+
+            // Check if any node is very close to this position
+            const threshold = 50;
+            let offset = 0;
+            while (
+                nodes.some(
+                    (n) =>
+                        Math.abs(n.position.x - (position.x + offset)) <
+                            threshold &&
+                        Math.abs(n.position.y - (position.y + offset)) <
+                            threshold,
+                )
+            ) {
+                offset += 40;
+            }
+            position.x += offset;
+            position.y += offset;
+        }
+
+        const newNode = {
+            id: `${type}-${Date.now()}`,
+            type,
+            position,
+            data,
+        };
+
+        nodes = [...nodes, newNode];
     }
 
     function handleRenameNode(id) {
@@ -159,5 +206,35 @@
         {/if}
     </div>
 
-    <NodeSidebar {availableComponents} bind:isOpen={isSidebarOpen} />
+    <NodeSidebar
+        {availableComponents}
+        bind:isOpen={isSidebarOpen}
+        onSelectNode={onSelectNodeFromSidebar}
+    />
+
+    <!-- Plus Button -->
+    <button
+        type="button"
+        onclick={() => {
+            sidebarPosition = null;
+            isSidebarOpen = true;
+        }}
+        class="absolute top-4 right-4 p-3 bg-white border border-slate-200 rounded-xl shadow-lg text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-all z-10 group"
+        title="Add Node"
+    >
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2.5"
+            stroke="currentColor"
+            class="w-5 h-5 group-hover:scale-110 transition-transform"
+        >
+            <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 4.5v15m7.5-7.5h-15"
+            />
+        </svg>
+    </button>
 </div>

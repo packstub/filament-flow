@@ -63,6 +63,7 @@
 >
     {#if type === "node"}
         <button
+            type="button"
             class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
             onclick={handleRename}
         >
@@ -84,6 +85,7 @@
         </button>
 
         <button
+            type="button"
             class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
             onclick={duplicateNode}
         >
@@ -107,6 +109,7 @@
         <div class="h-px bg-slate-100 my-1"></div>
 
         <button
+            type="button"
             class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors"
             onclick={handleDelete}
         >
@@ -128,6 +131,7 @@
         </button>
     {:else}
         <button
+            type="button"
             class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
             onclick={handleAdd}
         >
