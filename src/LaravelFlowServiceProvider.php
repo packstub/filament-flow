@@ -57,7 +57,7 @@ class LaravelFlowServiceProvider extends PackageServiceProvider
         $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\ModelCreated::class);
         $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\ModelUpdated::class);
         $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\ModelDeleted::class);
-        $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\WorkflowChained::class);
+        $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\SubWorkflowTriggered::class);
         $manager->registerAction(\Xlited\LaravelFlow\Nodes\Actions\SendEmail::class);
         $manager->registerAction(\Xlited\LaravelFlow\Nodes\Actions\SendSlackNotification::class);
         $manager->registerAction(\Xlited\LaravelFlow\Nodes\Actions\UpdateModel::class);

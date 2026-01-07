@@ -43,7 +43,7 @@ class DispatchWorkflow extends Action
         }
 
         app('laravel-flow')->dispatch(
-            \Xlited\LaravelFlow\Nodes\Triggers\WorkflowChained::class,
+            \Xlited\LaravelFlow\Nodes\Triggers\SubWorkflowTriggered::class,
             array_merge($payload, [
                 'target_workflow_id' => $targetWorkflowId,
             ])

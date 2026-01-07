@@ -3,18 +3,17 @@
 namespace Xlited\LaravelFlow\Nodes\Triggers;
 
 use Xlited\LaravelFlow\Base\Trigger;
-use Xlited\LaravelFlow\Models\Workflow;
 
-class WorkflowChained extends Trigger
+class SubWorkflowTriggered extends Trigger
 {
     public function getName(): string
     {
-        return 'Workflow Chained';
+        return 'Sub-workflow Triggered';
     }
 
     public function getDescription(): string
     {
-        return 'Triggers when another specific workflow completes successfully or is explicitly dispatched.';
+        return 'Triggers when this sub-workflow is explicitly started by another workflow.';
     }
 
     public function getIcon(): ?string
@@ -24,12 +23,6 @@ class WorkflowChained extends Trigger
 
     public function getFormSchema(): array
     {
-        return [
-            \Filament\Forms\Components\Select::make('workflow_id')
-                ->label('Parent Workflow')
-                ->options(Workflow::query()->pluck('name', 'id')->toArray())
-                ->searchable()
-                ->placeholder('Select a workflow...'),
-        ];
+        return [];
     }
 }
