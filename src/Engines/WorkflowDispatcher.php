@@ -65,6 +65,21 @@ class WorkflowDispatcher
             }
         }
 
+        if ($triggerType === \Xlited\LaravelFlow\Nodes\Triggers\Cron::class) {
+            $expression = $config['expression'] ?? null;
+            if (!$expression) {
+                return false;
+            }
+
+            try {
+                $cron = new \Cron\CronExpression($expression);
+                return $cron->isDue();
+            } catch (\Exception $e) {
+                Log::error("Invalid cron expression: {$expression}");
+                return false;
+            }
+        }
+
         return true;
     }
 

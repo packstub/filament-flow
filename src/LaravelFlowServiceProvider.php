@@ -27,6 +27,7 @@ class LaravelFlowServiceProvider extends PackageServiceProvider
             ->hasCommands([
                 \Xlited\LaravelFlow\Commands\TestWorkflowCommand::class,
                 \Xlited\LaravelFlow\Commands\InstallCommand::class,
+                \Xlited\LaravelFlow\Commands\WorkflowsCronCommand::class,
             ]);
     }
 
@@ -51,6 +52,7 @@ class LaravelFlowServiceProvider extends PackageServiceProvider
         \Xlited\LaravelFlow\Models\Workflow::observe(\Xlited\LaravelFlow\Observers\WorkflowObserver::class);
 
         $manager = app('laravel-flow-manager');
+        $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\Cron::class);
         $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\UserRegistered::class);
         $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\ModelCreated::class);
         $manager->registerTrigger(\Xlited\LaravelFlow\Nodes\Triggers\ModelUpdated::class);
