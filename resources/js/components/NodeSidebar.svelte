@@ -147,11 +147,13 @@
 
 {#if isOpen}
     <div
-        class="absolute top-4 right-4 bottom-4 w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300 z-40 rounded-2xl shadow-2xl p-0 animate-in slide-in-from-right-10"
+        in:fly={{ x: 20, duration: 200 }}
+        out:fly={{ x: 20, duration: 200 }}
+        class="absolute top-4 right-4 bottom-4 w-80 bg-white dark:bg-gray-900 border border-transparent ring-1 ring-gray-950/5 dark:ring-white/10 flex flex-col overflow-hidden transition-all duration-300 z-40 rounded-2xl shadow-2xl p-0"
     >
         <!-- Sticky Header Section -->
         <div
-            class="p-5 border-b border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10"
+            class="p-5 border-b border-gray-100 dark:border-gray-800 sticky top-0 z-10"
         >
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2">
@@ -160,14 +162,14 @@
                             type="button"
                             onclick={goBack}
                             title="Go back"
-                            class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
+                            class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
                         >
                             <ChevronLeft size={16} />
                         </button>
                     {/if}
                     <div>
                         <h3
-                            class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]"
+                            class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest"
                         >
                             {#if searchQuery}
                                 Search Results
@@ -185,7 +187,7 @@
                     onclick={closeSidebar}
                     type="button"
                     title="Close"
-                    class="p-2 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                    class="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                     <X size={16} />
                 </button>
@@ -197,11 +199,11 @@
                     type="text"
                     placeholder="Search nodes..."
                     bind:value={searchQuery}
-                    class="w-full text-sm px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-500/10 focus:border-blue-500 dark:focus:border-blue-400 transition-all pl-9"
+                    class="w-full text-sm px-3 py-2 rounded-lg border-none ring-1 ring-gray-950/10 dark:ring-white/10 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 transition-all pl-9"
                 />
                 <Search
                     size={16}
-                    class="absolute left-3 top-3 text-slate-400 dark:text-slate-500"
+                    class="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500"
                 />
             </div>
         </div>
@@ -217,7 +219,7 @@
                     {#each filteredNodes as node}
                         <button
                             type="button"
-                            class="group flex items-center gap-4 p-3 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-sm cursor-grab hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all active:cursor-grabbing text-left w-full"
+                            class="group flex items-center gap-4 p-3 bg-white dark:bg-gray-800 border-none ring-1 ring-gray-950/5 dark:ring-white/10 rounded-xl shadow-sm cursor-grab hover:ring-primary-500 dark:hover:ring-primary-400 transition-all active:cursor-grabbing text-left w-full"
                             draggable="true"
                             ondragstart={(e) =>
                                 onDragStart(e, node.type, node.data)}
@@ -230,12 +232,12 @@
                             </div>
                             <div class="min-w-0 flex-grow">
                                 <div
-                                    class="text-xs font-bold text-slate-800 dark:text-slate-100 tracking-tight truncate"
+                                    class="text-xs font-semibold text-gray-800 dark:text-gray-100 tracking-tight truncate"
                                 >
                                     {node.label}
                                 </div>
                                 <div
-                                    class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 truncate"
+                                    class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 truncate"
                                 >
                                     {node.description}
                                 </div>
@@ -245,9 +247,7 @@
 
                     {#if filteredNodes.length === 0}
                         <div class="text-center py-10">
-                            <p
-                                class="text-sm text-slate-400 dark:text-slate-500"
-                            >
+                            <p class="text-sm text-gray-400 dark:text-gray-500">
                                 No nodes found matching "{searchQuery}"
                             </p>
                         </div>
@@ -263,25 +263,25 @@
                         <button
                             type="button"
                             onclick={() => selectCategory(category.id)}
-                            class="group relative flex flex-col gap-1 p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-sm hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all w-full text-left overflow-hidden"
+                            class="group relative flex flex-col gap-1 p-4 bg-white dark:bg-gray-800 border-none ring-1 ring-gray-950/5 dark:ring-white/10 rounded-xl shadow-sm hover:ring-primary-500 dark:hover:ring-primary-400 transition-all w-full text-left overflow-hidden"
                         >
                             <div class="flex items-center gap-3 mb-1">
                                 <div
-                                    class="w-8 h-8 bg-slate-50 dark:bg-slate-700 rounded-lg flex items-center justify-center {category.color}"
+                                    class="w-8 h-8 bg-gray-50 dark:bg-gray-700/50 rounded-lg flex items-center justify-center {category.color}"
                                 >
                                     <category.icon size={16} />
                                 </div>
                                 <span
-                                    class="text-sm font-bold text-slate-800 dark:text-slate-100"
+                                    class="text-sm font-semibold text-gray-800 dark:text-gray-100"
                                     >{category.label}</span
                                 >
                                 <ChevronRight
                                     size={16}
-                                    class="ml-auto text-slate-300 dark:text-slate-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors"
+                                    class="ml-auto text-gray-300 dark:text-gray-600 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors"
                                 />
                             </div>
                             <p
-                                class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed"
+                                class="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed"
                             >
                                 {category.description}
                             </p>

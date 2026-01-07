@@ -239,7 +239,7 @@
 </script>
 
 <div
-    class="relative h-[600px] w-full border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-xl"
+    class="relative h-[600px] w-full border border-transparent ring-1 ring-gray-950/5 dark:ring-white/10 rounded-xl overflow-hidden bg-white dark:bg-gray-950 shadow-sm"
     bind:this={container}
     bind:clientWidth
     bind:clientHeight
@@ -294,7 +294,7 @@
             closeMenu();
             isNodeSidebarOpen = true;
         }}
-        class="absolute top-4 right-4 p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 transition-all z-10 group"
+        class="absolute top-4 right-4 p-3 bg-white dark:bg-gray-800 ring-1 ring-gray-950/10 dark:ring-white/10 rounded-xl shadow-lg text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:ring-primary-500 dark:hover:ring-primary-400 transition-all z-10 group"
         title="Add Node"
     >
         <Plus size={20} class="group-hover:scale-110 transition-transform" />

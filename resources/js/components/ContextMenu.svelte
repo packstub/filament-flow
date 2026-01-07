@@ -48,13 +48,13 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
     style="top: {top}px; left: {left}px; right: {right}px; bottom: {bottom}px;"
-    class="absolute z-50 min-w-[160px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-1 animate-in fade-in zoom-in duration-200"
+    class="absolute z-50 min-w-[160px] bg-white dark:bg-gray-900 ring-1 ring-gray-950/5 dark:ring-white/10 rounded-lg shadow-lg p-1 animate-in fade-in zoom-in duration-100"
     onclick={(e) => e.stopPropagation()}
 >
     {#if type === "node"}
         <button
             type="button"
-            class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-lg"
+            class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors rounded-md"
             onclick={handleRename}
         >
             <Pencil size={16} />
@@ -63,18 +63,18 @@
 
         <button
             type="button"
-            class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-lg"
+            class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors rounded-md"
             onclick={duplicateNode}
         >
             <Copy size={16} />
             Duplicate Node
         </button>
 
-        <div class="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
+        <div class="h-px bg-gray-100 dark:bg-white/5 my-1"></div>
 
         <button
             type="button"
-            class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors rounded-lg"
+            class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/10 transition-colors rounded-md"
             onclick={handleDelete}
         >
             <Trash2 size={16} />
@@ -83,7 +83,7 @@
     {:else}
         <button
             type="button"
-            class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-lg"
+            class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors rounded-md"
             onclick={handleAdd}
         >
             <Plus size={16} />
