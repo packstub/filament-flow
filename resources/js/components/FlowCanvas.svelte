@@ -21,7 +21,7 @@
 
     let container = $state();
     let menu = $state(null);
-    let isSidebarOpen = $state(false);
+    let isNodeSidebarOpen = $state(false);
     let clientWidth = $state(0);
     let clientHeight = $state(0);
     let addNodePosition = $state(null);
@@ -96,6 +96,15 @@
         menu = null;
     }
 
+    function closeNodeSidebar() {
+        isNodeSidebarOpen = false;
+    }
+
+    function closeOverlays() {
+        closeMenu();
+        closeNodeSidebar();
+    }
+
     function handleAddNode() {
         if (menu) {
             addNodePosition = {
@@ -105,7 +114,7 @@
         } else {
             addNodePosition = null;
         }
-        isSidebarOpen = true;
+        isNodeSidebarOpen = true;
     }
 
     function onSelectNodeFromSidebar(type, data) {
@@ -168,6 +177,17 @@
             }
         }
     }
+
+    $effect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === "Escape") {
+                closeOverlays();
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    });
 </script>
 
 <div
@@ -189,11 +209,11 @@
             fitView
             onnodeclick={({ event, node }) => {
                 onNodeClick && onNodeClick(event, node);
-                closeMenu();
+                closeOverlays();
             }}
             onnodecontextmenu={handleContextMenu}
             onpanecontextmenu={handlePaneContextMenu}
-            onpaneclick={closeMenu}
+            onpaneclick={closeOverlays}
         >
             <Controls />
             <Background variant="lines" gap={20} size={1} color="#f1f5f9" />
@@ -212,7 +232,7 @@
 
     <NodeSidebar
         {availableComponents}
-        bind:isOpen={isSidebarOpen}
+        bind:isOpen={isNodeSidebarOpen}
         onSelectNode={onSelectNodeFromSidebar}
     />
 
@@ -221,7 +241,7 @@
         type="button"
         onclick={() => {
             addNodePosition = null;
-            isSidebarOpen = true;
+            isNodeSidebarOpen = true;
         }}
         class="absolute top-4 right-4 p-3 bg-white border border-slate-200 rounded-xl shadow-lg text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-all z-10 group"
         title="Add Node"

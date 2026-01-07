@@ -58,13 +58,13 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
     style="top: {top}px; left: {left}px; right: {right}px; bottom: {bottom}px;"
-    class="absolute z-50 min-w-[160px] bg-white/80 backdrop-blur-md border border-slate-200 rounded-xl shadow-2xl py-1 animate-in fade-in zoom-in duration-200"
+    class="absolute z-50 min-w-[160px] bg-white/80 backdrop-blur-md border border-slate-200 rounded-xl shadow-2xl p-1 animate-in fade-in zoom-in duration-200"
     onclick={(e) => e.stopPropagation()}
 >
     {#if type === "node"}
         <button
             type="button"
-            class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors rounded-lg"
             onclick={handleRename}
         >
             <svg
@@ -86,7 +86,7 @@
 
         <button
             type="button"
-            class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors rounded-lg"
             onclick={duplicateNode}
         >
             <svg
@@ -110,7 +110,7 @@
 
         <button
             type="button"
-            class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+            class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors rounded-lg"
             onclick={handleDelete}
         >
             <svg
@@ -132,7 +132,7 @@
     {:else}
         <button
             type="button"
-            class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors rounded-lg"
             onclick={handleAdd}
         >
             <svg
