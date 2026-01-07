@@ -26,6 +26,7 @@
     let clientWidth = $state(0);
     let clientHeight = $state(0);
     let addNodePosition = $state(null);
+    let colorMode = $state("light");
 
     function onDragOver(event) {
         event.preventDefault();
@@ -212,12 +213,33 @@
         };
 
         window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
+
+        // Theme detection for Filament
+        const observer = new MutationObserver(() => {
+            colorMode = document.documentElement.classList.contains("dark")
+                ? "dark"
+                : "light";
+        });
+
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ["class"],
+        });
+
+        // Initial check
+        colorMode = document.documentElement.classList.contains("dark")
+            ? "dark"
+            : "light";
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            observer.disconnect();
+        };
     });
 </script>
 
 <div
-    class="relative h-[600px] w-full border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xl"
+    class="relative h-[600px] w-full border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-xl"
     bind:this={container}
     bind:clientWidth
     bind:clientHeight
@@ -232,6 +254,7 @@
             {nodeTypes}
             bind:nodes
             bind:edges
+            {colorMode}
             fitView
             onnodeclick={({ event, node }) => {
                 onNodeClick && onNodeClick(event, node);
@@ -242,7 +265,7 @@
             onpaneclick={closeOverlays}
         >
             <Controls />
-            <Background variant="lines" gap={20} size={1} color="#f1f5f9" />
+            <Background variant="lines" gap={20} size={1} />
             <MiniMap />
         </SvelteFlow>
 
@@ -271,7 +294,7 @@
             closeMenu();
             isNodeSidebarOpen = true;
         }}
-        class="absolute top-4 right-4 p-3 bg-white border border-slate-200 rounded-xl shadow-lg text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-all z-10 group"
+        class="absolute top-4 right-4 p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 transition-all z-10 group"
         title="Add Node"
     >
         <Plus size={20} class="group-hover:scale-110 transition-transform" />

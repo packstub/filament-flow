@@ -15,7 +15,7 @@ class DispatchWorkflow extends Action
 
     public function getDescription(): string
     {
-        return 'Start another workflow.';
+        return 'Start another sub-workflow.';
     }
 
     public function getIcon(): ?string

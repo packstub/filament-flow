@@ -11,7 +11,7 @@
     <BaseNode {id} {data} {selected} type="condition" {inputs}>
         {#if data.condition}
             <div
-                class="px-2 py-1 bg-purple-100/50 rounded border border-purple-200 text-[10px] font-mono mb-6"
+                class="px-2 py-1 bg-purple-100/50 dark:bg-purple-900/30 rounded border border-purple-200 dark:border-purple-800 text-[10px] font-mono mb-6 text-purple-700 dark:text-purple-400"
             >
                 {data.condition}
             </div>
@@ -21,25 +21,26 @@
         <div class="absolute -right-1.5 top-[60px] flex flex-col gap-6">
             <div class="relative flex items-center justify-end h-3">
                 <span
-                    class="text-[8px] font-black text-emerald-600 mr-2 uppercase"
+                    class="text-[8px] font-black text-emerald-600 dark:text-emerald-400 mr-2 uppercase"
                     >True</span
                 >
                 <Handle
                     type="source"
                     position={Position.Right}
                     id="true"
-                    class="!w-3 !h-3 !bg-emerald-500 !border-2 !border-white"
+                    class="!w-3 !h-3 !bg-emerald-500 !border-2 !border-white dark:!border-slate-800"
                 />
             </div>
             <div class="relative flex items-center justify-end h-3">
-                <span class="text-[8px] font-black text-rose-600 mr-2 uppercase"
+                <span
+                    class="text-[8px] font-black text-rose-600 dark:text-rose-400 mr-2 uppercase"
                     >False</span
                 >
                 <Handle
                     type="source"
                     position={Position.Right}
                     id="false"
-                    class="!w-3 !h-3 !bg-rose-500 !border-2 !border-white"
+                    class="!w-3 !h-3 !bg-rose-500 !border-2 !border-white dark:!border-slate-800"
                 />
             </div>
         </div>
