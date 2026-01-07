@@ -27,6 +27,7 @@
     let clientHeight = $state(0);
     let addNodePosition = $state(null);
     let colorMode = $state("light");
+    let pendingConnection = $state(null);
 
     function onDragOver(event) {
         event.preventDefault();
@@ -123,6 +124,7 @@
 
     function closeNodeSidebar() {
         isNodeSidebarOpen = false;
+        pendingConnection = null;
     }
 
     function closeOverlays() {
@@ -178,6 +180,49 @@
         };
 
         addNode(newNode);
+
+        if (pendingConnection) {
+            const edgeId = `edge-${Date.now()}`;
+            let newEdge = null;
+
+            if (pendingConnection.type === "source") {
+                // Clicked an output, connect to new node's input if it has one
+                if (type === "action" || type === "condition") {
+                    newEdge = {
+                        id: edgeId,
+                        source: pendingConnection.nodeId,
+                        sourceHandle: pendingConnection.handleId,
+                        target: newNode.id,
+                        targetHandle: "input",
+                    };
+                }
+            } else {
+                // Clicked an input, connect to new node's output if it has one
+                if (type === "trigger" || type === "action") {
+                    newEdge = {
+                        id: edgeId,
+                        source: newNode.id,
+                        sourceHandle: "output",
+                        target: pendingConnection.nodeId,
+                        targetHandle: pendingConnection.handleId,
+                    };
+                } else if (type === "condition") {
+                    // Default to 'true' output for condition nodes
+                    newEdge = {
+                        id: edgeId,
+                        source: newNode.id,
+                        sourceHandle: "true",
+                        target: pendingConnection.nodeId,
+                        targetHandle: pendingConnection.handleId,
+                    };
+                }
+            }
+
+            if (newEdge) {
+                edges = [...edges, newEdge];
+            }
+            pendingConnection = null;
+        }
     }
 
     function handleDeleteNode(id) {
@@ -212,7 +257,13 @@
             }
         };
 
+        const handleHandleClick = (e) => {
+            pendingConnection = e.detail;
+            isNodeSidebarOpen = true;
+        };
+
         window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("handle-click", handleHandleClick);
 
         // Theme detection for Filament
         const observer = new MutationObserver(() => {
@@ -233,6 +284,7 @@
 
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("handle-click", handleHandleClick);
             observer.disconnect();
         };
     });

@@ -1,6 +1,7 @@
 <script>
     import BaseNode from "./BaseNode.svelte";
-    import { Handle, Position } from "@xyflow/svelte";
+    import { Position } from "@xyflow/svelte";
+    import FlowHandle from "./FlowHandle.svelte";
 
     let { id, data, selected } = $props();
 
@@ -24,10 +25,11 @@
                     class="text-[8px] font-black text-emerald-600 dark:text-emerald-400 mr-2 uppercase"
                     >True</span
                 >
-                <Handle
+                <FlowHandle
                     type="source"
                     position={Position.Right}
                     id="true"
+                    nodeId={id}
                     class="!w-3 !h-3 !bg-emerald-500 !border-2 !border-white dark:!border-slate-800"
                 />
             </div>
@@ -36,10 +38,11 @@
                     class="text-[8px] font-black text-rose-600 dark:text-rose-400 mr-2 uppercase"
                     >False</span
                 >
-                <Handle
+                <FlowHandle
                     type="source"
                     position={Position.Right}
                     id="false"
+                    nodeId={id}
                     class="!w-3 !h-3 !bg-rose-500 !border-2 !border-white dark:!border-slate-800"
                 />
             </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { Handle, Position } from "@xyflow/svelte";
+    import { Position } from "@xyflow/svelte";
+    import FlowHandle from "./FlowHandle.svelte";
 
     let {
         id,
@@ -130,10 +131,11 @@
     >
         {#each inputs as input}
             <div class="relative w-3 h-3" role="presentation">
-                <Handle
+                <FlowHandle
                     type="target"
                     position={Position.Left}
                     id={input.id}
+                    nodeId={id}
                     class="!w-3 !h-3 !bg-gray-400 dark:!bg-gray-600 !border-2 !border-white dark:!border-gray-800 hover:!bg-primary-500 transition-all hover:scale-125"
                 />
             </div>
@@ -146,10 +148,11 @@
     >
         {#each outputs as output}
             <div class="relative w-3 h-3" role="presentation">
-                <Handle
+                <FlowHandle
                     type="source"
                     position={Position.Right}
                     id={output.id}
+                    nodeId={id}
                     class="!w-3 !h-3 !bg-gray-400 dark:!bg-gray-600 !border-2 !border-white dark:!border-gray-800 hover:!bg-primary-500 transition-all hover:scale-125"
                 />
             </div>
