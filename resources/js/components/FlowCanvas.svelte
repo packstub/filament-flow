@@ -33,7 +33,9 @@
     }
 
     function addNode(newNode) {
-        nodes = [...nodes, newNode];
+        // Deselect all existing nodes and select the new one
+        const updatedNodes = nodes.map((n) => ({ ...n, selected: false }));
+        nodes = [...updatedNodes, { ...newNode, selected: true }];
     }
 
     function duplicateNode(id) {
@@ -47,7 +49,6 @@
                     x: node.position.x + 20,
                     y: node.position.y + 20,
                 },
-                selected: false,
             };
             addNode(newNode);
         }

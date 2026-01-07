@@ -11508,7 +11508,8 @@ function Xp(e, t) {
     P.preventDefault(), P.dataTransfer.dropEffect = "move";
   }
   function v(P) {
-    n([...n(), P]);
+    const D = n().map((I) => ({ ...I, selected: !1 }));
+    n([...D, { ...P, selected: !0 }]);
   }
   function p(P) {
     const I = s().find((V) => V.id === P);
@@ -11516,8 +11517,7 @@ function Xp(e, t) {
       const V = {
         ...I,
         id: `${I.type}-${Date.now()}`,
-        position: { x: I.position.x + 20, y: I.position.y + 20 },
-        selected: !1
+        position: { x: I.position.x + 20, y: I.position.y + 20 }
       };
       v(V);
     }
