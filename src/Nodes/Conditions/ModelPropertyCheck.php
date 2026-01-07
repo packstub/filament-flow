@@ -33,11 +33,13 @@ class ModelPropertyCheck extends Condition
             \Filament\Forms\Components\Select::make('operator')
                 ->label('Operator')
                 ->options([
-                    'equals' => 'Equals',
-                    'not_equals' => 'Not Equals',
-                    'greater_than' => 'Greater Than',
-                    'less_than' => 'Less Than',
-                    'contains' => 'Contains',
+                    '=' => 'Equals',
+                    '!=' => 'Not Equals',
+                    '>' => 'Greater Than',
+                    '>=' => 'Greater Than or Equal To',
+                    '<' => 'Less Than',
+                    '<=' => 'Less Than or Equal To',
+                    '*' => 'Contains',
                 ])
                 ->required(),
             \Filament\Forms\Components\TextInput::make('value')
@@ -50,7 +52,7 @@ class ModelPropertyCheck extends Condition
     public function evaluate(array $data, array $payload): bool
     {
         $property = $data['property'] ?? null;
-        $operator = $data['operator'] ?? 'equals';
+        $operator = $data['operator'] ?? '=';
         $targetValue = $data['value'] ?? null;
 
         $model = $payload['model'] ?? null;
@@ -63,11 +65,13 @@ class ModelPropertyCheck extends Condition
         $actualValue = $model->getAttribute($property);
 
         return match ($operator) {
-            'equals' => $actualValue == $targetValue,
-            'not_equals' => $actualValue != $targetValue,
-            'greater_than' => $actualValue > $targetValue,
-            'less_than' => $actualValue < $targetValue,
-            'contains' => str_contains((string) $actualValue, (string) $targetValue),
+            '=' => $actualValue == $targetValue,
+            '!=' => $actualValue != $targetValue,
+            '>' => $actualValue > $targetValue,
+            '>=' => $actualValue >= $targetValue,
+            '<' => $actualValue < $targetValue,
+            '<=' => $actualValue <= $targetValue,
+            '*' => str_contains((string) $actualValue, (string) $targetValue),
             default => false,
         };
     }
