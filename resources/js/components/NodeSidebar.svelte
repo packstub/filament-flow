@@ -103,8 +103,8 @@
     function handleNodeClick(node) {
         if (onSelectNode) {
             onSelectNode(node.type, node.data);
-            isOpen = false;
         }
+        closeSidebar();
     }
 
     function closeSidebar() {

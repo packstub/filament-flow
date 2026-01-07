@@ -24,7 +24,7 @@
     let isSidebarOpen = $state(false);
     let clientWidth = $state(0);
     let clientHeight = $state(0);
-    let sidebarPosition = $state(null);
+    let addNodePosition = $state(null);
 
     function onDragOver(event) {
         event.preventDefault();
@@ -68,6 +68,8 @@
             left: x < clientWidth - 200 ? x : undefined,
             right: x >= clientWidth - 200 ? clientWidth - x : undefined,
             bottom: y >= clientHeight - 200 ? clientHeight - y : undefined,
+            clientX: event.clientX,
+            clientY: event.clientY,
         };
     }
 
@@ -85,6 +87,8 @@
             left: x < clientWidth - 200 ? x : undefined,
             right: x >= clientWidth - 200 ? clientWidth - x : undefined,
             bottom: y >= clientHeight - 200 ? clientHeight - y : undefined,
+            clientX: event.clientX,
+            clientY: event.clientY,
         };
     }
 
@@ -94,20 +98,20 @@
 
     function handleAddNode() {
         if (menu) {
-            sidebarPosition = {
-                x: menu.left ?? clientWidth - menu.right,
-                y: menu.top ?? clientHeight - menu.bottom,
+            addNodePosition = {
+                x: menu.clientX,
+                y: menu.clientY,
             };
         } else {
-            sidebarPosition = null;
+            addNodePosition = null;
         }
         isSidebarOpen = true;
     }
 
     function onSelectNodeFromSidebar(type, data) {
         let position;
-        if (sidebarPosition) {
-            position = screenToFlowPosition(sidebarPosition);
+        if (addNodePosition) {
+            position = screenToFlowPosition(addNodePosition);
         } else {
             // Find a spot or use center
             const center = { x: clientWidth / 2, y: clientHeight / 2 };
@@ -216,7 +220,7 @@
     <button
         type="button"
         onclick={() => {
-            sidebarPosition = null;
+            addNodePosition = null;
             isSidebarOpen = true;
         }}
         class="absolute top-4 right-4 p-3 bg-white border border-slate-200 rounded-xl shadow-lg text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-all z-10 group"
