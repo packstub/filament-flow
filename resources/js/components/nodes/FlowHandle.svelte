@@ -48,15 +48,34 @@
     <Handle {type} {position} {id} class={className} />
 
     {#if !isConnected}
+        <div
+            class="absolute pointer-events-none border-dashed border-gray-300 dark:border-gray-600 opacity-60 group-hover/handle:opacity-100 transition-opacity z-9
+            {position === Position.Right
+                ? 'left-full w-4 border-t top-1/2'
+                : ''}
+            {position === Position.Left
+                ? 'right-full w-4 border-t top-1/2'
+                : ''}
+            {position === Position.Top
+                ? 'bottom-full h-4 border-l left-1/2'
+                : ''}
+            {position === Position.Bottom
+                ? 'top-full h-4 border-l left-1/2'
+                : ''}"
+        ></div>
+
         <button
             type="button"
             onclick={onPlusClick}
-            class="absolute {position === Position.Right
-                ? '-right-8'
-                : '-left-8'} w-4 h-4 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 transition-all hover:scale-125 shadow-sm z-50 border border-gray-600 dark:border-gray-400"
+            class="absolute w-4 h-4 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 transition-all hover:scale-125 shadow-sm z-50 border border-gray-600 dark:border-gray-400
+            {position === Position.Right ? '-right-8' : ''}
+            {position === Position.Left ? '-left-8' : ''}
+            {position === Position.Top ? '-top-8' : ''}
+            {position === Position.Bottom ? '-bottom-8' : ''}
+            {!Object.values(Position).includes(position) ? '-left-8' : ''}"
             title="Add Node"
         >
-            <Plus size={20} />
+            <Plus size={12} />
         </button>
     {/if}
 </div>
