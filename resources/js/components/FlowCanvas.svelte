@@ -19,6 +19,7 @@
 
     const { screenToFlowPosition, setNodes } = useSvelteFlow();
 
+    let container = $state();
     let menu = $state(null);
     let isSidebarOpen = $state(false);
     let clientWidth = $state(0);
@@ -54,37 +55,35 @@
 
     function handleContextMenu({ event, node }) {
         event.preventDefault();
+
+        const rect = container.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
         menu = {
             id: node.id,
             type: "node",
-            top: event.clientY < clientHeight - 200 ? event.clientY : undefined,
-            left: event.clientX < clientWidth - 200 ? event.clientX : undefined,
-            right:
-                event.clientX >= clientWidth - 200
-                    ? clientWidth - event.clientX
-                    : undefined,
-            bottom:
-                event.clientY >= clientHeight - 200
-                    ? clientHeight - event.clientY
-                    : undefined,
+            top: y < clientHeight - 200 ? y : undefined,
+            left: x < clientWidth - 200 ? x : undefined,
+            right: x >= clientWidth - 200 ? clientWidth - x : undefined,
+            bottom: y >= clientHeight - 200 ? clientHeight - y : undefined,
         };
     }
 
-    function handlePaneContextMenu(event) {
+    function handlePaneContextMenu({ event }) {
         event.preventDefault();
+
+        const rect = container.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
         menu = {
             id: "canvas",
-            type: "pane",
-            top: event.clientY < clientHeight - 200 ? event.clientY : undefined,
-            left: event.clientX < clientWidth - 200 ? event.clientX : undefined,
-            right:
-                event.clientX >= clientWidth - 200
-                    ? clientWidth - event.clientX
-                    : undefined,
-            bottom:
-                event.clientY >= clientHeight - 200
-                    ? clientHeight - event.clientY
-                    : undefined,
+            type: "canvas",
+            top: y < clientHeight - 200 ? y : undefined,
+            left: x < clientWidth - 200 ? x : undefined,
+            right: x >= clientWidth - 200 ? clientWidth - x : undefined,
+            bottom: y >= clientHeight - 200 ? clientHeight - y : undefined,
         };
     }
 
@@ -122,6 +121,7 @@
 
 <div
     class="relative h-[600px] w-full border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xl"
+    bind:this={container}
     bind:clientWidth
     bind:clientHeight
 >
@@ -147,16 +147,16 @@
             <Controls />
             <Background variant="lines" gap={20} size={1} color="#f1f5f9" />
             <MiniMap />
-
-            {#if menu}
-                <ContextMenu
-                    {...menu}
-                    onclick={closeMenu}
-                    onAddNode={handleAddNode}
-                    onRenameNode={handleRenameNode}
-                />
-            {/if}
         </SvelteFlow>
+
+        {#if menu}
+            <ContextMenu
+                {...menu}
+                onclick={closeMenu}
+                onAddNode={handleAddNode}
+                onRenameNode={handleRenameNode}
+            />
+        {/if}
     </div>
 
     <NodeSidebar {availableComponents} bind:isOpen={isSidebarOpen} />
