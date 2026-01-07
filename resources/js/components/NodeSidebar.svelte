@@ -1,7 +1,6 @@
 <script>
-    let { availableComponents = {} } = $props();
+    let { availableComponents = {}, isOpen = $bindable(false) } = $props();
 
-    let isCollapsed = $state(false);
     let searchQuery = $state("");
 
     function createNodeList(components) {
@@ -62,66 +61,48 @@
         event.dataTransfer.effectAllowed = "move";
     }
 
-    function toggleSidebar() {
-        isCollapsed = !isCollapsed;
+    function closeSidebar() {
+        isOpen = false;
     }
 </script>
 
-<div
-    class="{isCollapsed
-        ? 'w-20 px-2 pt-14 pb-5 items-center'
-        : 'w-64 p-5'} bg-slate-50 border-r border-slate-200 flex flex-col gap-5 overflow-y-auto transition-all duration-300 relative"
->
-    <!-- Toggle Button -->
-    <button
-        onclick={toggleSidebar}
-        type="button"
-        class="absolute top-2 right-2 p-1 rounded-md text-slate-400 hover:bg-slate-200 transition-colors z-10"
-        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+{#if isOpen}
+    <div
+        class="absolute top-4 right-4 bottom-4 w-72 bg-white/90 backdrop-blur-xl border border-slate-200 flex flex-col gap-5 overflow-y-auto transition-all duration-300 z-40 rounded-2xl shadow-2xl p-5 animate-in slide-in-from-right-10 duration-300"
     >
-        {#if isCollapsed}
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="2"
-                stroke="currentColor"
-                class="w-4 h-4"
+        <!-- Header -->
+        <div class="flex items-center justify-between">
+            <div>
+                <h3
+                    class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]"
+                >
+                    Components
+                </h3>
+                <p class="text-[10px] text-slate-500 mt-1">
+                    Drag to build workflow
+                </p>
+            </div>
+            <button
+                onclick={closeSidebar}
+                type="button"
+                class="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                title="Close Panel"
             >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5"
-                />
-            </svg>
-        {:else}
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="2"
-                stroke="currentColor"
-                class="w-4 h-4"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M18.75 4.5l-7.5 7.5 7.5 7.5m-6-15l-7.5 7.5 7.5 7.5"
-                />
-            </svg>
-        {/if}
-    </button>
-
-    {#if !isCollapsed}
-        <div>
-            <h3
-                class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]"
-            >
-                Components
-            </h3>
-            <p class="text-[10px] text-slate-500 mt-1">
-                Drag to build workflow
-            </p>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="2.5"
+                    stroke="currentColor"
+                    class="w-4 h-4"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                    />
+                </svg>
+            </button>
         </div>
 
         <!-- Search Input -->
@@ -130,13 +111,13 @@
                 type="text"
                 placeholder="Search nodes..."
                 bind:value={searchQuery}
-                class="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow pl-8"
+                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow pl-8 bg-slate-50/50"
             />
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke-width="2"
+                stroke-width="2.5"
                 stroke="currentColor"
                 class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400"
             >
@@ -147,27 +128,23 @@
                 />
             </svg>
         </div>
-    {/if}
 
-    <div class="flex flex-col gap-3 w-full" role="list">
-        {#each nodeTypes as node}
-            <div
-                class="group flex items-center {isCollapsed
-                    ? 'justify-center p-2'
-                    : 'gap-4 p-4'} bg-white border border-slate-200 rounded-xl shadow-sm cursor-grab hover:border-blue-400 hover:shadow-md transition-all active:cursor-grabbing"
-                draggable="true"
-                role="listitem"
-                aria-roledescription="node blueprint"
-                ondragstart={(e) => onDragStart(e, node.type, node.data)}
-                title={node.label}
-            >
+        <div class="flex flex-col gap-3 w-full" role="list">
+            {#each nodeTypes as node}
                 <div
-                    class="w-10 h-10 {node.color} mr-auto p-1.5 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform flex-shrink-0"
+                    class="group flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-xl shadow-sm cursor-grab hover:border-blue-400 hover:shadow-md transition-all active:cursor-grabbing"
+                    draggable="true"
+                    role="listitem"
+                    aria-roledescription="node blueprint"
+                    ondragstart={(e) => onDragStart(e, node.type, node.data)}
+                    title={node.label}
                 >
-                    {@html node.icon || "<span>?</span>"}
-                </div>
-                {#if !isCollapsed}
-                    <div class="min-w-0">
+                    <div
+                        class="w-10 h-10 {node.color} mr-auto p-1.5 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform flex-shrink-0"
+                    >
+                        {@html node.icon || "<span>?</span>"}
+                    </div>
+                    <div class="min-w-0 flex-grow">
                         <div
                             class="text-xs font-bold text-slate-800 tracking-tight truncate"
                         >
@@ -177,14 +154,12 @@
                             {node.description}
                         </div>
                     </div>
-                {/if}
-            </div>
-        {/each}
-    </div>
+                </div>
+            {/each}
+        </div>
 
-    {#if !isCollapsed}
         <div
-            class="mt-auto p-4 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl text-white shadow-xl shadow-blue-200/50"
+            class="mt-auto p-4 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl text-white shadow-xl shadow-blue-200/50"
         >
             <div class="flex items-center gap-2 mb-2">
                 <span class="text-sm">💡</span>
@@ -196,5 +171,5 @@
                 Connect nodes by clicking and dragging between handles.
             </p>
         </div>
-    {/if}
-</div>
+    </div>
+{/if}
