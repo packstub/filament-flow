@@ -1,49 +1,128 @@
 <?php
 
-/*
-|--------------------------------------------------------------------------
-| Test Case
-|--------------------------------------------------------------------------
-|
-| The closure you provide to your test functions is always bound to a specific PHPUnit test
-| case class. By default, that class is "PHPUnit\Framework\TestCase". Of course, you may
-| need to change it using the "pest()" function to bind a different classes or traits.
-|
-*/
+use Illuminate\Support\Facades\Hash;
+use Packstub\Flow\Models\Workflow;
+use Packstub\Flow\Nodes\Triggers\Manual;
+use Packstub\Flow\Tests\Fixtures\Order;
+use Packstub\Flow\Tests\Fixtures\SetStatusAction;
+use Packstub\Flow\Tests\Fixtures\User;
+use Packstub\Flow\Tests\TestCase;
 
-pest()->extend(Packstub\Flow\Tests\TestCase::class)
-    // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
-    ->in('Feature')
-    ->in('Unit')
-    ->in('Browser');
+pest()->extend(TestCase::class)->in('Feature');
 
-/*
-|--------------------------------------------------------------------------
-| Expectations
-|--------------------------------------------------------------------------
-|
-| When you're writing tests, you often need to check that values meet certain conditions. The
-| "expect()" function gives you access to a set of "expectations" methods that you can use
-| to assert different things. Of course, you may extend the Expectation API at any time.
-|
-*/
-
-expect()->extend('toBeOne', function () {
-    return $this->toBe(1);
+pest()->beforeEach(function (): void {
+    SetStatusAction::$calls = [];
 });
 
-/*
-|--------------------------------------------------------------------------
-| Functions
-|--------------------------------------------------------------------------
-|
-| While Pest is very powerful out-of-the-box, you may have some testing code specific to your
-| project that you don't want to repeat in every file. Here you can also expose helpers as
-| global functions to help you to reduce the number of lines of code in your test files.
-|
-*/
-
-function something()
+/**
+ * @param  array<string, mixed>  $attributes
+ */
+function createUser(array $attributes = []): User
 {
-    // ..
+    $sequence = User::query()->count() + 1;
+
+    return User::query()->create([
+        'name' => "User {$sequence}",
+        'email' => "user{$sequence}@example.com",
+        'password' => Hash::make('secret'),
+        ...$attributes,
+    ]);
+}
+
+/**
+ * @param  array<string, mixed>  $attributes
+ */
+function createOrder(array $attributes = []): Order
+{
+    $sequence = Order::query()->count() + 1;
+
+    return Order::query()->create([
+        'reference' => sprintf('ORD-%04d', $sequence),
+        'status' => 'pending',
+        'total' => 100,
+        ...$attributes,
+    ]);
+}
+
+/**
+ * Build a node for a workflow definition.
+ *
+ * @param  array<string, mixed>  $config
+ * @return array<string, mixed>
+ */
+function node(string $id, string $type, string $identifier, array $config = [], ?string $label = null): array
+{
+    return [
+        'id' => $id,
+        'type' => $type,
+        'position' => ['x' => 0, 'y' => 0],
+        'data' => [
+            'identifier' => $identifier,
+            'label' => $label ?? $id,
+            'description' => null,
+            'config' => $config,
+        ],
+    ];
+}
+
+/** @param array<string, mixed> $config */
+function triggerNode(string $id, string $identifier, array $config = []): array
+{
+    return node($id, 'trigger', $identifier, $config);
+}
+
+/** @param array<string, mixed> $config */
+function actionNode(string $id, string $identifier, array $config = []): array
+{
+    return node($id, 'action', $identifier, $config);
+}
+
+/** @param array<string, mixed> $config */
+function conditionNode(string $id, string $identifier, array $config = []): array
+{
+    return node($id, 'condition', $identifier, $config);
+}
+
+/** @return array<string, mixed> */
+function edge(string $source, string $target, ?string $sourceHandle = null): array
+{
+    static $sequence = 0;
+
+    $sequence++;
+
+    return array_filter([
+        'id' => "e{$sequence}",
+        'source' => $source,
+        'sourceHandle' => $sourceHandle,
+        'target' => $target,
+    ], fn ($value): bool => $value !== null);
+}
+
+/**
+ * @param  array<int, array<string, mixed>>  $nodes
+ * @param  array<int, array<string, mixed>>  $edges
+ * @param  array<string, mixed>  $attributes
+ */
+function createWorkflow(array $nodes, array $edges = [], array $attributes = []): Workflow
+{
+    return Workflow::query()->create([
+        'name' => 'Test workflow',
+        'is_active' => true,
+        'definition' => ['nodes' => $nodes, 'edges' => $edges],
+        ...$attributes,
+    ]);
+}
+
+/**
+ * A workflow with a manual trigger followed by one test action.
+ *
+ * @param  array<string, mixed>  $actionConfig
+ */
+function manualWorkflow(array $actionConfig = ['status' => 'done'], array $attributes = []): Workflow
+{
+    return createWorkflow(
+        [triggerNode('t', Manual::class), actionNode('a', SetStatusAction::class, $actionConfig)],
+        [edge('t', 'a')],
+        $attributes,
+    );
 }

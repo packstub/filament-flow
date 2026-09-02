@@ -2,16 +2,9 @@
     import { Position } from "@xyflow/svelte";
     import FlowHandle from "./FlowHandle.svelte";
     import { Zap, Rocket, CircleHelp, Box, Settings } from "lucide-svelte";
+    import { t } from "../labels";
 
-    let {
-        id,
-        data,
-        selected,
-        type = "default",
-        inputs = [],
-        outputs = [],
-        children,
-    } = $props();
+    let { id, data, selected, type = "default", inputs = [], outputs = [], children } = $props();
 
     const themes = {
         trigger: {
@@ -46,118 +39,73 @@
 
     const theme = $derived(themes[type] || themes.default);
 
-    function openSettings(event) {
+    function openSettings(event: MouseEvent) {
         event.stopPropagation();
         window.dispatchEvent(
-            new CustomEvent("open-node-settings", {
+            new CustomEvent("packstub-flow-open-node", {
                 detail: {
-                    id: id,
+                    id,
                     identifier: data.identifier,
-                    config: {
-                        label: data.label,
-                        description: data.description,
-                        ...(data.config || {}),
-                    },
+                    config: { label: data.label, description: data.description, ...(data.config || {}) },
                 },
             }),
         );
     }
 </script>
 
-<div class="relative group" role="presentation">
-    <!-- Node Container -->
+<div class="fi-flow-node group relative" role="presentation" ondblclick={openSettings}>
     <div
-        class="min-w-[180px] max-w-[240px] bg-white dark:bg-gray-900 rounded-xl shadow-sm border {theme.border} ring-1 ring-gray-950/5 dark:ring-white/10 overflow-hidden transition-all duration-200 {selected
-            ? 'ring-2 ring-primary-500 dark:ring-primary-400 ring-offset-2 dark:ring-offset-gray-950'
+        class="min-w-[180px] max-w-[240px] overflow-hidden rounded-xl border bg-white shadow-sm ring-1 ring-gray-950/5 transition-all duration-200 dark:bg-gray-900 dark:ring-white/10 {theme.border} {selected
+            ? 'ring-2 ring-primary-500 ring-offset-2 dark:ring-primary-400 dark:ring-offset-gray-950'
             : 'hover:shadow-md dark:hover:shadow-primary-500/10'}"
     >
-        <!-- Header -->
-        <div class="{theme.header} px-3 py-1.5 flex items-center gap-2">
-            <span class="text-white">
-                <theme.icon size={12} strokeWidth={2.5} />
-            </span>
-            <span
-                class="text-[10px] font-bold uppercase tracking-wider text-white flex-1"
-            >
-                {data.label || "Node"}
-            </span>
-            <!-- Settings Button -->
+        <div class="{theme.header} flex items-center gap-2 px-3 py-1.5">
+            <span class="text-white"><theme.icon size={12} strokeWidth={2.5} /></span>
+            <span class="flex-1 truncate text-[10px] font-bold tracking-wider text-white uppercase">{data.label || "Node"}</span>
             <button
                 onclick={openSettings}
                 type="button"
-                class="text-white/70 hover:text-white hover:bg-white/20 rounded p-0.5 transition-all opacity-0 group-hover:opacity-100"
-                title="Edit Settings"
+                class="rounded p-0.5 text-white/70 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/20 hover:text-white"
+                title={t("settings")}
+                aria-label={t("settings")}
             >
                 <Settings size={14} />
             </button>
         </div>
 
-        <!-- Body -->
         <div class="p-3 {theme.bg}">
             {#if data.description}
-                <p
-                    class="text-[10px] leading-relaxed text-gray-500 dark:text-gray-400 mb-2 italic"
-                >
-                    {data.description}
-                </p>
+                <p class="mb-2 text-[10px] leading-relaxed text-gray-500 italic dark:text-gray-400">{data.description}</p>
             {/if}
-
-            <div class="text-xs font-medium {theme.text}">
-                {@render children?.()}
-            </div>
+            <div class="text-xs font-medium {theme.text}">{@render children?.()}</div>
         </div>
     </div>
 
-    <!-- Inputs (Left) -->
-    <div
-        class="absolute -left-2 top-0 bottom-0 flex flex-col justify-center gap-4"
-    >
-        {#each inputs as input}
-            <div class="relative w-3 h-3" role="presentation">
+    <div class="absolute top-0 bottom-0 -left-2 flex flex-col justify-center gap-4">
+        {#each inputs as input (input.id)}
+            <div class="relative h-3 w-3" role="presentation">
                 <FlowHandle
                     type="target"
                     position={Position.Left}
                     id={input.id}
                     nodeId={id}
-                    class="!w-3 !h-3 !bg-gray-400 dark:!bg-gray-600 !border-2 !border-white dark:!border-gray-800 hover:!bg-primary-500 transition-all hover:scale-125"
+                    class="!h-3 !w-3 !border-2 !border-white !bg-gray-400 transition-all hover:scale-125 hover:!bg-primary-500 dark:!border-gray-800 dark:!bg-gray-600"
                 />
             </div>
         {/each}
     </div>
 
-    <!-- Outputs (Right) -->
-    <div
-        class="absolute -right-2 top-0 bottom-0 flex flex-col justify-center gap-4"
-    >
-        {#each outputs as output}
-            <div class="relative w-3 h-3" role="presentation">
+    <div class="absolute top-0 -right-2 bottom-0 flex flex-col justify-center gap-4">
+        {#each outputs as output (output.id)}
+            <div class="relative h-3 w-3" role="presentation">
                 <FlowHandle
                     type="source"
                     position={Position.Right}
                     id={output.id}
                     nodeId={id}
-                    class="!w-3 !h-3 !bg-gray-400 dark:!bg-gray-600 !border-2 !border-white dark:!border-gray-800 hover:!bg-primary-500 transition-all hover:scale-125"
+                    class="!h-3 !w-3 !border-2 !border-white !bg-gray-400 transition-all hover:scale-125 hover:!bg-primary-500 dark:!border-gray-800 dark:!bg-gray-600"
                 />
             </div>
         {/each}
     </div>
 </div>
-
-<style>
-    :global(.svelte-flow__node) {
-        border-radius: 12px;
-    }
-
-    :global(.svelte-flow__handle) {
-        border-radius: 50% !important;
-        z-index: 10;
-        transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-        border-color: white !important;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    }
-
-    .dark :global(.svelte-flow__handle) {
-        border-color: #111827 !important; /* gray-900 */
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-    }
-</style>

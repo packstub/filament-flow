@@ -1,0 +1,59 @@
+<?php
+
+namespace Packstub\Flow\Nodes\Actions;
+
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Illuminate\Support\Facades\Http;
+use Packstub\Flow\Nodes\Action;
+use Packstub\Flow\Nodes\Concerns\InterpolatesPlaceholders;
+
+/**
+ * Posts to a Slack incoming webhook.
+ */
+class SendSlackMessage extends Action
+{
+    use InterpolatesPlaceholders;
+
+    public function getName(): string
+    {
+        return __('packstub-flow::flow.nodes.slack.name');
+    }
+
+    public function getDescription(): string
+    {
+        return __('packstub-flow::flow.nodes.slack.description');
+    }
+
+    public function getIcon(): ?string
+    {
+        return 'heroicon-o-chat-bubble-left-right';
+    }
+
+    public function getFormSchema(): array
+    {
+        return [
+            TextInput::make('webhook_url')
+                ->label(__('packstub-flow::flow.nodes.slack.webhook_url'))
+                ->placeholder('https://hooks.slack.com/services/...')
+                ->url()
+                ->required(),
+            Textarea::make('message')
+                ->label(__('packstub-flow::flow.nodes.slack.message'))
+                ->placeholder(__('packstub-flow::flow.nodes.slack.message_placeholder'))
+                ->rows(4)
+                ->required(),
+        ];
+    }
+
+    public function handle(array $config, array $payload): void
+    {
+        $url = $this->interpolate($config['webhook_url'] ?? '', $payload);
+
+        if ($url === '') {
+            return;
+        }
+
+        Http::post($url, ['text' => $this->interpolate($config['message'] ?? '', $payload)])->throw();
+    }
+}

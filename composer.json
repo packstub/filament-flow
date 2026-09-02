@@ -1,42 +1,74 @@
 {
     "name": "packstub/filament-flow",
-    "description": "Visual Workflow Builder for Filament PHP",
+    "description": "Visual workflow automation for Filament panels: triggers, conditions and actions drawn on a canvas, run by your queue.",
     "keywords": [
+        "packstub",
         "laravel",
         "filament",
+        "filament-plugin",
+        "filament-v5",
+        "filament-flow",
         "workflow",
+        "workflows",
+        "automation",
         "flowchart",
-        "automation"
+        "no-code",
+        "triggers"
     ],
-    "homepage": "https://github.com/ioncaliman/laravel-flow",
+    "homepage": "https://github.com/packstub/filament-flow",
+    "support": {
+        "issues": "https://github.com/packstub/filament-flow/issues",
+        "source": "https://github.com/packstub/filament-flow",
+        "docs": "https://packstub.dev/docs/filament-flow"
+    },
     "license": "MIT",
     "authors": [
         {
             "name": "Ion Caliman",
-            "email": "ion@example.com",
+            "email": "icaliman92@gmail.com",
             "role": "Developer"
+        },
+        {
+            "name": "Packstub",
+            "email": "support@packstub.dev",
+            "homepage": "https://packstub.dev"
         }
     ],
     "require": {
-        "php": "^8.4",
-        "filament/filament": "^4.0",
-        "spatie/laravel-package-tools": "^1.16"
+        "php": "^8.3",
+        "dragonmantank/cron-expression": "^3.3",
+        "filament/filament": "^4.0 || ^5.0",
+        "illuminate/contracts": "^12.0 || ^13.0",
+        "spatie/laravel-package-tools": "^1.92"
     },
     "require-dev": {
-        "orchestra/testbench": "^10.0",
-        "pestphp/pest": "^4.3",
-        "pestphp/pest-plugin-laravel": "^4.0",
-        "pestphp/pest-plugin-browser": "^4.1"
+        "laravel/pint": "^1.27",
+        "orchestra/testbench": "^10.0 || ^11.0",
+        "pestphp/pest": "^4.0 || ^5.0",
+        "pestphp/pest-plugin-laravel": "^4.0 || ^5.0",
+        "pestphp/pest-plugin-livewire": "^4.0 || ^5.0"
     },
     "autoload": {
         "psr-4": {
-            "Packstub\\Flow\\": "src/",
-            "Packstub\\Flow\\Database\\Factories\\": "database/factories/"
+            "Packstub\\Flow\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
             "Packstub\\Flow\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "test:filter": "pest --filter",
+        "lint": "vendor/bin/pint",
+        "lint:test": "vendor/bin/pint --test",
+        "build": "bun run build"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
         }
     },
     "extra": {
@@ -45,16 +77,10 @@
                 "Packstub\\Flow\\FlowServiceProvider"
             ],
             "aliases": {
-                "LaravelFlow": "Packstub\\Flow\\Facades\\LaravelFlow"
+                "Flow": "Packstub\\Flow\\Facades\\Flow"
             }
         }
     },
-    "config": {
-        "sort-packages": true,
-        "allow-plugins": {
-            "pestphp/pest-plugin": true
-        }
-    },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }

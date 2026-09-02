@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Handle, Position, useNodeConnections } from "@xyflow/svelte";
     import { Plus } from "lucide-svelte";
+    import { t } from "../labels";
 
     let {
         type,
@@ -33,7 +34,7 @@
     function onPlusClick(event: MouseEvent) {
         event.stopPropagation();
         window.dispatchEvent(
-            new CustomEvent("handle-click", {
+            new CustomEvent("packstub-flow-handle-click", {
                 detail: {
                     nodeId: nodeId,
                     handleId: id,
@@ -67,7 +68,7 @@
             {position === Position.Right ? '-right-8' : ''}
             {position === Position.Bottom ? '-bottom-8' : ''}
             {!Object.values(Position).includes(position) ? '-left-8' : ''}"
-            title="Add Node"
+            title={t("add_node")} aria-label={t("add_node")}
         >
             <Plus size={12} />
         </button>

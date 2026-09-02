@@ -1,122 +1,59 @@
 <script lang="ts">
     import { fly } from "svelte/transition";
-    import {
-        Zap,
-        Rocket,
-        Scale,
-        ChevronLeft,
-        X,
-        Search,
-        ChevronRight,
-    } from "lucide-svelte";
+    import { Zap, Rocket, Scale, ChevronLeft, X, Search, ChevronRight } from "lucide-svelte";
+    import { t } from "./labels";
 
     let {
-        availableComponents = {},
+        availableNodes = {},
         isOpen = $bindable(false),
+        selectedCategory = $bindable<string | null>(null),
         onSelectNode,
+        onClose,
     }: {
-        availableComponents?: Record<string, any>;
+        availableNodes?: Record<string, any>;
         isOpen: boolean;
+        selectedCategory: string | null;
         onSelectNode: (type: string, data: any) => void;
+        onClose?: () => void;
     } = $props();
 
     let searchQuery = $state("");
-    let selectedCategory = $state(null);
 
     const categories = [
-        {
-            id: "triggers",
-            label: "Triggers",
-            icon: Zap,
-            color: "text-amber-500",
-            description: "Events that start your workflow",
-        },
-        {
-            id: "actions",
-            label: "Actions",
-            icon: Rocket,
-            color: "text-blue-500",
-            description: "Operations your workflow performs",
-        },
-        {
-            id: "conditions",
-            label: "Conditions",
-            icon: Scale,
-            color: "text-purple-500",
-            description: "Logic to branch your workflow",
-        },
+        { id: "triggers", type: "trigger", icon: Zap, color: "text-amber-500", tile: "bg-amber-500" },
+        { id: "actions", type: "action", icon: Rocket, color: "text-blue-500", tile: "bg-blue-600" },
+        { id: "conditions", type: "condition", icon: Scale, color: "text-purple-500", tile: "bg-purple-600" },
     ];
 
-    function createNodeList(components) {
-        const triggers = (components.triggers || []).map((t) => ({
-            category: "triggers",
-            type: "trigger",
-            label: t.name,
-            icon: t.icon,
-            description: t.description,
-            color: "bg-amber-500",
-            data: {
-                label: t.name,
-                description: t.description,
-                identifier: t.identifier,
-            },
-        }));
-
-        const actions = (components.actions || []).map((a) => ({
-            category: "actions",
-            type: "action",
-            label: a.name,
-            icon: a.icon,
-            description: a.description,
-            color: "bg-blue-600",
-            data: {
-                label: a.name,
-                description: a.description,
-                identifier: a.identifier,
-            },
-        }));
-
-        const conditions = (components.conditions || []).map((c) => ({
-            category: "conditions",
-            type: "condition",
-            label: c.name,
-            icon: c.icon,
-            description: c.description,
-            color: "bg-purple-600",
-            data: {
-                label: c.name,
-                description: c.description,
-                identifier: c.identifier,
-            },
-        }));
-
-        return [...triggers, ...actions, ...conditions];
-    }
-
-    let allNodes = $derived(createNodeList(availableComponents));
+    let allNodes = $derived(
+        categories.flatMap((category) =>
+            (availableNodes[category.id] || []).map((node: any) => ({
+                category: category.id,
+                type: category.type,
+                label: node.name,
+                icon: node.icon,
+                description: node.description,
+                color: category.tile,
+                data: { label: node.name, description: node.description, identifier: node.identifier, config: {} },
+            })),
+        ),
+    );
 
     let filteredNodes = $derived(
         searchQuery
-            ? allNodes.filter((node) =>
-                  node.label.toLowerCase().includes(searchQuery.toLowerCase()),
-              )
+            ? allNodes.filter((node) => node.label.toLowerCase().includes(searchQuery.toLowerCase()))
             : selectedCategory
               ? allNodes.filter((node) => node.category === selectedCategory)
               : [],
     );
 
-    function onDragStart(event, nodeType, initialData) {
-        event.dataTransfer.setData(
-            "application/svelteflow",
-            JSON.stringify({ type: nodeType, data: initialData }),
-        );
-        event.dataTransfer.effectAllowed = "move";
+    function onDragStart(event: DragEvent, nodeType: string, initialData: any) {
+        event.dataTransfer?.setData("application/svelteflow", JSON.stringify({ type: nodeType, data: initialData }));
+        if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
     }
 
-    function handleNodeClick(node) {
-        if (onSelectNode) {
-            onSelectNode(node.type, node.data);
-        }
+    function handleNodeClick(node: any) {
+        onSelectNode?.(node.type, JSON.parse(JSON.stringify(node.data)));
         closeSidebar();
     }
 
@@ -124,25 +61,14 @@
         isOpen = false;
         searchQuery = "";
         selectedCategory = null;
-    }
-
-    function goBack() {
-        selectedCategory = null;
-    }
-
-    function selectCategory(id) {
-        selectedCategory = id;
+        onClose?.();
     }
 
     $effect(() => {
         if (!isOpen) return;
-
-        const handleKeyDown = (e) => {
-            if (e.key === "Escape") {
-                closeSidebar();
-            }
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") closeSidebar();
         };
-
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
     });
@@ -152,142 +78,95 @@
     <div
         in:fly={{ x: 20, duration: 200 }}
         out:fly={{ x: 20, duration: 200 }}
-        class="absolute top-2 right-2 bottom-2 w-80 bg-white dark:bg-gray-900 border border-transparent ring-1 ring-gray-950/5 dark:ring-white/10 flex flex-col overflow-hidden transition-all duration-300 z-40 rounded-2xl shadow-2xl p-0"
+        class="fi-flow-sidebar absolute top-2 right-2 bottom-2 z-40 flex w-80 flex-col overflow-hidden rounded-2xl bg-white p-0 shadow-2xl ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
     >
-        <!-- Sticky Header Section -->
-        <div
-            class="p-5 border-b border-gray-100 dark:border-gray-800 sticky top-0 z-10"
-        >
-            <div class="flex items-center justify-between mb-4">
+        <div class="sticky top-0 z-10 border-b border-gray-100 p-5 dark:border-gray-800">
+            <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     {#if selectedCategory && !searchQuery}
                         <button
                             type="button"
-                            onclick={goBack}
-                            title="Go back"
-                            class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
+                            onclick={() => (selectedCategory = null)}
+                            title={t("back")}
+                            class="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
                         >
                             <ChevronLeft size={16} />
                         </button>
                     {/if}
-                    <div>
-                        <h3
-                            class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest"
-                        >
-                            {#if searchQuery}
-                                Search Results
-                            {:else if selectedCategory}
-                                {categories.find(
-                                    (c) => c.id === selectedCategory,
-                                )?.label}
-                            {:else}
-                                Components
-                            {/if}
-                        </h3>
-                    </div>
+                    <h3 class="text-xs font-semibold tracking-widest text-gray-400 uppercase dark:text-gray-500">
+                        {#if searchQuery}
+                            {t("search_results")}
+                        {:else if selectedCategory}
+                            {t(selectedCategory)}
+                        {:else}
+                            {t("components")}
+                        {/if}
+                    </h3>
                 </div>
                 <button
                     onclick={closeSidebar}
                     type="button"
-                    title="Close"
-                    class="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    title={t("close")}
+                    class="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
                 >
                     <X size={16} />
                 </button>
             </div>
 
-            <!-- Search Input (Fixed) -->
             <div class="relative">
                 <input
                     type="text"
-                    placeholder="Search nodes..."
+                    placeholder={t("search")}
                     bind:value={searchQuery}
-                    class="w-full text-sm px-3 py-2 rounded-lg border-none ring-1 ring-gray-950/10 dark:ring-white/10 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 transition-all pl-9"
+                    class="w-full rounded-lg border-none bg-white py-2 pr-3 pl-9 text-sm text-gray-900 ring-1 ring-gray-950/10 transition-all focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10"
                 />
-                <Search
-                    size={16}
-                    class="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500"
-                />
+                <Search size={16} class="absolute top-2.5 left-3 text-gray-400 dark:text-gray-500" />
             </div>
         </div>
 
-        <!-- Scrollable Content -->
-        <div class="flex-grow overflow-y-auto p-5 relative">
+        <div class="relative flex-grow overflow-y-auto p-5">
             {#if searchQuery || selectedCategory}
-                <div
-                    in:fly={{ x: 20, duration: 300, delay: 150 }}
-                    out:fly={{ x: 20, duration: 200 }}
-                    class="flex flex-col gap-3"
-                >
-                    {#each filteredNodes as node}
+                <div in:fly={{ x: 20, duration: 300, delay: 150 }} out:fly={{ x: 20, duration: 200 }} class="flex flex-col gap-3">
+                    {#each filteredNodes as node (node.data.identifier)}
                         <button
                             type="button"
-                            class="group flex items-center gap-4 p-3 bg-white dark:bg-gray-800 border-none ring-1 ring-gray-950/5 dark:ring-white/10 rounded-xl shadow-sm cursor-grab hover:ring-primary-500 dark:hover:ring-primary-400 transition-all active:cursor-grabbing text-left w-full"
+                            class="group flex w-full cursor-grab items-center gap-4 rounded-xl border-none bg-white p-3 text-left shadow-sm ring-1 ring-gray-950/5 transition-all hover:ring-primary-500 active:cursor-grabbing dark:bg-gray-800 dark:ring-white/10 dark:hover:ring-primary-400"
                             draggable="true"
-                            ondragstart={(e) =>
-                                onDragStart(e, node.type, node.data)}
+                            ondragstart={(e) => onDragStart(e, node.type, node.data)}
                             onclick={() => handleNodeClick(node)}
                         >
-                            <div
-                                class="w-10 h-10 {node.color} p-2 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform flex-shrink-0"
-                            >
+                            <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg {node.color} p-2 text-white transition-transform group-hover:scale-110">
                                 {@html node.icon || "<span>?</span>"}
                             </div>
                             <div class="min-w-0 flex-grow">
-                                <div
-                                    class="text-xs font-semibold text-gray-800 dark:text-gray-100 tracking-tight truncate"
-                                >
-                                    {node.label}
-                                </div>
-                                <div
-                                    class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 truncate"
-                                >
-                                    {node.description}
-                                </div>
+                                <div class="truncate text-xs font-semibold tracking-tight text-gray-800 dark:text-gray-100">{node.label}</div>
+                                <div class="mt-0.5 truncate text-[10px] text-gray-400 dark:text-gray-500">{node.description}</div>
                             </div>
                         </button>
                     {/each}
 
                     {#if filteredNodes.length === 0}
-                        <div class="text-center py-10">
-                            <p class="text-sm text-gray-400 dark:text-gray-500">
-                                No nodes found matching "{searchQuery}"
-                            </p>
+                        <div class="py-10 text-center">
+                            <p class="text-sm text-gray-400 dark:text-gray-500">{t("no_results", { query: searchQuery })}</p>
                         </div>
                     {/if}
                 </div>
             {:else}
-                <div
-                    in:fly={{ x: -20, duration: 300, delay: 150 }}
-                    out:fly={{ x: -20, duration: 200 }}
-                    class="flex flex-col gap-3"
-                >
-                    {#each categories as category}
+                <div in:fly={{ x: -20, duration: 300, delay: 150 }} out:fly={{ x: -20, duration: 200 }} class="flex flex-col gap-3">
+                    {#each categories as category (category.id)}
                         <button
                             type="button"
-                            onclick={() => selectCategory(category.id)}
-                            class="group relative flex flex-col gap-1 p-4 bg-white dark:bg-gray-800 border-none ring-1 ring-gray-950/5 dark:ring-white/10 rounded-xl shadow-sm hover:ring-primary-500 dark:hover:ring-primary-400 transition-all w-full text-left overflow-hidden"
+                            onclick={() => (selectedCategory = category.id)}
+                            class="group relative flex w-full flex-col gap-1 overflow-hidden rounded-xl border-none bg-white p-4 text-left shadow-sm ring-1 ring-gray-950/5 transition-all hover:ring-primary-500 dark:bg-gray-800 dark:ring-white/10 dark:hover:ring-primary-400"
                         >
-                            <div class="flex items-center gap-3 mb-1">
-                                <div
-                                    class="w-8 h-8 bg-gray-50 dark:bg-gray-700/50 rounded-lg flex items-center justify-center {category.color}"
-                                >
+                            <div class="mb-1 flex items-center gap-3">
+                                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-700/50 {category.color}">
                                     <category.icon size={16} />
                                 </div>
-                                <span
-                                    class="text-sm font-semibold text-gray-800 dark:text-gray-100"
-                                    >{category.label}</span
-                                >
-                                <ChevronRight
-                                    size={16}
-                                    class="ml-auto text-gray-300 dark:text-gray-600 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors"
-                                />
+                                <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">{t(category.id)}</span>
+                                <ChevronRight size={16} class="ml-auto text-gray-300 transition-colors group-hover:text-primary-500 dark:text-gray-600 dark:group-hover:text-primary-400" />
                             </div>
-                            <p
-                                class="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed"
-                            >
-                                {category.description}
-                            </p>
+                            <p class="text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">{t(`${category.id}_description`)}</p>
                         </button>
                     {/each}
                 </div>

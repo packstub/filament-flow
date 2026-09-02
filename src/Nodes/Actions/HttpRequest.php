@@ -6,19 +6,24 @@ use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Illuminate\Support\Facades\Http;
-use Packstub\Flow\Base\Action;
+use Packstub\Flow\Exceptions\WorkflowException;
+use Packstub\Flow\Nodes\Action;
+use Packstub\Flow\Nodes\Concerns\InterpolatesPlaceholders;
 
 class HttpRequest extends Action
 {
+    use InterpolatesPlaceholders;
+
     public function getName(): string
     {
-        return 'HTTP Request';
+        return __('packstub-flow::flow.nodes.http.name');
     }
 
     public function getDescription(): string
     {
-        return 'Makes an HTTP request to a URL.';
+        return __('packstub-flow::flow.nodes.http.description');
     }
 
     public function getIcon(): ?string
@@ -30,84 +35,88 @@ class HttpRequest extends Action
     {
         return [
             Select::make('method')
-                ->options([
-                    'GET' => 'GET',
-                    'POST' => 'POST',
-                    'PUT' => 'PUT',
-                    'DELETE' => 'DELETE',
-                    'PATCH' => 'PATCH',
-                ])
-                ->default('GET')
+                ->label(__('packstub-flow::flow.nodes.http.method'))
+                ->options(array_combine($methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], $methods))
+                ->default('POST')
                 ->required(),
-
             TextInput::make('url')
-                ->label('URL')
-                ->required()
-                ->url(),
-
+                ->label(__('packstub-flow::flow.nodes.http.url'))
+                ->placeholder('https://api.example.com/hooks/{{ model.id }}')
+                ->required(),
             KeyValue::make('headers')
-                ->label('Headers')
-                ->keyLabel('Header Name')
-                ->valueLabel('Header Value'),
-
+                ->label(__('packstub-flow::flow.nodes.http.headers'))
+                ->keyLabel(__('packstub-flow::flow.nodes.http.header_name'))
+                ->valueLabel(__('packstub-flow::flow.nodes.http.header_value')),
             Textarea::make('body')
-                ->label('JSON Body')
-                ->rows(5)
-                ->json(),
+                ->label(__('packstub-flow::flow.nodes.http.body'))
+                ->placeholder('{"id": "{{ model.id }}", "name": "{{ model.name }}"}')
+                ->helperText(__('packstub-flow::flow.nodes.http.body_help'))
+                ->rows(6)
+                ->rule(fn () => function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (is_string($value) && trim($value) !== '' && ! json_validate($this->maskPlaceholders($value))) {
+                        $fail(__('packstub-flow::flow.nodes.http.invalid_json'));
+                    }
+                }),
+            Toggle::make('throw_on_error')
+                ->label(__('packstub-flow::flow.nodes.http.throw_on_error'))
+                ->helperText(__('packstub-flow::flow.nodes.http.throw_on_error_help'))
+                ->default(true),
         ];
     }
 
-    public function handle(array $data, array $payload): void
+    public function handle(array $config, array $payload): void
     {
-        $method = $data['method'] ?? 'GET';
-        $url = $this->interpolate($data['url'] ?? '', $payload);
-        $headers = $this->interpolateArray($data['headers'] ?? [], $payload);
-        // data['body'] comes as JSON string from the form if using ->json(), 
-        // or array if Filament handles it differently? 
-        // Filament KeyValue returns array. Textarea returns string.
-        // We decode valid JSON string into array, then interpolate.
+        $method = strtoupper((string) ($config['method'] ?? 'POST'));
+        $url = $this->interpolate($config['url'] ?? '', $payload);
 
-        $bodyRaw = $data['body'] ?? '{}';
-        $body = json_decode($bodyRaw, true);
+        if ($url === '') {
+            throw new WorkflowException('HTTP request has no URL.');
+        }
+
+        $headers = $this->interpolateArray(array_filter((array) ($config['headers'] ?? [])), $payload);
+        $body = $this->decodeBody($config['body'] ?? null, $payload);
+
+        $options = [];
+
+        if ($body !== null && $method !== 'GET') {
+            $options['json'] = $body;
+        }
+
+        $response = Http::withHeaders($headers)->send($method, $url, $options);
+
+        if (($config['throw_on_error'] ?? true) && $response->failed()) {
+            throw new WorkflowException("HTTP {$method} {$url} returned {$response->status()}.");
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    protected function decodeBody(?string $raw, array $payload): mixed
+    {
+        if ($raw === null || trim($raw) === '') {
+            return null;
+        }
+
+        $decoded = json_decode($raw, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            // usage of empty array or log error? 
-            $body = [];
-        }
+            // Placeholders that expand to unquoted values (numbers, JSON) are
+            // supported by interpolating first and decoding after.
+            $decoded = json_decode($this->interpolate($raw, $payload), true);
 
-        // Interpolate headers and body
-        $body = $this->interpolateArray($body, $payload);
-
-        if ($url) {
-            // Note: 'json' option is for request body, 'query' for query params
-            // We assume body is for POST/PUT
-            Http::withHeaders($headers)->send($method, $url, [
-                'json' => $body,
-            ]);
-        }
-    }
-
-    protected function interpolateArray(array $data, array $payload): array
-    {
-        foreach ($data as $key => $value) {
-            if (is_array($value)) {
-                $data[$key] = $this->interpolateArray($value, $payload);
-            } elseif (is_string($value)) {
-                $data[$key] = $this->interpolate($value, $payload);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new WorkflowException('HTTP request body is not valid JSON.');
             }
+
+            return $decoded;
         }
-        return $data;
+
+        return is_array($decoded) ? $this->interpolateArray($decoded, $payload) : $decoded;
     }
 
-    protected function interpolate(string $text, array $payload): string
+    protected function maskPlaceholders(string $json): string
     {
-        if (isset($payload['model'])) {
-            // Simple regex to replace {{ model.attribute }}
-            $text = preg_replace_callback('/\{\{\s*model\.(\w+)\s*\}\}/', function ($matches) use ($payload) {
-                $attribute = $matches[1];
-                return $payload['model']->$attribute ?? '';
-            }, $text);
-        }
-        return $text;
+        return (string) preg_replace('/\{\{\s*[A-Za-z0-9_.\-]+\s*\}\}/', 'x', $json);
     }
 }

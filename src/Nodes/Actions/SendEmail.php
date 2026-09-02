@@ -2,18 +2,25 @@
 
 namespace Packstub\Flow\Nodes\Actions;
 
-use Packstub\Flow\Base\Action;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Illuminate\Support\Facades\Mail;
+use Packstub\Flow\Mail\WorkflowMail;
+use Packstub\Flow\Nodes\Action;
+use Packstub\Flow\Nodes\Concerns\InterpolatesPlaceholders;
 
 class SendEmail extends Action
 {
+    use InterpolatesPlaceholders;
+
     public function getName(): string
     {
-        return 'Send Email';
+        return __('packstub-flow::flow.nodes.send_email.name');
     }
 
     public function getDescription(): string
     {
-        return 'Sends an email to a specific user.';
+        return __('packstub-flow::flow.nodes.send_email.description');
     }
 
     public function getIcon(): ?string
@@ -24,48 +31,35 @@ class SendEmail extends Action
     public function getFormSchema(): array
     {
         return [
-            \Filament\Forms\Components\TextInput::make('recipient')
-                ->placeholder('user@example.com')
+            TextInput::make('recipient')
+                ->label(__('packstub-flow::flow.nodes.send_email.recipient'))
+                ->placeholder('{{ model.email }}')
                 ->default('{{ model.email }}')
+                ->helperText(__('packstub-flow::flow.nodes.send_email.recipient_help'))
                 ->required(),
-            \Filament\Forms\Components\TextInput::make('subject')
-                ->placeholder('Welcome to our app!')
+            TextInput::make('subject')
+                ->label(__('packstub-flow::flow.nodes.send_email.subject'))
+                ->placeholder(__('packstub-flow::flow.nodes.send_email.subject_placeholder'))
                 ->required(),
-            \Filament\Forms\Components\Textarea::make('body')
-                ->label('Message')
-                ->placeholder('Hi {{ model.name }}, ...')
+            Textarea::make('body')
+                ->label(__('packstub-flow::flow.nodes.send_email.body'))
+                ->placeholder(__('packstub-flow::flow.nodes.send_email.body_placeholder'))
+                ->rows(6)
                 ->required(),
         ];
     }
 
-    public function handle(array $data, array $payload): void
+    public function handle(array $config, array $payload): void
     {
-        $recipient = $this->interpolate($data['recipient'] ?? '', $payload);
-        $subject = $this->interpolate($data['subject'] ?? '', $payload);
-        $body = $this->interpolate($data['body'] ?? '', $payload);
+        $recipients = array_filter(array_map('trim', explode(',', $this->interpolate($config['recipient'] ?? '', $payload))));
 
-        if (!$recipient && isset($payload['model']) && isset($payload['model']->email)) {
-            $recipient = $payload['model']->email;
-        }
-
-        if (!$recipient) {
+        if ($recipients === []) {
             return;
         }
 
-        \Illuminate\Support\Facades\Mail::to($recipient)->send(
-            new \Packstub\Flow\Mail\GenericEmail($subject, $body)
-        );
-    }
-
-    protected function interpolate(string $text, array $payload): string
-    {
-        if (isset($payload['model'])) {
-            // Replace all {{ model.attribute.nested.key }}
-            $text = preg_replace_callback('/\{\{\s*model\.(\w+)\s*\}\}/', function ($matches) use ($payload) {
-                $attribute = $matches[1];
-                return data_get($payload['model'], $attribute, '');
-            }, $text);
-        }
-        return $text;
+        Mail::to($recipients)->send(new WorkflowMail(
+            $this->interpolate($config['subject'] ?? '', $payload),
+            $this->interpolate($config['body'] ?? '', $payload),
+        ));
     }
 }

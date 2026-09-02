@@ -5,6 +5,7 @@
     import TriggerNode from "./nodes/TriggerNode.svelte";
     import ActionNode from "./nodes/ActionNode.svelte";
     import ConditionNode from "./nodes/ConditionNode.svelte";
+    import { setLabels } from "./labels";
 
     const nodeTypes = {
         trigger: TriggerNode,
@@ -12,128 +13,66 @@
         condition: ConditionNode,
     };
 
-    const defaultNodes = [
-        {
-            id: "trigger-1",
-            type: "trigger",
-            position: { x: 50, y: 50 },
-            data: {
-                label: "User Registered",
-                identifier:
-                    "Packstub\\Flow\\Nodes\\Triggers\\UserRegistered",
-                description: "Triggers when a new user signs up.",
-            },
-        },
-        {
-            id: "action-1",
-            type: "action",
-            position: { x: 350, y: 50 },
-            data: {
-                label: "Send Welcome Email",
-                identifier: "Packstub\\Flow\\Nodes\\Actions\\SendEmail",
-                description: "Sends a welcome email to the user.",
-                config: {
-                    to: "{{model.email}}",
-                    subject: "Welcome to our platform",
-                    body: "Hi {{model.name}}!\nThank you for signing up!",
-                },
-            },
-        },
-    ];
-
-    const defaultEdges = [
-        {
-            id: "edge-1",
-            source: "trigger-1",
-            target: "action-1",
-        },
-    ];
-
     let {
         nodes: incomingNodes = [],
         edges: incomingEdges = [],
-        availableComponents = {},
+        availableNodes = {},
+        labels = {},
         updateState,
     } = $props();
 
-    let nodes = $state.raw<Node[]>(
-        untrack(() =>
-            incomingNodes.length > 0 ? incomingNodes : defaultNodes,
-        ),
-    );
-    let edges = $state.raw<Edge[]>(
-        untrack(() =>
-            incomingEdges.length > 0 ? incomingEdges : defaultEdges,
-        ),
-    );
-    let selectedNodeId = $state(null);
+    setLabels(untrack(() => labels));
 
-    let selectedNode = $derived(nodes.find((n) => n.id === selectedNodeId));
+    let nodes = $state.raw<Node[]>(untrack(() => incomingNodes));
+    let edges = $state.raw<Edge[]>(untrack(() => incomingEdges));
 
-    function onNodeClick(event, node) {
-        selectedNodeId = node.id;
-    }
+    let updateTimeout: ReturnType<typeof setTimeout> | undefined;
 
-    let updateTimeout;
-
+    // Push the graph back to Livewire, debounced so dragging a node does not
+    // fire a request per pixel.
     $effect(() => {
-        // Track dependencies by reading them
         const currentNodes = nodes;
         const currentEdges = edges;
 
-        if (updateState) {
-            clearTimeout(updateTimeout);
-            updateTimeout = setTimeout(() => {
-                updateState({
-                    nodes: JSON.parse(JSON.stringify(currentNodes)),
-                    edges: JSON.parse(JSON.stringify(currentEdges)),
-                });
-            }, 500); // 500ms debounce
-        }
+        if (!updateState) return;
+
+        clearTimeout(updateTimeout);
+        updateTimeout = setTimeout(() => {
+            updateState({
+                nodes: JSON.parse(JSON.stringify(currentNodes)),
+                edges: JSON.parse(JSON.stringify(currentEdges)),
+            });
+        }, 400);
 
         return () => clearTimeout(updateTimeout);
     });
 
+    // The settings slide-over (a Livewire component) applies a node's new
+    // label / description / config through this browser event.
     $effect(() => {
-        const handleUpdate = (e) => {
+        const handleUpdate = (e: CustomEvent) => {
             const { id, config } = e.detail;
             const index = nodes.findIndex((n) => n.id === id);
-            if (index !== -1) {
-                // Extract label/description from the form result
-                const { label, description, ...restConfig } = config;
+            if (index === -1) return;
 
-                // Create a new object to trigger reactivity
-                const updatedNode = { ...nodes[index] };
-                updatedNode.data = {
-                    ...updatedNode.data,
-                    label: label,
-                    description: description,
-                    config: restConfig,
-                };
+            const { label, description, ...restConfig } = config;
+            const updated = {
+                ...nodes[index],
+                data: { ...nodes[index].data, label, description, config: restConfig },
+            };
 
-                // Update the nodes array
-                const newNodes = [...nodes];
-                newNodes[index] = updatedNode;
-                nodes = newNodes;
-            }
+            const next = [...nodes];
+            next[index] = updated;
+            nodes = next;
         };
 
-        window.addEventListener("update-node-config", handleUpdate);
-
-        return () => {
-            window.removeEventListener("update-node-config", handleUpdate);
-        };
+        window.addEventListener("packstub-flow-apply-node", handleUpdate as EventListener);
+        return () => window.removeEventListener("packstub-flow-apply-node", handleUpdate as EventListener);
     });
 </script>
 
 <SvelteFlowProvider>
     <div class="flex h-full w-full overflow-hidden">
-        <FlowCanvas
-            bind:nodes
-            bind:edges
-            {nodeTypes}
-            {onNodeClick}
-            {availableComponents}
-        />
+        <FlowCanvas bind:nodes bind:edges {nodeTypes} {availableNodes} />
     </div>
 </SvelteFlowProvider>

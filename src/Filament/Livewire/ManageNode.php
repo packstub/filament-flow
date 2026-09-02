@@ -2,96 +2,112 @@
 
 namespace Packstub\Flow\Filament\Livewire;
 
+use Filament\Actions\Action;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
+use Illuminate\Contracts\View\View;
+use Livewire\Attributes\On;
 use Livewire\Component;
-use Filament\Forms\Form;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Actions\Concerns\InteractsWithActions;
-use Filament\Actions\Contracts\HasActions;
-use Filament\Actions\Action;
-use Packstub\Flow\FlowManager;
+use Packstub\Flow\NodeRegistry;
+use Packstub\Flow\Nodes\Node;
 
-class ManageNode extends Component implements HasForms, HasActions
+/**
+ * The slide-over that edits one node's label and settings. Opened by the
+ * canvas, it hands the values back through a browser event.
+ */
+class ManageNode extends Component implements HasActions, HasForms
 {
-    use InteractsWithForms;
     use InteractsWithActions;
+    use InteractsWithForms;
 
     public ?string $nodeId = null;
+
     public ?string $nodeClass = null;
 
-    protected $listeners = ['open-manage-node-modal' => 'open'];
-
-    public function open(string $id, string $identifier, array $config)
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    #[On('packstub-flow.open-node')]
+    public function open(string $id, string $identifier, array $config = []): void
     {
+        if (! app(NodeRegistry::class)->has($identifier)) {
+            return;
+        }
+
         $this->nodeId = $id;
         $this->nodeClass = $identifier;
-        $this->mountAction('manageNode', ['nodeId' => $id, 'nodeClass' => $identifier, 'data' => $config]);
-    }
 
-    public function close()
-    {
-        $this->nodeId = null;
-        $this->nodeClass = null;
-    }
-
-    public function save(array $data)
-    {
-        $this->dispatch(
-            'node-updated',
-            id: $this->nodeId,
-            config: $data
-        );
-    }
-
-    public function form(Schema $form): Schema
-    {
-        if (!$this->nodeClass) {
-            return $form->schema([]);
-        }
-
-        // Resolve the node class to get its schema
-        // $manager = app('packstub-flow.registry');
-        // We need a way to get the instance or class. Accessing static method if possible or creating instance.
-
-        $schema = [];
-        if (class_exists($this->nodeClass)) {
-            $instance = new $this->nodeClass();
-            if (method_exists($instance, 'getFormSchema')) {
-                $schema = $instance->getFormSchema();
-            }
-        }
-
-        return $form
-            ->schema([
-                Section::make('General Settings')
-                    ->schema([
-                        \Filament\Forms\Components\TextInput::make('label')
-                            ->label('Node Label')
-                            ->required(),
-                        \Filament\Forms\Components\Textarea::make('description')
-                            ->label('Description')
-                            ->rows(2),
-                    ]),
-                Section::make('Configuration')
-                    ->schema($schema),
-            ]);
-    }
-
-    public function render()
-    {
-        return view('packstub-flow::livewire.manage-node');
+        $this->mountAction('manageNode', ['data' => $config]);
     }
 
     public function manageNodeAction(): Action
     {
         return Action::make('manageNode')
+            ->label(__('packstub-flow::flow.node_settings.title'))
+            ->modalHeading(fn (): string => $this->node()?->getName() ?? __('packstub-flow::flow.node_settings.title'))
+            ->modalDescription(fn (): ?string => $this->node()?->getDescription())
             ->slideOver()
             ->modalWidth(Width::TwoExtraLarge)
-            ->form(fn(Schema $form) => $this->form($form))
-            ->fillForm(fn(array $arguments) => $arguments['data'] ?? [])
-            ->action(fn($data) => $this->save($data));
+            ->modalSubmitActionLabel(__('packstub-flow::flow.node_settings.apply'))
+            ->schema(fn (Schema $schema): Schema => $this->nodeSchema($schema))
+            ->fillForm(fn (array $arguments): array => $arguments['data'] ?? [])
+            ->action(function (array $data): void {
+                $this->dispatch('packstub-flow.node-updated', id: $this->nodeId, config: $data);
+            });
+    }
+
+    public function render(): View
+    {
+        return view('packstub-flow::livewire.manage-node');
+    }
+
+    protected function node(): ?Node
+    {
+        return $this->nodeClass ? app(NodeRegistry::class)->node($this->nodeClass) : null;
+    }
+
+    protected function nodeSchema(Schema $schema): Schema
+    {
+        $node = $this->node();
+        $settings = $node?->getFormSchema() ?? [];
+        $placeholders = $node?->getPlaceholders() ?? [];
+
+        $components = [
+            Section::make(__('packstub-flow::flow.node_settings.general'))
+                ->schema([
+                    TextInput::make('label')
+                        ->label(__('packstub-flow::flow.node_settings.label'))
+                        ->required()
+                        ->maxLength(80),
+                    Textarea::make('description')
+                        ->label(__('packstub-flow::flow.node_settings.description'))
+                        ->rows(2)
+                        ->maxLength(255),
+                ]),
+        ];
+
+        if ($settings !== []) {
+            $components[] = Section::make(__('packstub-flow::flow.node_settings.settings'))
+                ->description($placeholders !== [] ? __('packstub-flow::flow.node_settings.placeholders_hint') : null)
+                ->schema($settings);
+        }
+
+        if ($placeholders !== []) {
+            $components[] = Section::make(__('packstub-flow::flow.node_settings.placeholders'))
+                ->collapsed()
+                ->schema([
+                    \Filament\Schemas\Components\View::make('packstub-flow::forms.placeholders')
+                        ->viewData(['placeholders' => $placeholders]),
+                ]);
+        }
+
+        return $schema->components($components);
     }
 }

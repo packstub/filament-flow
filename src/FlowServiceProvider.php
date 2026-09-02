@@ -2,80 +2,90 @@
 
 namespace Packstub\Flow;
 
-use Spatie\LaravelPackageTools\Package;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
-
-use Filament\Support\Assets\AlpineComponent;
-use Filament\Support\Assets\Asset;
 use Filament\Support\Assets\Css;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Route;
+use Livewire\Livewire;
+use Packstub\Flow\Commands\PruneRunsCommand;
+use Packstub\Flow\Commands\RunScheduledWorkflowsCommand;
+use Packstub\Flow\Commands\RunWorkflowCommand;
+use Packstub\Flow\Engine\Dispatcher;
+use Packstub\Flow\Filament\Livewire\ManageNode;
+use Packstub\Flow\Http\Controllers\WebhookController;
+use Packstub\Flow\Listeners\DispatchEventTriggers;
+use Packstub\Flow\Listeners\DispatchUserRegistered;
+use Packstub\Flow\Observers\WorkflowObserver;
+use Spatie\LaravelPackageTools\Commands\InstallCommand;
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 class FlowServiceProvider extends PackageServiceProvider
 {
-    public string $name = "packstub-flow";
-    public string $viewNamespace = "packstub-flow";
+    public static string $name = 'packstub-flow';
 
     public function configurePackage(Package $package): void
     {
         $package
-            ->name($this->name)
+            ->name(static::$name)
             ->hasConfigFile()
-            ->hasViews($this->viewNamespace)
-            ->hasAssets()
-            ->hasMigration('create_workflow_tables')
+            ->hasViews(static::$name)
+            ->hasTranslations()
+            ->hasMigration('create_flow_tables')
             ->hasCommands([
-                \Packstub\Flow\Commands\TestWorkflowCommand::class,
-                \Packstub\Flow\Commands\InstallCommand::class,
-                \Packstub\Flow\Commands\WorkflowsCronCommand::class,
-            ]);
+                RunScheduledWorkflowsCommand::class,
+                RunWorkflowCommand::class,
+                PruneRunsCommand::class,
+            ])
+            ->hasInstallCommand(function (InstallCommand $command): void {
+                $command
+                    ->publishConfigFile()
+                    ->publishMigrations()
+                    ->askToRunMigrations()
+                    ->askToStarRepoOnGitHub('packstub/filament-flow');
+            });
     }
 
     public function packageRegistered(): void
     {
-        $this->app->singleton('packstub-flow.registry', function () {
-            return new \Packstub\Flow\FlowManager();
+        $this->app->singleton(NodeRegistry::class, function (): NodeRegistry {
+            return (new NodeRegistry)
+                ->registerTriggers(config('packstub-flow.triggers', []))
+                ->registerActions(config('packstub-flow.actions', []))
+                ->registerConditions(config('packstub-flow.conditions', []));
         });
 
-        $this->app->singleton('packstub-flow', function () {
-            return new \Packstub\Flow\Engines\WorkflowDispatcher();
-        });
+        $this->app->singleton(Dispatcher::class);
+        $this->app->singleton(Flow::class);
     }
 
     public function packageBooted(): void
     {
-        \Illuminate\Support\Facades\Event::listen(
-            \Illuminate\Auth\Events\Registered::class,
-            \Packstub\Flow\Listeners\TriggerWorkflowsListener::class
-        );
+        Flow::workflowModel()::observe(WorkflowObserver::class);
 
-        \Packstub\Flow\Models\Workflow::observe(\Packstub\Flow\Observers\WorkflowObserver::class);
+        Event::listen(Registered::class, DispatchUserRegistered::class);
+        Event::listen('*', DispatchEventTriggers::class);
 
-        $manager = app('packstub-flow.registry');
-        $manager->registerTrigger(\Packstub\Flow\Nodes\Triggers\Cron::class);
-        $manager->registerTrigger(\Packstub\Flow\Nodes\Triggers\UserRegistered::class);
-        $manager->registerTrigger(\Packstub\Flow\Nodes\Triggers\ModelCreated::class);
-        $manager->registerTrigger(\Packstub\Flow\Nodes\Triggers\ModelUpdated::class);
-        $manager->registerTrigger(\Packstub\Flow\Nodes\Triggers\ModelDeleted::class);
-        $manager->registerTrigger(\Packstub\Flow\Nodes\Triggers\SubWorkflowTriggered::class);
-        $manager->registerAction(\Packstub\Flow\Nodes\Actions\SendEmail::class);
-        $manager->registerAction(\Packstub\Flow\Nodes\Actions\SendSlackNotification::class);
-        $manager->registerAction(\Packstub\Flow\Nodes\Actions\UpdateModel::class);
-        $manager->registerAction(\Packstub\Flow\Nodes\Actions\HttpRequest::class);
-        $manager->registerAction(\Packstub\Flow\Nodes\Actions\Delay::class);
-        $manager->registerAction(\Packstub\Flow\Nodes\Actions\DispatchWorkflow::class);
+        Livewire::component('packstub-flow-manage-node', ManageNode::class);
 
-        $manager->registerCondition(\Packstub\Flow\Nodes\Conditions\ModelPropertyCheck::class);
-        $manager->registerCondition(\Packstub\Flow\Nodes\Conditions\TimeOfDay::class);
+        FilamentAsset::register([
+            Css::make('packstub-flow', __DIR__.'/../resources/dist/flow.css'),
+            Js::make('packstub-flow', __DIR__.'/../resources/dist/flow.js'),
+        ], 'packstub/filament-flow');
 
-        FilamentAsset::register(
-            [
-                Css::make('laravel-flow-styles', __DIR__ . '/../dist/laravel-flow.css'),
-                Js::make('laravel-flow-scripts', __DIR__ . '/../dist/laravel-flow.js'),
-            ],
-            'packstub/filament-flow'
-        );
+        if (config('packstub-flow.webhooks.enabled', true)) {
+            Route::post(trim((string) config('packstub-flow.webhooks.prefix', 'flow/webhooks'), '/').'/{workflow}/{token}', WebhookController::class)
+                ->middleware(config('packstub-flow.webhooks.middleware', ['api']))
+                ->name('packstub-flow.webhook');
+        }
 
-        \Livewire\Livewire::component('packstub-flow::manage-node', \Packstub\Flow\Filament\Livewire\ManageNode::class);
+        if (config('packstub-flow.register_schedule', true)) {
+            $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+                $schedule->command('packstub-flow:cron')->everyMinute()->withoutOverlapping();
+            });
+        }
     }
 }

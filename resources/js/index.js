@@ -1,32 +1,42 @@
-import { mount } from 'svelte';
-import '../css/plugin.css';
+import { mount, unmount } from 'svelte';
+import '../css/flow.css';
 import FlowBuilder from './components/FlowBuilder.svelte';
 
-const init = () => {
-    window.Alpine.data('flowBuilder', ({ state, components }) => ({
+const register = () => {
+    window.Alpine.data('packstubFlowBuilder', ({ state, nodes, labels }) => ({
         state,
-        components,
-        init() {
-            const nodes = Array.isArray(this.state?.nodes) ? JSON.parse(JSON.stringify(this.state.nodes)) : [];
-            const edges = Array.isArray(this.state?.edges) ? JSON.parse(JSON.stringify(this.state.edges)) : [];
+        nodes,
+        labels,
+        app: null,
 
-            mount(FlowBuilder, {
+        init() {
+            const initial = this.state && typeof this.state === 'object' ? this.state : {};
+
+            this.app = mount(FlowBuilder, {
                 target: this.$refs.canvas,
                 props: {
-                    nodes: nodes,
-                    edges: edges,
-                    availableComponents: this.components,
-                    updateState: (newState) => {
-                        this.state = newState;
-                    }
-                }
+                    nodes: Array.isArray(initial.nodes) ? JSON.parse(JSON.stringify(initial.nodes)) : [],
+                    edges: Array.isArray(initial.edges) ? JSON.parse(JSON.stringify(initial.edges)) : [],
+                    availableNodes: this.nodes,
+                    labels: this.labels,
+                    updateState: (next) => {
+                        this.state = next;
+                    },
+                },
             });
-        }
+        },
+
+        destroy() {
+            if (this.app) {
+                unmount(this.app);
+                this.app = null;
+            }
+        },
     }));
 };
 
 if (window.Alpine) {
-    init();
+    register();
 } else {
-    document.addEventListener('alpine:init', init);
+    document.addEventListener('alpine:init', register);
 }

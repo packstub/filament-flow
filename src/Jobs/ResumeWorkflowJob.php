@@ -6,36 +6,45 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-use Packstub\Flow\Models\Workflow;
-use Packstub\Flow\Models\WorkflowLog;
-use Packstub\Flow\Engines\WorkflowRunner;
+use Packstub\Flow\Engine\Graph;
+use Packstub\Flow\Engine\Runner;
+use Packstub\Flow\Flow;
+use Packstub\Flow\Support\PayloadSerializer;
 
+/**
+ * Continues a run after a Wait step. Carries a snapshot of the graph so a
+ * workflow edited during the delay does not change a run already in flight.
+ */
 class ResumeWorkflowJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * @param  array<string, mixed>  $payload  already serialized with PayloadSerializer
+     * @param  array<int, string>  $nodeIds
+     * @param  array{nodes: array<int, array<string, mixed>>, edges: array<int, array<string, mixed>>}  $graph
+     */
     public function __construct(
-        public string $workflowId,
-        public string $logId,
+        public string $runId,
         public array $payload,
-        public string $resumeFromNodeId,
-        public array $nodes,
-        public array $edges,
-    ) {
-    }
+        public array $nodeIds,
+        public array $graph,
+    ) {}
 
     public function handle(): void
     {
-        $workflow = Workflow::find($this->workflowId);
-        $log = WorkflowLog::find($this->logId);
+        $run = Flow::runModel()::query()->with('workflow')->find($this->runId);
 
-        if (!$workflow || !$log) {
+        if (! $run || ! $run->workflow) {
             return;
         }
 
-        // Create a new runner instance and resume from the specified node
-        $runner = new WorkflowRunner($workflow, $this->payload);
-        $runner->resumeFrom($this->resumeFromNodeId, $this->nodes, $this->edges, $log);
+        $runner = new Runner(
+            $run->workflow,
+            PayloadSerializer::unserialize($this->payload),
+            new Graph($this->graph['nodes'] ?? [], $this->graph['edges'] ?? []),
+        );
+
+        $runner->resume($run, $this->nodeIds);
     }
 }

@@ -2,26 +2,30 @@
 
 namespace Packstub\Flow\Nodes\Triggers;
 
-use Packstub\Flow\Base\Trigger;
+use Packstub\Flow\Nodes\Trigger;
 
+/**
+ * Fires on Laravel's Illuminate\Auth\Events\Registered event.
+ */
 class UserRegistered extends Trigger
 {
     public function getName(): string
     {
-        return 'User Registered';
+        return __('packstub-flow::flow.nodes.user_registered.name');
     }
 
     public function getDescription(): string
     {
-        return 'Fires when a new user registers on the platform.';
+        return __('packstub-flow::flow.nodes.user_registered.description');
     }
 
     public function getIcon(): ?string
     {
         return 'heroicon-o-user-plus';
     }
-    public function getFormSchema(): array
+
+    public function getPlaceholders(): array
     {
-        return [];
+        return ['{{ model.email }}' => __('packstub-flow::flow.placeholders.user')];
     }
 }

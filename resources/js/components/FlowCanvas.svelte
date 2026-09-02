@@ -13,20 +13,19 @@
     } from "@xyflow/svelte";
     import NodeSidebar from "./NodeSidebar.svelte";
     import ContextMenu from "./ContextMenu.svelte";
-    import { Plus } from "lucide-svelte";
+    import { Plus, Zap } from "lucide-svelte";
+    import { t } from "./labels";
 
     let {
         nodes = $bindable([]),
         edges = $bindable([]),
         nodeTypes,
-        onNodeClick,
-        availableComponents = {},
+        availableNodes = {},
     }: {
         nodes?: Node[];
         edges?: Edge[];
         nodeTypes: NodeTypes;
-        onNodeClick?: (event: MouseEvent | TouchEvent, node: Node) => void;
-        availableComponents?: Record<string, any>;
+        availableNodes?: Record<string, any>;
     } = $props();
 
     const { screenToFlowPosition, getNodes } = useSvelteFlow();
@@ -34,7 +33,7 @@
     let container = $state<HTMLDivElement>();
     let menu = $state<{
         id: string;
-        type: string;
+        type: "node" | "canvas";
         top?: number;
         left?: number;
         right?: number;
@@ -43,6 +42,7 @@
         clientY: number;
     } | null>(null);
     let isNodeSidebarOpen = $state(false);
+    let sidebarCategory = $state<string | null>(null);
     let clientWidth = $state(0);
     let clientHeight = $state(0);
     let addNodePosition = $state<{ x: number; y: number } | null>(null);
@@ -53,85 +53,50 @@
         type: "source" | "target";
     } | null>(null);
 
-    function onDragOver(event) {
+    let isEmpty = $derived(nodes.length === 0);
+
+    const newId = (type: string) => `${type}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
+    function onDragOver(event: DragEvent) {
         event.preventDefault();
-        event.dataTransfer.dropEffect = "move";
+        if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
     }
 
-    function addNode(newNode) {
-        // Deselect all existing nodes and select the new one
+    function addNode(newNode: Node) {
         const updatedNodes = nodes.map((n) => ({ ...n, selected: false }));
         nodes = [...updatedNodes, { ...newNode, selected: true }];
     }
 
-    function duplicateNode(id) {
-        const currentNodes = getNodes();
-        const node = currentNodes.find((n) => n.id === id);
-        if (node) {
-            const newNode = {
-                ...node,
-                id: `${node.type}-${Date.now()}`,
-                position: {
-                    x: node.position.x + 20,
-                    y: node.position.y + 20,
-                },
-            };
-            addNode(newNode);
-        }
+    function duplicateNode(id: string) {
+        const node = getNodes().find((n) => n.id === id);
+        if (!node) return;
+        addNode({
+            ...node,
+            id: newId(node.type ?? "node"),
+            position: { x: node.position.x + 40, y: node.position.y + 40 },
+            data: JSON.parse(JSON.stringify(node.data)),
+        });
     }
 
-    function onDrop(event) {
+    function onDrop(event: DragEvent) {
         event.preventDefault();
-
-        const rawData = event.dataTransfer.getData("application/svelteflow");
+        const rawData = event.dataTransfer?.getData("application/svelteflow");
         if (!rawData) return;
 
         const { type, data } = JSON.parse(rawData);
+        const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+        addNode({ id: newId(type), type, position, data });
+    }
 
-        const position = screenToFlowPosition({
-            x: event.clientX,
-            y: event.clientY,
-        });
+    function menuAt(event: MouseEvent, id: string, type: "node" | "canvas") {
+        event.preventDefault();
+        const rect = container!.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
 
-        const newNode = {
-            id: `${type}-${Date.now()}`,
+        menu = {
+            id,
             type,
-            position,
-            data,
-        };
-
-        addNode(newNode);
-    }
-
-    function handleContextMenu({ event, node }) {
-        event.preventDefault();
-
-        const rect = container.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        menu = {
-            id: node.id,
-            type: "node",
-            top: y < clientHeight - 200 ? y : undefined,
-            left: x < clientWidth - 200 ? x : undefined,
-            right: x >= clientWidth - 200 ? clientWidth - x : undefined,
-            bottom: y >= clientHeight - 200 ? clientHeight - y : undefined,
-            clientX: event.clientX,
-            clientY: event.clientY,
-        };
-    }
-
-    function handlePaneContextMenu({ event }) {
-        event.preventDefault();
-
-        const rect = container.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        menu = {
-            id: "canvas",
-            type: "canvas",
             top: y < clientHeight - 200 ? y : undefined,
             left: x < clientWidth - 200 ? x : undefined,
             right: x >= clientWidth - 200 ? clientWidth - x : undefined,
@@ -149,6 +114,7 @@
     function closeNodeSidebar() {
         isNodeSidebarOpen = false;
         pendingConnection = null;
+        sidebarCategory = null;
     }
 
     function closeOverlays() {
@@ -156,38 +122,29 @@
         closeNodeSidebar();
     }
 
-    function handleAddNode() {
-        if (menu) {
-            addNodePosition = {
-                x: menu.clientX,
-                y: menu.clientY,
-            };
-        } else {
-            addNodePosition = null;
-        }
+    function openSidebar(category: string | null = null) {
+        sidebarCategory = category;
         isNodeSidebarOpen = true;
     }
 
-    function onSelectNodeFromSidebar(type, data) {
+    function handleAddNode() {
+        addNodePosition = menu ? { x: menu.clientX, y: menu.clientY } : null;
+        openSidebar();
+    }
+
+    function onSelectNodeFromSidebar(type: string, data: any) {
         let position;
         if (addNodePosition) {
             position = screenToFlowPosition(addNodePosition);
         } else {
-            // Find a spot or use center
-            const center = { x: clientWidth / 2, y: clientHeight / 2 };
-            // Simple heuristic: offset a bit from existing nodes if they are in the center
-            position = screenToFlowPosition(center);
-
-            // Check if any node is very close to this position
+            position = screenToFlowPosition({ x: clientWidth / 2, y: clientHeight / 2 });
             const threshold = 50;
             let offset = 0;
             while (
                 nodes.some(
                     (n) =>
-                        Math.abs(n.position.x - (position.x + offset)) <
-                            threshold &&
-                        Math.abs(n.position.y - (position.y + offset)) <
-                            threshold,
+                        Math.abs(n.position.x - (position.x + offset)) < threshold &&
+                        Math.abs(n.position.y - (position.y + offset)) < threshold,
                 )
             ) {
                 offset += 40;
@@ -196,21 +153,14 @@
             position.y += offset;
         }
 
-        const newNode = {
-            id: `${type}-${Date.now()}`,
-            type,
-            position,
-            data,
-        };
-
+        const newNode = { id: newId(type), type, position, data };
         addNode(newNode);
 
         if (pendingConnection) {
-            const edgeId = `edge-${Date.now()}`;
-            let newEdge = null;
+            const edgeId = newId("edge");
+            let newEdge: Edge | null = null;
 
             if (pendingConnection.type === "source") {
-                // Clicked an output, connect to new node's input if it has one
                 if (type === "action" || type === "condition") {
                     newEdge = {
                         id: edgeId,
@@ -220,133 +170,105 @@
                         targetHandle: "input",
                     };
                 }
-            } else {
-                // Clicked an input, connect to new node's output if it has one
-                if (type === "trigger" || type === "action") {
-                    newEdge = {
-                        id: edgeId,
-                        source: newNode.id,
-                        sourceHandle: "output",
-                        target: pendingConnection.nodeId,
-                        targetHandle: pendingConnection.handleId,
-                    };
-                } else if (type === "condition") {
-                    // Default to 'true' output for condition nodes
-                    newEdge = {
-                        id: edgeId,
-                        source: newNode.id,
-                        sourceHandle: "true",
-                        target: pendingConnection.nodeId,
-                        targetHandle: pendingConnection.handleId,
-                    };
-                }
+            } else if (type === "trigger" || type === "action") {
+                newEdge = {
+                    id: edgeId,
+                    source: newNode.id,
+                    sourceHandle: "output",
+                    target: pendingConnection.nodeId,
+                    targetHandle: pendingConnection.handleId,
+                };
+            } else if (type === "condition") {
+                newEdge = {
+                    id: edgeId,
+                    source: newNode.id,
+                    sourceHandle: "true",
+                    target: pendingConnection.nodeId,
+                    targetHandle: pendingConnection.handleId,
+                };
             }
 
-            if (newEdge) {
-                edges = [...edges, newEdge];
-            }
+            if (newEdge) edges = [...edges, newEdge];
             pendingConnection = null;
         }
+
+        addNodePosition = null;
     }
 
-    function handleDeleteNode(id) {
+    function handleDeleteNode(id: string) {
         nodes = nodes.filter((n) => n.id !== id);
+        edges = edges.filter((e) => e.source !== id && e.target !== id);
     }
 
-    function handleRenameNode(id: string) {
+    function handleOpenSettings(id: string) {
         const node = nodes.find((n) => n.id === id);
-        if (node) {
-            const newLabel = window.prompt(
-                "Enter new node name:",
-                (node.data as any).label as string,
-            );
-            if (newLabel !== null) {
-                nodes = nodes.map((n) => {
-                    if (n.id === id) {
-                        return {
-                            ...n,
-                            data: { ...(n.data as any), label: newLabel },
-                        };
-                    }
-                    return n;
-                });
-            }
-        }
+        if (!node) return;
+        const data: any = node.data;
+        window.dispatchEvent(
+            new CustomEvent("packstub-flow-open-node", {
+                detail: {
+                    id,
+                    identifier: data.identifier,
+                    config: { label: data.label, description: data.description, ...(data.config || {}) },
+                },
+            }),
+        );
     }
 
     $effect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === "Escape") {
-                closeOverlays();
-            }
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") closeOverlays();
         };
 
-        const handleNodeHandleClick = (e) => {
-            pendingConnection = e.detail;
-            isNodeSidebarOpen = true;
-            addNodePosition = {
-                x: e.detail.clientX + 40,
-                y: e.detail.clientY - 40, // Calculate position relative to the node handle
-            };
+        const handleNodeHandleClick = (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            pendingConnection = detail;
+            addNodePosition = { x: detail.clientX + 40, y: detail.clientY - 40 };
+            openSidebar();
         };
 
         window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("handle-click", handleNodeHandleClick);
+        window.addEventListener("packstub-flow-handle-click", handleNodeHandleClick);
 
-        // Theme detection for Filament
-        const observer = new MutationObserver(() => {
-            colorMode = document.documentElement.classList.contains("dark")
-                ? "dark"
-                : "light";
-        });
-
-        observer.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ["class"],
-        });
-
-        // Initial check
-        colorMode = document.documentElement.classList.contains("dark")
-            ? "dark"
-            : "light";
+        // Follow Filament's dark mode (the "dark" class on <html>).
+        const syncColorMode = () => {
+            colorMode = document.documentElement.classList.contains("dark") ? "dark" : "light";
+        };
+        const observer = new MutationObserver(syncColorMode);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+        syncColorMode();
 
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
-            window.removeEventListener("handle-click", handleHandleClick);
+            window.removeEventListener("packstub-flow-handle-click", handleNodeHandleClick);
             observer.disconnect();
         };
     });
 </script>
 
 <div
-    class="relative h-[600px] w-full border border-transparent ring-1 ring-gray-950/5 dark:ring-white/10 rounded-xl overflow-hidden bg-white dark:bg-gray-950 shadow-sm"
+    class="relative h-[600px] w-full overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-950 dark:ring-white/10"
     bind:this={container}
     bind:clientWidth
     bind:clientHeight
 >
-    <div
-        class="absolute inset-0"
-        role="presentation"
-        ondragover={onDragOver}
-        ondrop={onDrop}
-    >
+    <div class="absolute inset-0" role="presentation" ondragover={onDragOver} ondrop={onDrop}>
         <SvelteFlow
             {nodeTypes}
             bind:nodes
             bind:edges
             {colorMode}
             fitView
-            onnodeclick={({ event, node }) => {
-                onNodeClick && onNodeClick(event, node);
-                closeOverlays();
-            }}
-            onnodecontextmenu={handleContextMenu}
-            onpanecontextmenu={handlePaneContextMenu}
+            fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
+            deleteKey={["Backspace", "Delete"]}
+            onnodeclick={closeOverlays}
+            onnodecontextmenu={({ event, node }) => menuAt(event as MouseEvent, node.id, "node")}
+            onpanecontextmenu={({ event }) => menuAt(event as MouseEvent, "canvas", "canvas")}
             onpaneclick={closeOverlays}
         >
-            <Controls />
-            <Background variant={BackgroundVariant.Lines} gap={20} size={1} />
-            <MiniMap />
+            <Controls showLock={false} />
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+            <MiniMap pannable zoomable />
         </SvelteFlow>
 
         {#if menu}
@@ -354,29 +276,51 @@
                 {...menu}
                 onclick={closeMenu}
                 onAddNode={handleAddNode}
-                onRenameNode={handleRenameNode}
+                onOpenSettings={handleOpenSettings}
                 onDuplicateNode={duplicateNode}
                 onDeleteNode={handleDeleteNode}
             />
         {/if}
     </div>
 
+    {#if isEmpty && !isNodeSidebarOpen}
+        <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div class="pointer-events-auto max-w-sm rounded-2xl bg-white/90 p-6 text-center shadow-lg ring-1 ring-gray-950/5 backdrop-blur dark:bg-gray-900/90 dark:ring-white/10">
+                <div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-white">
+                    <Zap size={20} />
+                </div>
+                <h3 class="text-sm font-semibold text-gray-950 dark:text-white">{t("empty_title")}</h3>
+                <p class="mt-1 text-xs leading-relaxed text-gray-500 dark:text-gray-400">{t("empty_description")}</p>
+                <button
+                    type="button"
+                    onclick={() => openSidebar("triggers")}
+                    class="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-primary-500"
+                >
+                    <Plus size={14} />
+                    {t("add_trigger")}
+                </button>
+            </div>
+        </div>
+    {/if}
+
     <NodeSidebar
-        {availableComponents}
+        {availableNodes}
         bind:isOpen={isNodeSidebarOpen}
+        bind:selectedCategory={sidebarCategory}
         onSelectNode={onSelectNodeFromSidebar}
+        onClose={closeNodeSidebar}
     />
 
-    <!-- Plus Button -->
     <button
         type="button"
         onclick={() => {
             closeMenu();
-            isNodeSidebarOpen = true;
+            openSidebar();
         }}
-        class="absolute top-4 right-4 p-3 bg-white dark:bg-gray-800 ring-1 ring-gray-950/10 dark:ring-white/10 rounded-xl shadow-lg text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:ring-primary-500 dark:hover:ring-primary-400 transition-all z-10 group"
-        title="Add Node"
+        class="group absolute top-4 right-4 z-10 rounded-xl bg-white p-3 text-gray-600 shadow-lg ring-1 ring-gray-950/10 transition-all hover:text-primary-600 hover:ring-primary-500 dark:bg-gray-800 dark:text-gray-400 dark:ring-white/10 dark:hover:text-primary-400 dark:hover:ring-primary-400"
+        title={t("add_node")}
+        aria-label={t("add_node")}
     >
-        <Plus size={20} class="group-hover:scale-110 transition-transform" />
+        <Plus size={20} class="transition-transform group-hover:scale-110" />
     </button>
 </div>

@@ -2,9 +2,9 @@
 
 namespace Packstub\Flow\Filament\Resources\WorkflowResource\Pages;
 
-use Packstub\Flow\Filament\Resources\WorkflowResource;
-use Filament\Actions;
+use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
+use Packstub\Flow\Filament\Resources\WorkflowResource;
 
 class EditWorkflow extends EditRecord
 {
@@ -13,7 +13,8 @@ class EditWorkflow extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            WorkflowResource::runNowAction(),
+            DeleteAction::make(),
         ];
     }
 }

@@ -1,7 +1,0 @@
-@reference "tailwindcss";
-
-@import "@xyflow/svelte/dist/style.css";
-
-.svelte-flow__node {
-    @apply border-none bg-transparent shadow-none;
-}

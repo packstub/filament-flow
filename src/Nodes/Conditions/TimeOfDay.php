@@ -2,19 +2,25 @@
 
 namespace Packstub\Flow\Nodes\Conditions;
 
-use Packstub\Flow\Base\Condition;
 use Carbon\Carbon;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TimePicker;
+use Illuminate\Support\Facades\Date;
+use Packstub\Flow\Nodes\Condition;
 
+/**
+ * True while the current time is inside a daily window (may cross midnight).
+ */
 class TimeOfDay extends Condition
 {
     public function getName(): string
     {
-        return 'Time of Day';
+        return __('packstub-flow::flow.nodes.time_of_day.name');
     }
 
     public function getDescription(): string
     {
-        return 'Checks if the current time is within a specific range.';
+        return __('packstub-flow::flow.nodes.time_of_day.description');
     }
 
     public function getIcon(): ?string
@@ -25,39 +31,36 @@ class TimeOfDay extends Condition
     public function getFormSchema(): array
     {
         return [
-            \Filament\Forms\Components\TimePicker::make('start_time')
-                ->label('Start Time')
-                ->placeholder('09:00')
+            TimePicker::make('start_time')
+                ->label(__('packstub-flow::flow.nodes.time_of_day.start'))
                 ->seconds(false)
+                ->default('09:00')
                 ->required(),
-            \Filament\Forms\Components\TimePicker::make('end_time')
-                ->label('End Time')
-                ->placeholder('17:00')
+            TimePicker::make('end_time')
+                ->label(__('packstub-flow::flow.nodes.time_of_day.end'))
                 ->seconds(false)
+                ->default('17:00')
                 ->required(),
-            \Filament\Forms\Components\Select::make('timezone')
-                ->label('Timezone')
-                ->options(array_combine(timezone_identifiers_list(), timezone_identifiers_list()))
+            Select::make('timezone')
+                ->label(__('packstub-flow::flow.nodes.time_of_day.timezone'))
+                ->options(array_combine($zones = timezone_identifiers_list(), $zones))
                 ->searchable()
-                ->placeholder('UTC'),
+                ->default(config('app.timezone')),
         ];
     }
 
-    public function evaluate(array $data, array $payload): bool
+    public function evaluate(array $config, array $payload): bool
     {
-        $startTime = $data['start_time'] ?? '00:00';
-        $endTime = $data['end_time'] ?? '23:59';
-        $timezone = $data['timezone'] ?: config('app.timezone');
+        $timezone = $config['timezone'] ?: config('app.timezone');
+        $now = Date::now($timezone);
 
-        $now = Carbon::now($timezone);
-        $start = Carbon::createFromTimeString($startTime, $timezone);
-        $end = Carbon::createFromTimeString($endTime, $timezone);
+        $start = Carbon::parse($config['start_time'] ?? '00:00', $timezone)->setDate($now->year, $now->month, $now->day);
+        $end = Carbon::parse($config['end_time'] ?? '23:59', $timezone)->setDate($now->year, $now->month, $now->day);
 
-        if ($start > $end) {
-            // Over midnight case
-            return $now >= $start || $now <= $end;
+        if ($start->greaterThan($end)) {
+            return $now->greaterThanOrEqualTo($start) || $now->lessThanOrEqualTo($end);
         }
 
-        return $now >= $start && $now <= $end;
+        return $now->betweenIncluded($start, $end);
     }
 }

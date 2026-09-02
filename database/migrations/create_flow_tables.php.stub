@@ -1,0 +1,54 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        $workflows = config('packstub-flow.tables.workflows', 'flow_workflows');
+        $triggers = config('packstub-flow.tables.triggers', 'flow_workflow_triggers');
+        $runs = config('packstub-flow.tables.runs', 'flow_workflow_runs');
+
+        Schema::create($workflows, function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->json('definition')->nullable();
+            $table->boolean('is_active')->default(false)->index();
+            $table->timestamps();
+        });
+
+        Schema::create($triggers, function (Blueprint $table) use ($workflows): void {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('workflow_id')->constrained($workflows)->cascadeOnDelete();
+            $table->string('node_id', 64);
+            $table->string('type')->index();
+            $table->json('config')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create($runs, function (Blueprint $table) use ($workflows): void {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('workflow_id')->constrained($workflows)->cascadeOnDelete();
+            $table->string('trigger_type')->nullable();
+            $table->string('status', 16)->index();
+            $table->json('context')->nullable();
+            $table->json('steps')->nullable();
+            $table->text('error')->nullable();
+            $table->unsignedInteger('pending_resumes')->default(0);
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('finished_at')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists(config('packstub-flow.tables.runs', 'flow_workflow_runs'));
+        Schema::dropIfExists(config('packstub-flow.tables.triggers', 'flow_workflow_triggers'));
+        Schema::dropIfExists(config('packstub-flow.tables.workflows', 'flow_workflows'));
+    }
+};
