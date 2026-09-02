@@ -17,6 +17,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Packstub\Flow\Engine\Dispatcher;
 use Packstub\Flow\FlowServiceProvider;
 use Packstub\Flow\Listeners\DispatchEventTriggers;
 use Packstub\Flow\Support\ModelFinder;
@@ -33,6 +34,7 @@ abstract class TestCase extends Orchestra
         $this->migrate();
 
         DispatchEventTriggers::flush();
+        Dispatcher::flushCache();
         ModelFinder::flush();
     }
 
@@ -72,6 +74,7 @@ abstract class TestCase extends Orchestra
         $app['config']->set('mail.default', 'array');
         $app['config']->set('queue.default', 'sync');
         $app['config']->set('packstub-flow.models_for_triggers', [Fixtures\Order::class]);
+        $app['config']->set('packstub-flow.http.block_private_networks', false);
     }
 
     protected function migrate(): void

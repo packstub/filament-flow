@@ -2,9 +2,11 @@
 
 namespace Packstub\Flow;
 
+use Closure;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\Support\ModelFinder;
 
@@ -37,6 +39,9 @@ class FlowPlugin implements Plugin
     protected ?int $navigationSort = null;
 
     protected bool $hasResource = true;
+
+    /** @var (Closure(): bool)|null */
+    protected ?Closure $authorize = null;
 
     public static function make(): static
     {
@@ -125,6 +130,30 @@ class FlowPlugin implements Plugin
         $this->hasResource = false;
 
         return $this;
+    }
+
+    /**
+     * Who may see and manage workflows. Runs in addition to any policy on
+     * the Workflow model and the packstub-flow.gate ability.
+     *
+     * @param  Closure(): bool  $callback
+     */
+    public function authorize(Closure $callback): static
+    {
+        $this->authorize = $callback;
+
+        return $this;
+    }
+
+    public function isAuthorized(): bool
+    {
+        if ($this->authorize !== null && ! (bool) app()->call($this->authorize)) {
+            return false;
+        }
+
+        $gate = config('packstub-flow.gate');
+
+        return ! $gate || Gate::allows($gate);
     }
 
     public function navigationGroup(?string $group): static

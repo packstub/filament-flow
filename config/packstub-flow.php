@@ -55,6 +55,8 @@ return [
         'enabled' => (bool) env('PACKSTUB_FLOW_QUEUE', false),
         'connection' => env('PACKSTUB_FLOW_QUEUE_CONNECTION'),
         'queue' => env('PACKSTUB_FLOW_QUEUE_NAME'),
+        // Seconds a queued run (or a resumed branch) may take before the worker kills it.
+        'timeout' => (int) env('PACKSTUB_FLOW_QUEUE_TIMEOUT', 300),
     ],
 
     /*
@@ -68,6 +70,30 @@ return [
     */
 
     'max_steps' => 1000,
+
+    // An action's output (an HTTP response, for example) is kept on the run's
+    // step log up to this many bytes; larger outputs are stored as a preview.
+    'max_output_bytes' => 16384,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Outgoing HTTP
+    |--------------------------------------------------------------------------
+    |
+    | Applies to the "HTTP request" and "Send Slack message" actions. Private
+    | and reserved addresses (localhost, 10.x, 192.168.x, 169.254.x, ...)
+    | are refused unless block_private_networks is off. Set allowed_hosts to
+    | restrict requests to a list of hosts ("api.example.com",
+    | "*.example.com"); when it is not empty only those hosts are allowed.
+    |
+    */
+
+    'http' => [
+        'timeout' => (int) env('PACKSTUB_FLOW_HTTP_TIMEOUT', 15),
+        'retry_after_ms' => 500,
+        'block_private_networks' => (bool) env('PACKSTUB_FLOW_HTTP_BLOCK_PRIVATE', true),
+        'allowed_hosts' => [],
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -97,6 +123,8 @@ return [
         'enabled' => true,
         'prefix' => 'flow/webhooks',
         'middleware' => ['api', 'throttle:60,1'],
+        // Request headers that are dropped before the payload is stored on the run.
+        'redacted_headers' => ['authorization', 'proxy-authorization', 'cookie', 'x-api-key', 'x-auth-token', 'x-signature', 'x-hub-signature', 'x-hub-signature-256'],
     ],
 
     /*
@@ -173,5 +201,19 @@ return [
     */
 
     'prune_runs_after_days' => 30,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authorization
+    |--------------------------------------------------------------------------
+    |
+    | Workflows can call URLs, send mail and update records, so who may
+    | manage them matters. Register a policy for the Workflow model, call
+    | FlowPlugin::make()->authorize(fn () => ...), or name a Gate ability
+    | here that every panel user must pass to see the Workflows resource.
+    |
+    */
+
+    'gate' => env('PACKSTUB_FLOW_GATE'),
 
 ];

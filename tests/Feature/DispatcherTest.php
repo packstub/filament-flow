@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
@@ -103,4 +104,62 @@ it('returns null from run when the workflow has no trigger node', function (): v
     expect(Flow::run(manualWorkflow(), startNodeId: 'zzz')->status)->toBe(RunStatus::Failed);
 
     expect(Manual::make()->matches([], []))->toBeTrue();
+});
+
+it('fires a record updated trigger only when a watched attribute changes', function (): void {
+    createWorkflow([triggerNode('t', RecordUpdated::class, ['model_class' => Order::class, 'watch' => ['status']]), actionNode('a', SetStatusAction::class, ['status' => 'seen'])], [edge('t', 'a')]);
+
+    $order = createOrder();
+
+    $order->update(['total' => 250]);
+    expect(SetStatusAction::$calls)->toBe([]);
+
+    $order->update(['reference' => 'X', 'status' => 'paid']);
+    expect(SetStatusAction::$calls)->toHaveCount(1);
+});
+
+it('runs a workflow once per record when the trigger says so', function (): void {
+    createWorkflow([triggerNode('t', RecordUpdated::class, ['model_class' => Order::class, 'once' => true]), actionNode('a', SetStatusAction::class, ['status' => 'seen'])], [edge('t', 'a')]);
+
+    $order = createOrder();
+    $other = createOrder();
+
+    $order->update(['total' => 1]);
+    $order->update(['total' => 2]);
+    $other->update(['total' => 3]);
+
+    $runs = WorkflowRun::query()->get();
+
+    expect(SetStatusAction::$calls)->toHaveCount(2)
+        ->and($runs)->toHaveCount(2)
+        ->and($runs->pluck('subject_id')->all())->toBe([(string) $order->id, (string) $other->id])
+        ->and($runs->first()->subject_type)->toBe(Order::class)
+        ->and($runs->first()->subject()->is($order))->toBeTrue();
+});
+
+it('does not query the triggers table when no active workflow uses the trigger', function (): void {
+    createWorkflow([triggerNode('t', RecordCreated::class, ['model_class' => Order::class]), actionNode('a', SetStatusAction::class, ['status' => 'x'])], [edge('t', 'a')], ['is_active' => false]);
+
+    DB::enableQueryLog();
+
+    $order = createOrder();
+    $order->update(['total' => 5]);
+    $order->delete();
+
+    $queries = collect(DB::getQueryLog())->pluck('query')->filter(fn (string $sql): bool => str_contains($sql, 'flow_workflow_triggers'));
+
+    expect($queries)->toHaveCount(1);
+
+    DB::disableQueryLog();
+});
+
+it('rebuilds a payload from a run so it can be started again', function (): void {
+    $order = createOrder();
+    $run = Flow::run(manualWorkflow(), ['model' => $order, 'webhook' => ['id' => 5], 'user' => createUser()]);
+
+    $payload = $run->rebuildPayload();
+
+    expect($payload['model']->is($order))->toBeTrue()
+        ->and($payload['webhook'])->toBe(['id' => 5])
+        ->and($payload['user'])->toBeInstanceOf(User::class);
 });

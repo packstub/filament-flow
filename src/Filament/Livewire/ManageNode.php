@@ -5,6 +5,7 @@ namespace Packstub\Flow\Filament\Livewire;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -15,6 +16,8 @@ use Filament\Support\Enums\Width;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Packstub\Flow\Engine\Runner;
+use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\NodeRegistry;
 use Packstub\Flow\Nodes\Node;
 
@@ -97,6 +100,34 @@ class ManageNode extends Component implements HasActions, HasForms
             $components[] = Section::make(__('packstub-flow::flow.node_settings.settings'))
                 ->description($placeholders !== [] ? __('packstub-flow::flow.node_settings.placeholders_hint') : null)
                 ->schema($settings);
+        }
+
+        if ($node?->getType() === NodeType::Action) {
+            $components[] = Section::make(__('packstub-flow::flow.node_settings.error_handling'))
+                ->description(__('packstub-flow::flow.node_settings.error_handling_help'))
+                ->collapsed()
+                ->columns(3)
+                ->schema([
+                    TextInput::make(Runner::RETRIES)
+                        ->label(__('packstub-flow::flow.node_settings.retries'))
+                        ->numeric()
+                        ->minValue(0)
+                        ->maxValue(10)
+                        ->default(0),
+                    TextInput::make(Runner::RETRY_AFTER)
+                        ->label(__('packstub-flow::flow.node_settings.retry_after'))
+                        ->numeric()
+                        ->minValue(0)
+                        ->maxValue(300)
+                        ->default(0),
+                    Select::make(Runner::ON_ERROR)
+                        ->label(__('packstub-flow::flow.node_settings.on_error'))
+                        ->options([
+                            'fail' => __('packstub-flow::flow.node_settings.on_error_fail'),
+                            'continue' => __('packstub-flow::flow.node_settings.on_error_continue'),
+                        ])
+                        ->default('fail'),
+                ]);
         }
 
         if ($placeholders !== []) {

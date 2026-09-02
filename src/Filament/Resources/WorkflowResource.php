@@ -22,6 +22,7 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
@@ -66,6 +67,21 @@ class WorkflowResource extends Resource
     public static function getNavigationSort(): ?int
     {
         return static::plugin()?->getNavigationSort() ?? config('packstub-flow.navigation.sort');
+    }
+
+    public static function canAccess(): bool
+    {
+        $plugin = static::plugin();
+
+        if ($plugin && ! $plugin->isAuthorized()) {
+            return false;
+        }
+
+        if (! $plugin && ($gate = config('packstub-flow.gate')) && ! Gate::allows($gate)) {
+            return false;
+        }
+
+        return parent::canAccess();
     }
 
     public static function getRecordTitleAttribute(): ?string

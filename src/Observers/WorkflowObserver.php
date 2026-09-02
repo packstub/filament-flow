@@ -2,6 +2,7 @@
 
 namespace Packstub\Flow\Observers;
 
+use Packstub\Flow\Engine\Dispatcher;
 use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\Listeners\DispatchEventTriggers;
 use Packstub\Flow\Models\Workflow;
@@ -12,6 +13,16 @@ use Packstub\Flow\Models\Workflow;
 class WorkflowObserver
 {
     public function saved(Workflow $workflow): void
+    {
+        $workflow->getConnection()->transaction(function () use ($workflow): void {
+            $this->syncTriggers($workflow);
+        });
+
+        DispatchEventTriggers::flush();
+        Dispatcher::flushCache();
+    }
+
+    protected function syncTriggers(Workflow $workflow): void
     {
         $workflow->triggers()->delete();
 
@@ -32,8 +43,6 @@ class WorkflowObserver
                 'config' => $node['data']['config'] ?? [],
             ]);
         }
-
-        DispatchEventTriggers::flush();
     }
 
     public function deleting(Workflow $workflow): void
@@ -47,5 +56,6 @@ class WorkflowObserver
     public function deleted(Workflow $workflow): void
     {
         DispatchEventTriggers::flush();
+        Dispatcher::flushCache();
     }
 }

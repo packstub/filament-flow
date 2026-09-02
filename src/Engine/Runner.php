@@ -2,6 +2,7 @@
 
 namespace Packstub\Flow\Engine;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Packstub\Flow\Contracts\Delayable;
 use Packstub\Flow\Enums\NodeType;
@@ -15,16 +16,28 @@ use Packstub\Flow\Jobs\ResumeWorkflowJob;
 use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\Models\WorkflowRun;
 use Packstub\Flow\NodeRegistry;
+use Packstub\Flow\Nodes\Action;
 use Packstub\Flow\Support\PayloadSerializer;
 use Throwable;
 
 /**
  * Walks a workflow graph from a start node, recording every step on a
  * WorkflowRun. Conditions branch on their true/false handles, Delayable
- * actions hand the remainder of the branch to the queue.
+ * actions hand the remainder of the branch to the queue, and an action's
+ * output travels down its branch as {{ last.* }} / {{ outputs.<id>.* }}.
+ *
+ * Branches leaving the same node run one after another, in edge order. A
+ * node reached again through another branch (a join) runs once.
  */
 class Runner
 {
+    /** Node config keys reserved for the runner (see ManageNode's "Error handling" section). */
+    public const RETRIES = '_retries';
+
+    public const RETRY_AFTER = '_retry_after';
+
+    public const ON_ERROR = '_on_error';
+
     protected Graph $graph;
 
     protected NodeRegistry $registry;
@@ -34,6 +47,9 @@ class Runner
     protected int $steps = 0;
 
     protected bool $paused = false;
+
+    /** @var array<string, true> */
+    protected array $visited = [];
 
     /**
      * @param  array<string, mixed>  $payload
@@ -53,9 +69,13 @@ class Runner
 
         $runModel = Flow::runModel();
 
+        $subject = $this->payload['model'] ?? null;
+
         $this->run = $runModel::query()->create([
             'workflow_id' => $this->workflow->getKey(),
             'trigger_type' => $startNode['data']['identifier'] ?? null,
+            'subject_type' => $subject instanceof Model ? $subject::class : null,
+            'subject_id' => $subject instanceof Model ? $subject->getKey() : null,
             'status' => RunStatus::Running,
             'context' => PayloadSerializer::summarize($this->payload),
             'steps' => [],
@@ -69,7 +89,7 @@ class Runner
                 throw new WorkflowException("Start node [{$startNodeId}] not found in workflow.");
             }
 
-            $this->visit($startNode, []);
+            $this->visit($startNode, [], $this->payload);
         });
 
         return $this->run;
@@ -85,6 +105,13 @@ class Runner
         $this->run = $run;
         $this->run->decrement('pending_resumes');
         $this->run->refresh();
+
+        // Another branch failed the run while this one was waiting: leave the
+        // failure as it is instead of running the rest and reporting success.
+        if ($this->run->status === RunStatus::Failed) {
+            return $this->run;
+        }
+
         $this->run->status = RunStatus::Running;
 
         $this->execute(function () use ($nodeIds): void {
@@ -96,7 +123,7 @@ class Runner
                 }
 
                 $this->record($node, __('packstub-flow::flow.steps.resumed'));
-                $this->visit($node, []);
+                $this->visit($node, [], $this->payload);
             }
         });
 
@@ -118,6 +145,8 @@ class Runner
     {
         try {
             $callback();
+
+            $this->run->refresh();
 
             $this->finish($this->paused || $this->run->pending_resumes > 0 ? RunStatus::Delayed : RunStatus::Success);
         } catch (Throwable $exception) {
@@ -151,8 +180,9 @@ class Runner
     /**
      * @param  array<string, mixed>  $node
      * @param  array<int, string>  $path  ids of the nodes above this one on the current branch
+     * @param  array<string, mixed>  $payload  the payload as seen by this branch (trigger data plus earlier outputs)
      */
-    protected function visit(array $node, array $path): void
+    protected function visit(array $node, array $path, array $payload): void
     {
         $id = (string) $node['id'];
 
@@ -160,35 +190,51 @@ class Runner
             throw new WorkflowException("Cycle detected at node [{$id}] ({$this->label($node)}).");
         }
 
+        if (isset($this->visited[$id])) {
+            // A join: two branches lead here. It already ran for the first one.
+            return;
+        }
+
         if (++$this->steps > (int) config('packstub-flow.max_steps', 1000)) {
             throw new WorkflowException('Workflow exceeded the maximum number of steps.');
         }
 
+        $this->visited[$id] = true;
         $path[] = $id;
         $type = $node['type'] ?? null;
+        $startedAt = microtime(true);
 
-        $next = match ($type) {
-            NodeType::Trigger->value => $this->visitTrigger($node),
-            NodeType::Condition->value => $this->visitCondition($node),
-            NodeType::Action->value => $this->visitAction($node),
-            default => throw new WorkflowException("Unknown node type [{$type}] at node [{$id}]."),
-        };
+        try {
+            [$next, $payload] = match ($type) {
+                NodeType::Trigger->value => [$this->visitTrigger($node, $startedAt), $payload],
+                NodeType::Condition->value => [$this->visitCondition($node, $payload, $startedAt), $payload],
+                NodeType::Action->value => $this->visitAction($node, $payload, $startedAt),
+                default => throw new WorkflowException("Unknown node type [{$type}] at node [{$id}]."),
+            };
+        } catch (Throwable $exception) {
+            $this->record($node, $exception->getMessage(), 'failed', $startedAt);
+
+            throw $exception;
+        }
 
         foreach ($next as $child) {
-            $this->visit($child, $path);
+            $this->visit($child, $path, $payload);
         }
     }
 
     /** @return array<int, array<string, mixed>> */
-    protected function visitTrigger(array $node): array
+    protected function visitTrigger(array $node, float $startedAt): array
     {
-        $this->record($node, __('packstub-flow::flow.steps.triggered'));
+        $this->record($node, __('packstub-flow::flow.steps.triggered'), startedAt: $startedAt);
 
         return $this->graph->next($node['id']);
     }
 
-    /** @return array<int, array<string, mixed>> */
-    protected function visitCondition(array $node): array
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<int, array<string, mixed>>
+     */
+    protected function visitCondition(array $node, array $payload, float $startedAt): array
     {
         $identifier = $node['data']['identifier'] ?? null;
         $condition = $identifier ? $this->registry->condition($identifier) : null;
@@ -197,15 +243,18 @@ class Runner
             throw new WorkflowException("Condition [{$identifier}] is not registered.");
         }
 
-        $result = $condition->evaluate($node['data']['config'] ?? [], $this->payload);
+        $result = $condition->evaluate($node['data']['config'] ?? [], $payload);
 
-        $this->record($node, __($result ? 'packstub-flow::flow.steps.condition_true' : 'packstub-flow::flow.steps.condition_false'));
+        $this->record($node, __($result ? 'packstub-flow::flow.steps.condition_true' : 'packstub-flow::flow.steps.condition_false'), startedAt: $startedAt);
 
         return $this->graph->next($node['id'], $result ? 'true' : 'false');
     }
 
-    /** @return array<int, array<string, mixed>> */
-    protected function visitAction(array $node): array
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array{0: array<int, array<string, mixed>>, 1: array<string, mixed>}
+     */
+    protected function visitAction(array $node, array $payload, float $startedAt): array
     {
         $identifier = $node['data']['identifier'] ?? null;
         $action = $identifier ? $this->registry->action($identifier) : null;
@@ -217,27 +266,80 @@ class Runner
         $config = $node['data']['config'] ?? [];
 
         if ($action instanceof Delayable) {
-            $seconds = $action->getDelaySeconds($config, $this->payload);
+            $seconds = $action->getDelaySeconds($config, $payload);
 
             if ($seconds !== null && $seconds > 0) {
-                return $this->pause($node, $seconds);
+                return [$this->pause($node, $seconds, $payload), $payload];
             }
         }
 
-        $action->handle($config, $this->payload);
+        $this->handleWithRetries($node, $action, $config, $payload);
 
-        $this->record($node, __('packstub-flow::flow.steps.action_done'));
+        $output = $action->pullOutput();
 
-        return $this->graph->next($node['id']);
+        if ($output !== null) {
+            $payload['outputs'][(string) $node['id']] = $output;
+            $payload['last'] = $output;
+        }
+
+        $this->record($node, __('packstub-flow::flow.steps.action_done'), startedAt: $startedAt, output: $output);
+
+        return [$this->graph->next($node['id']), $payload];
+    }
+
+    /**
+     * Run an action, retrying it the number of times set on the node. When the
+     * node is set to continue on error the failure is logged as a step and the
+     * branch goes on; otherwise the exception fails the run.
+     *
+     * @param  array<string, mixed>  $node
+     * @param  array<string, mixed>  $config
+     * @param  array<string, mixed>  $payload
+     */
+    protected function handleWithRetries(array $node, Action $action, array $config, array $payload): void
+    {
+        $retries = max(0, min((int) ($config[self::RETRIES] ?? 0), 10));
+        $retryAfter = max(0, (int) ($config[self::RETRY_AFTER] ?? 0));
+        $onError = (string) ($config[self::ON_ERROR] ?? 'fail');
+
+        $config = array_diff_key($config, array_flip([self::RETRIES, self::RETRY_AFTER, self::ON_ERROR]));
+
+        for ($attempt = 1; ; $attempt++) {
+            try {
+                $action->handle($config, $payload);
+
+                return;
+            } catch (Throwable $exception) {
+                if ($attempt <= $retries) {
+                    $this->record($node, __('packstub-flow::flow.steps.retrying', ['attempt' => $attempt, 'max' => $retries, 'error' => $exception->getMessage()]), 'retry');
+
+                    if ($retryAfter > 0) {
+                        sleep($retryAfter);
+                    }
+
+                    continue;
+                }
+
+                if ($onError === 'continue') {
+                    report($exception);
+                    $this->record($node, __('packstub-flow::flow.steps.continued', ['error' => $exception->getMessage()]), 'failed');
+
+                    return;
+                }
+
+                throw $exception;
+            }
+        }
     }
 
     /**
      * Schedule the nodes after a Delayable action and stop this branch.
      *
      * @param  array<string, mixed>  $node
+     * @param  array<string, mixed>  $payload
      * @return array<int, array<string, mixed>>
      */
-    protected function pause(array $node, int $seconds): array
+    protected function pause(array $node, int $seconds, array $payload): array
     {
         $nextIds = $this->graph->nextIds($node['id']);
 
@@ -254,7 +356,7 @@ class Runner
 
         $job = new ResumeWorkflowJob(
             $this->run->getKey(),
-            PayloadSerializer::serialize($this->payload),
+            PayloadSerializer::serialize($payload),
             $nextIds,
             $this->graph->toArray(),
         );
@@ -273,22 +375,50 @@ class Runner
     }
 
     /**
+     * Append a step to the run. Steps are re-read under a lock so two
+     * resumed branches finishing at the same time do not overwrite each other.
+     *
      * @param  array<string, mixed>  $node
+     * @param  array<string, mixed>|null  $output
      */
-    protected function record(array $node, string $message): void
+    protected function record(array $node, string $message, string $status = 'ok', ?float $startedAt = null, ?array $output = null): void
     {
-        $steps = $this->run->steps ?? [];
-
-        $steps[] = [
+        $step = array_filter([
             'at' => Date::now()->toIso8601String(),
             'node_id' => (string) $node['id'],
             'type' => $node['type'] ?? null,
             'label' => $this->label($node),
             'message' => $message,
-        ];
+            'status' => $status,
+            'duration_ms' => $startedAt !== null ? (int) round((microtime(true) - $startedAt) * 1000) : null,
+            'output' => $output !== null ? $this->truncateOutput($output) : null,
+        ], fn ($value): bool => $value !== null);
 
-        $this->run->steps = $steps;
-        $this->run->save();
+        $this->run->getConnection()->transaction(function () use ($step): void {
+            $fresh = $this->run->newQuery()->lockForUpdate()->find($this->run->getKey());
+
+            $steps = $fresh?->steps ?? $this->run->steps ?? [];
+            $steps[] = $step;
+
+            $this->run->steps = $steps;
+            $this->run->save();
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $output
+     * @return array<string, mixed>
+     */
+    protected function truncateOutput(array $output): array
+    {
+        $max = (int) config('packstub-flow.max_output_bytes', 16384);
+        $encoded = json_encode($output);
+
+        if ($encoded === false || strlen($encoded) <= $max) {
+            return $output;
+        }
+
+        return ['truncated' => true, 'preview' => mb_strcut($encoded, 0, $max)];
     }
 
     /** @param array<string, mixed> $node */

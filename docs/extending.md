@@ -20,7 +20,7 @@ The `config` array is exactly what the form produced; the `payload` array is wha
 
 ## Actions
 
-Extend `Packstub\Flow\Nodes\Action` and implement `handle(array $config, array $payload): void`. Throw to fail the run; return to continue.
+Extend `Packstub\Flow\Nodes\Action` and implement `handle(array $config, array $payload): void`. Throw to fail the run (or let the node's retry / continue-on-error settings deal with it); return to continue. Call `$this->output([...])` before returning to expose values to the nodes after it as `{{ last.* }}` and `{{ outputs.<node id>.* }}` — see [Placeholders](placeholders.md#outputs-of-earlier-actions).
 
 ```php
 namespace App\Flow\Actions;
@@ -68,6 +68,8 @@ class AssignToTeam extends Action
         }
 
         $record->forceFill(['team_id' => $config['team_id']])->saveQuietly();
+
+        $this->output(['team_id' => $config['team_id']]);
     }
 }
 ```

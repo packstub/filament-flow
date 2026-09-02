@@ -15,6 +15,8 @@ use Packstub\Flow\NodeRegistry;
  * @property string $id
  * @property string $workflow_id
  * @property string|null $trigger_type
+ * @property class-string<Model>|null $subject_type
+ * @property string|null $subject_id
  * @property RunStatus $status
  * @property array<string, mixed>|null $context
  * @property array<int, array<string, mixed>>|null $steps
@@ -46,6 +48,50 @@ class WorkflowRun extends Model
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Flow::workflowModel(), 'workflow_id');
+    }
+
+    /**
+     * The record that started the run, if it still exists.
+     */
+    public function subject(): ?Model
+    {
+        if (! $this->subject_type || $this->subject_id === null || ! is_a($this->subject_type, Model::class, true)) {
+            return null;
+        }
+
+        return $this->subject_type::query()->find($this->subject_id);
+    }
+
+    /**
+     * Rebuild a payload from the stored context so the run can be started
+     * again: records are re-fetched by key, everything else is kept as is.
+     *
+     * @return array<string, mixed>
+     */
+    public function rebuildPayload(): array
+    {
+        return $this->rebuild($this->context ?? []);
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>
+     */
+    protected function rebuild(array $context): array
+    {
+        $payload = [];
+
+        foreach ($context as $key => $value) {
+            if (is_array($value) && isset($value['type']) && is_string($value['type']) && array_key_exists('key', $value) && count($value) === 2 && is_a($value['type'], Model::class, true)) {
+                $payload[$key] = $value['type']::query()->find($value['key']);
+
+                continue;
+            }
+
+            $payload[$key] = is_array($value) ? $this->rebuild($value) : $value;
+        }
+
+        return $payload;
     }
 
     public function scopeFinished(Builder $query): Builder

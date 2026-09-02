@@ -2,8 +2,11 @@
 
 namespace Packstub\Flow\Filament\Forms\Components;
 
+use Closure;
 use Filament\Forms\Components\Field;
+use Filament\Schemas\Components\Utilities\Get;
 use Packstub\Flow\NodeRegistry;
+use Packstub\Flow\Support\DefinitionValidator;
 
 /**
  * The canvas. State is {nodes: [...], edges: [...]} in the shape used by
@@ -15,6 +18,8 @@ class FlowBuilder extends Field
 
     protected int|string $minHeight = 600;
 
+    protected bool $validatesDefinition = true;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -22,6 +27,28 @@ class FlowBuilder extends Field
         $this->default(['nodes' => [], 'edges' => []]);
         $this->dehydrateStateUsing(fn (mixed $state): array => static::normalizeState($state));
         $this->columnSpanFull();
+        $this->rule(fn (Get $get): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get): void {
+            if (! $this->validatesDefinition) {
+                return;
+            }
+
+            $active = (bool) ($get('is_active') ?? true);
+
+            foreach (DefinitionValidator::problems(static::normalizeState($value), $active) as $problem) {
+                $fail($problem);
+            }
+        });
+    }
+
+    /**
+     * Skip the structural checks (trigger present, nodes connected, required
+     * settings filled) that run before an active workflow is saved.
+     */
+    public function withoutValidation(bool $condition = true): static
+    {
+        $this->validatesDefinition = ! $condition;
+
+        return $this;
     }
 
     public function minHeight(int|string $height): static

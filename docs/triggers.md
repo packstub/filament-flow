@@ -39,8 +39,9 @@ Runs on a cron expression. `packstub-flow:cron` — registered with Laravel's sc
 | Setting | |
 | --- | --- |
 | Cron expression | Five fields: minute, hour, day of month, month, day of week. Validated when you apply the settings. `0 9 * * 1-5` is weekdays at 09:00 |
+| Timezone | The timezone the expression is evaluated in; empty means the application timezone (`app.timezone`) |
 
-The expression is evaluated in the application timezone (`app.timezone`). A node with an invalid expression never matches.
+A node with an invalid expression never matches.
 
 | Payload | |
 | --- | --- |
@@ -57,11 +58,14 @@ POST {app url}/flow/webhooks/{workflow id}/{token}
 | Setting | |
 | --- | --- |
 | Secret token | Generated for you (40 random characters); 16–120 letters, digits, dashes and underscores. The settings panel shows the full URL prefix |
+| Signing secret | Optional. When set, every request must carry an HMAC-SHA256 signature (hex, with or without a `sha256=` prefix) of the raw body, computed with this secret |
+| Signature header | The header that carries the signature; `X-Signature` by default |
 
 The endpoint:
 
 - answers `202 Accepted` with `{"accepted": true, "run": "<run id>", "status": "success"}` — with queued runs (see [Queue & scheduling](queue-and-scheduling.md)) `run` is `null` and `status` is `"queued"`;
 - answers `404` when the workflow does not exist, is inactive, or the token does not match any webhook node of that workflow (tokens are compared in constant time);
+- answers `401` when the node has a signing secret and the signature is missing or wrong;
 - reads a JSON body when the request is JSON, and form fields otherwise.
 
 ```bash
@@ -73,13 +77,13 @@ curl -X POST https://example.com/flow/webhooks/9d2f4a1e-.../your-secret-token \
 | Payload | |
 | --- | --- |
 | `webhook` | The request body: `{{ webhook.order.status }}` |
-| `headers` | Request headers, first value each, lower-cased names: `{{ headers.x-signature }}` |
+| `headers` | Request headers, first value each, lower-cased names: `{{ headers.x-request-id }}`. Credential headers (`Authorization`, `Cookie`, `X-Api-Key`, the signature header, …) are dropped before the payload is stored — the list is `webhooks.redacted_headers` in the config |
 | `webhook_token` | The token from the URL (used for matching) |
 
 The route is named `packstub-flow.webhook`, runs under the `api` and `throttle:60,1` middleware by default, and can be disabled or moved to another prefix in the config — see [Configuration](configuration.md#webhooks).
 
 > [!NOTE]
-> The token is the only authentication. Treat the URL as a secret, keep the throttle middleware, and validate anything you act on inside the workflow (a **Compare values** condition on `{{ headers.x-signature }}` or a body field is a good first step).
+> Treat the URL as a secret and keep the throttle middleware. When the sender can sign requests (most services can), set a signing secret so a leaked URL is not enough to start the workflow.
 
 ## Record created / updated / deleted
 
@@ -97,8 +101,10 @@ class Order extends Model
 | Setting | |
 | --- | --- |
 | Record type | The model class. The list contains every non-abstract model in `app/Models` that uses `HasWorkflows`, plus the classes in `models_for_triggers` (config) and `FlowPlugin::make()->models([...])` |
+| Run once per record | Skips a record the workflow has already run for (any status). Welcome series, surveys and reminders should not fire twice |
+| Only when these attributes change | **Record updated** only: attribute names; the trigger fires only when at least one of them is in `changes`. Empty fires on every update |
 
-A node matches when the payload's model is an instance of the chosen class (subclasses included).
+A node matches when the payload's model is an instance of the chosen class (subclasses included). "Status becomes *paid*" is **Record updated** watching `status`, followed by a **Record attribute** condition `status = paid`; `{{ original.status }}` still holds the previous value. Runs remember the record they started for (`subject_type` / `subject_id`), which the Runs tab shows and searches.
 
 | Payload | Provided by |
 | --- | --- |
@@ -108,6 +114,8 @@ A node matches when the payload's model is an instance of the chosen class (subc
 
 Some details worth knowing:
 
+- Mass updates (`Order::query()->update()`), `saveQuietly()` / `updateQuietly()` and soft-delete restores fire no `created` / `updated` / `deleted` event and therefore no trigger; a soft delete fires **Record deleted**.
+- A trigger fired inside a database transaction starts the run right away in sync mode; with the queue enabled the job is dispatched after the transaction commits.
 - Saves made with `saveQuietly()` / `updateQuietly()` fire no Eloquent events and therefore no trigger. The **Update record** action saves quietly by default for exactly this reason: a workflow that updates the record that started it would otherwise start itself again.
 - A model listed in the config or the plugin without the trait appears in the select but never fires on its own — dispatch the trigger yourself, or add the trait.
 - A **Record deleted** run that continues through the queue (after a **Wait**) gets the deleted record rebuilt from the attributes it had, so placeholders keep working.

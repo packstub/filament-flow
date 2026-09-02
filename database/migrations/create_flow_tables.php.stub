@@ -34,6 +34,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('workflow_id')->constrained($workflows)->cascadeOnDelete();
             $table->string('trigger_type')->nullable();
+            $table->string('subject_type')->nullable();
+            $table->string('subject_id', 64)->nullable();
             $table->string('status', 16)->index();
             $table->json('context')->nullable();
             $table->json('steps')->nullable();
@@ -42,6 +44,10 @@ return new class extends Migration
             $table->timestamp('started_at')->nullable();
             $table->timestamp('finished_at')->nullable();
             $table->timestamps();
+
+            $table->index(['workflow_id', 'started_at']);
+            $table->index(['workflow_id', 'subject_type', 'subject_id'], 'flow_runs_subject_index');
+            $table->index('started_at');
         });
     }
 

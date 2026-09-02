@@ -5,6 +5,7 @@ namespace Packstub\Flow\Filament\Resources\WorkflowResource\RelationManagers;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
@@ -12,6 +13,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Packstub\Flow\Enums\RunStatus;
+use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Models\WorkflowRun;
 
 class RunsRelationManager extends RelationManager
@@ -35,6 +37,12 @@ class RunsRelationManager extends RelationManager
                     ->label(__('packstub-flow::flow.runs.trigger'))
                     ->formatStateUsing(fn (WorkflowRun $record): ?string => $record->triggerName())
                     ->placeholder('—'),
+                TextColumn::make('subject_id')
+                    ->label(__('packstub-flow::flow.runs.subject'))
+                    ->formatStateUsing(fn (WorkflowRun $record): string => class_basename((string) $record->subject_type).' #'.$record->subject_id)
+                    ->searchable()
+                    ->placeholder('—')
+                    ->toggleable(),
                 TextColumn::make('started_at')
                     ->label(__('packstub-flow::flow.runs.started'))
                     ->dateTime()
@@ -68,6 +76,34 @@ class RunsRelationManager extends RelationManager
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel(__('packstub-flow::flow.runs.close'))
                     ->modalContent(fn (WorkflowRun $record) => view('packstub-flow::runs.detail', ['run' => $record])),
+                Action::make('rerun')
+                    ->label(__('packstub-flow::flow.runs.rerun'))
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->modalDescription(__('packstub-flow::flow.runs.rerun_description'))
+                    ->visible(fn (WorkflowRun $record): bool => $record->status->isFinished() && $record->workflow?->is_active)
+                    ->action(function (WorkflowRun $record): void {
+                        $workflow = $record->workflow;
+                        $startNode = $record->trigger_type ? $workflow->triggerNode($record->trigger_type) : null;
+
+                        $run = Flow::run($workflow, $record->rebuildPayload(), isset($startNode['id']) ? (string) $startNode['id'] : null);
+
+                        if (! $run) {
+                            Notification::make()->title(__('packstub-flow::flow.actions.run_queued'))->info()->send();
+
+                            return;
+                        }
+
+                        $notification = Notification::make()
+                            ->title(__('packstub-flow::flow.actions.run_finished', ['status' => $run->status->getLabel()]));
+
+                        $run->status === RunStatus::Failed
+                            ? $notification->danger()->body($run->error)
+                            : $notification->success();
+
+                        $notification->send();
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

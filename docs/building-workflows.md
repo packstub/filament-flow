@@ -36,6 +36,7 @@ The slide-over is a Filament form:
 
 - **General** — label (required, up to 80 characters) and description (up to 255).
 - **Settings** — the node's own fields, e.g. the record type of a trigger or the recipient and subject of an email. Fields are validated when you press **Apply**; a cron expression, a JSON body or an event class that does not exist is rejected right there.
+- **Error handling** — action nodes only: retries, the pause between them, and whether the last failure fails the run or is logged and skipped. See [Runs](runs.md#failures).
 - **Placeholders** — a collapsed section listing the `{{ placeholders }}` that node understands. See [Placeholders](placeholders.md).
 
 **Apply** writes the values back to the node on the canvas. They are stored when you save the workflow.
@@ -49,6 +50,8 @@ Right-click a node for **Settings**, **Duplicate** and **Delete**. A duplicate k
 The canvas is a form field; the usual **Save** (or **Create**) button of the page stores the graph together with the name, description and **Active** toggle. After creating a workflow you land on its edit page.
 
 Only active workflows run. New workflows start inactive, and a copy made with the table's **Replicate** action is inactive too, so you can finish a draft safely before switching it on.
+
+Saving an **active** workflow checks the definition first and refuses it with a message per problem: no trigger node, a node nothing leads to, or a required setting left empty (a node dropped on the canvas whose settings were never opened). Inactive drafts are only checked for nodes whose class is no longer registered.
 
 When a workflow is saved, its trigger nodes are mirrored into the `flow_workflow_triggers` table. That is how the dispatcher finds candidate workflows for an incoming event with one indexed query — you never edit that table yourself.
 
