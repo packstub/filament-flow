@@ -11,7 +11,7 @@
 
 </div>
 
-Automate your Filament panel on a canvas: draw triggers, conditions and actions, and let the runner — or your queue — do the rest.
+Visual workflow automations for your Filament panel: draw triggers, conditions and actions on a canvas, and let the runner — or your queue — do the rest.
 
 ## Features
 
