@@ -5,6 +5,7 @@ use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\Models\WorkflowRun;
 use Packstub\Flow\Models\WorkflowStep;
 use Packstub\Flow\Models\WorkflowTrigger;
+use Packstub\Flow\Models\WorkflowVersion;
 use Packstub\Flow\Models\WorkflowWait;
 use Packstub\Flow\Nodes;
 
@@ -28,6 +29,7 @@ return [
         'secrets' => 'flow_secrets',
         'steps' => 'flow_workflow_steps',
         'waits' => 'flow_workflow_waits',
+        'versions' => 'flow_workflow_versions',
     ],
 
     /*
@@ -47,6 +49,41 @@ return [
         'secret' => Secret::class,
         'step' => WorkflowStep::class,
         'wait' => WorkflowWait::class,
+        'version' => WorkflowVersion::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tenancy
+    |--------------------------------------------------------------------------
+    |
+    | Workflows, runs, secrets and waits carry a tenant (team, company...).
+    | In a Filament panel with tenancy the resources are scoped to the
+    | current tenant automatically. When a trigger fires, the tenant of the
+    | payload decides which workflows run: the tenant's own plus the global
+    | ones (no tenant). The tenant is read from the payload's record through
+    | this relationship ("team" for $order->team), from a resolver set with
+    | Flow::resolveTenantUsing(), or from Filament::getTenant().
+    |
+    */
+
+    'tenancy' => [
+        'relationship' => env('PACKSTUB_FLOW_TENANT_RELATIONSHIP'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Versions
+    |--------------------------------------------------------------------------
+    |
+    | Every change to a workflow's definition is kept as a version (with the
+    | user who saved it) so it can be compared and restored. Older versions
+    | beyond this number are pruned per workflow.
+    |
+    */
+
+    'versions' => [
+        'keep' => 50,
     ],
 
     /*

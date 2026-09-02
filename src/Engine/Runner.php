@@ -26,6 +26,7 @@ use Packstub\Flow\Nodes\Action;
 use Packstub\Flow\Nodes\Triggers\WorkflowCalled;
 use Packstub\Flow\Support\PayloadSerializer;
 use Packstub\Flow\Support\Placeholders;
+use Packstub\Flow\Support\Tenancy;
 use Throwable;
 
 /**
@@ -87,9 +88,13 @@ class Runner
         $runModel = Flow::runModel();
 
         $subject = $this->payload['model'] ?? null;
+        $tenant = $this->tenant();
 
         $this->run = $runModel::query()->create([
             'workflow_id' => $this->workflow->getKey(),
+            'version_id' => $this->workflow->latestVersion?->getKey(),
+            'tenant_type' => $tenant?->getMorphClass(),
+            'tenant_id' => $tenant === null ? null : (string) $tenant->getKey(),
             'trigger_type' => $startNode['data']['identifier'] ?? null,
             'subject_type' => $subject instanceof Model ? $subject::class : null,
             'subject_id' => $subject instanceof Model ? $subject->getKey() : null,
@@ -179,12 +184,27 @@ class Runner
         return $this->payload;
     }
 
+    /**
+     * The tenant this run belongs to: the workflow's own, or the one the
+     * payload was resolved to for a global workflow.
+     */
+    protected function tenant(): ?Model
+    {
+        if (! $this->workflow->isGlobal()) {
+            return $this->workflow->tenant;
+        }
+
+        $tenant = $this->payload['tenant'] ?? null;
+
+        return $tenant instanceof Model ? $tenant : Tenancy::resolve($this->payload);
+    }
+
     protected function execute(callable $callback): void
     {
         static::$depth++;
 
         try {
-            $callback();
+            Tenancy::using($this->tenant(), $callback);
 
             $this->run->refresh();
 
@@ -277,7 +297,7 @@ class Runner
             return;
         }
 
-        $handler = Flow::workflowModel()::query()->find($id);
+        $handler = Flow::workflowModel()::query()->withoutGlobalScopes()->find($id);
         $node = $handler?->is_active ? $handler->triggerNode(WorkflowCalled::class) : null;
 
         if (! $handler || ! $node) {
@@ -605,6 +625,8 @@ class Runner
         $wait = Flow::waitModel()::query()->create([
             'workflow_id' => $this->workflow->getKey(),
             'run_id' => $this->run->getKey(),
+            'tenant_type' => $this->run->tenant_type,
+            'tenant_id' => $this->run->tenant_id,
             'node_id' => (string) $node['id'],
             'type' => $request->type,
             'key' => $request->key,

@@ -4,6 +4,7 @@ namespace Packstub\Flow\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Packstub\Flow\Models\Concerns\BelongsToTenant;
 use Packstub\Flow\Support\Secrets;
 
 /**
@@ -18,6 +19,7 @@ use Packstub\Flow\Support\Secrets;
  */
 class Secret extends Model
 {
+    use BelongsToTenant;
     use HasUuids;
 
     protected $guarded = [];

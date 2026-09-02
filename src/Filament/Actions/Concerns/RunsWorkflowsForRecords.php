@@ -11,6 +11,7 @@ use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\Nodes\Triggers\Manual;
+use Packstub\Flow\Support\Tenancy;
 
 /**
  * Shared by RunWorkflowAction (one record) and RunWorkflowBulkAction (a
@@ -67,6 +68,8 @@ trait RunsWorkflowsForRecords
         $ids = $this->evaluate($this->workflowIds);
 
         return Flow::workflowModel()::query()
+            ->withoutGlobalScopes()
+            ->forTenant(Tenancy::panelTenant())
             ->where('is_active', true)
             ->when(is_array($ids), fn ($query) => $query->whereIn('id', $ids))
             ->orderBy('name')

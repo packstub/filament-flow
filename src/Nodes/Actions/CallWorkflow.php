@@ -8,6 +8,7 @@ use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Nodes\Action;
 use Packstub\Flow\Nodes\Triggers\WorkflowCalled;
+use Packstub\Flow\Support\Tenancy;
 
 /**
  * Starts another workflow from its "Called by another workflow" trigger,
@@ -37,7 +38,7 @@ class CallWorkflow extends Action
         return [
             Select::make('workflow_id')
                 ->label(__('packstub-flow::flow.nodes.call_workflow.workflow'))
-                ->options(fn (): array => Flow::workflowModel()::query()->orderBy('name')->pluck('name', 'id')->all())
+                ->options(fn (): array => Flow::workflowModel()::query()->forTenant(Tenancy::panelTenant())->orderBy('name')->pluck('name', 'id')->all())
                 ->searchable()
                 ->required()
                 ->helperText(__('packstub-flow::flow.nodes.call_workflow.workflow_help')),
@@ -47,7 +48,7 @@ class CallWorkflow extends Action
     public function handle(array $config, array $payload): void
     {
         $id = $config['workflow_id'] ?? null;
-        $workflow = $id ? Flow::workflowModel()::query()->find($id) : null;
+        $workflow = $id ? Flow::workflowModel()::query()->withoutGlobalScopes()->find($id) : null;
 
         if (! $workflow) {
             throw new WorkflowException('The workflow to call no longer exists.');

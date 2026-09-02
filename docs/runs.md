@@ -109,6 +109,10 @@ Besides the Runs tab under each workflow, the **Runs** page (next to Workflows i
 
 Steps are stored one row per step in the `flow_workflow_steps` table (`WorkflowStep` model; `$run->steps` returns them as arrays, `$run->steps()` as the relationship) rather than in a JSON column, so a run with hundreds of steps costs one insert per step and the Runs page can count and filter them.
 
+## Versions
+
+Every save that changes the definition stores a snapshot in the **Versions** tab of the workflow — the version number, who saved it, when, the node count and a summary of what changed compared to the previous one (nodes added, removed, changed; connections added or removed). Moving nodes around is not a change. **Changes** opens the summary in a modal; **Restore** puts an older definition back on the canvas as a new version, so nothing is ever lost. Each run pins the version it started from (`version_id`, the *Version* column of the Runs tab). Older versions are pruned beyond `versions.keep` (50) per workflow.
+
 ## Failures
 
 When a node throws, the run is marked Failed with the exception message and `finished_at`, the exception is passed to Laravel's `report()` — so it reaches your log and error tracker as usual — and `WorkflowFailed` is dispatched. The exception is not rethrown: the request, model event or job that triggered the workflow carries on. Branches leaving the same node run one after another in the order their edges were drawn, so the branches after the failing one do not run, and side effects of the ones before it stand. A resume job for a run that another branch has since failed does nothing.

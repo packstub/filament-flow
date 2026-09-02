@@ -31,4 +31,9 @@ class Order extends Model
     {
         return $this->hasMany(Note::class);
     }
+
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
+    }
 }

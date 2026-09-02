@@ -1,0 +1,54 @@
+<?php
+
+namespace Packstub\Flow\Tests\Fixtures;
+
+use Filament\Http\Middleware\Authenticate;
+use Filament\Http\Middleware\DisableBladeIconComponents;
+use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Pages\Dashboard;
+use Filament\Panel;
+use Filament\PanelProvider;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Session\Middleware\AuthenticateSession;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Packstub\Flow\FlowPlugin;
+
+/**
+ * A second panel with tenancy (teams), to test tenant scoping.
+ */
+class TenantPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('app')
+            ->path('app')
+            ->login()
+            ->tenant(Team::class, slugAttribute: 'slug')
+            ->pages([Dashboard::class])
+            ->resources([OrderResource::class])
+            ->middleware([
+                EncryptCookies::class,
+                AddQueuedCookiesToResponse::class,
+                StartSession::class,
+                AuthenticateSession::class,
+                ShareErrorsFromSession::class,
+                VerifyCsrfToken::class,
+                SubstituteBindings::class,
+                DisableBladeIconComponents::class,
+                DispatchServingFilamentEvent::class,
+            ])
+            ->authMiddleware([
+                Authenticate::class,
+            ])
+            ->plugin(
+                FlowPlugin::make()
+                    ->actions([SetStatusAction::class, FlakyAction::class, EchoAction::class])
+                    ->maxWorkflows(fn (?Team $team): ?int => $team?->max_workflows),
+            );
+    }
+}

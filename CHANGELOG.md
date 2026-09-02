@@ -6,6 +6,9 @@ All notable changes to `packstub/filament-flow` are documented here.
 
 ### Added
 
+- **Multi-tenancy**: `tenant_type` / `tenant_id` on workflows, runs, secrets and waits (`BelongsToTenant` trait: `tenant()`, `ofTenant()`, `forTenant()`, `global()`, `isGlobal()`). In a panel with tenancy the Workflows and Secrets resources, the Runs page and the Approvals page are scoped to the current tenant and new rows are attached to it; the dispatcher runs the payload's tenant's workflows plus the global ones, resolved by `Flow::resolveTenantUsing()`, the `tenancy.relationship` config key or Filament's current tenant; runs store their tenant and expose `{{ tenant.* }}`; a tenant's secret shadows a global one; `FlowPlugin::maxWorkflows()` caps workflows per tenant (plan limits).
+- **Versions**: `flow_workflow_versions` (`WorkflowVersion`) snapshots the definition on every change with the user who saved it; a **Versions** tab with a change summary (`DefinitionDiff`), a compare modal and **Restore**; runs pin `version_id`; `versions.keep` prunes old ones.
+
 - **Find records** (`FindRecords`, read-only) and **For each** (`ForEachLoop`, the `Iterates` contract): query records with a condition builder, loop over them — or any list — with `{{ item.* }}` and `{{ loop.* }}`, a body branch per item and a done branch; a maximum-iterations guard (`max_records`).
 - **Date on a record** trigger (`DateReached`, the `Pollable` contract): "N days/hours before / at / after `{{ model.due_at }}`", polled every minute by `packstub-flow:cron` (`Flow::poll()`), once per record.
 - **Error branch**: the *After the last failure* setting gained **Follow the error branch**, which adds an Error output to the node; the branch runs with `{{ error.message }}` / `{{ error.node }}`. A per-workflow **On failure, run** setting (`on_failure_workflow_id`) starts another workflow (with a Called-by-another-workflow trigger) whenever a run fails, with `{{ error.* }}` and `{{ failed_run.* }}`.
@@ -46,6 +49,7 @@ All notable changes to `packstub/filament-flow` are documented here.
 ### Changed
 
 - **Nested runs are capped instead of blocked**: an event fired inside a run (a record saved with events on, a mail) can start another workflow up to `max_nesting` levels deep (5); the wildcard event listener no longer ignores every event dispatched during a run.
+- Migration: `flow_workflow_versions` table; `tenant_type` / `tenant_id` on workflows, runs, secrets and waits; `version_id` on runs; the secrets `key` index is per tenant.
 - Migration: `flow_secrets`, `flow_workflow_steps` and `flow_workflow_waits` tables; `prune_after_days`, `max_consecutive_failures`, `consecutive_failures` and `on_failure_workflow_id` on the workflows table; `is_test` on the runs table, whose `steps` JSON column is gone.
 - A run's final status now depends on its pending resumes only (a resume that already ran on a sync queue no longer leaves the run "Waiting"); `max_steps` default raised to 10 000 to leave room for loops.
 - **Outgoing requests are guarded**: `HttpRequest` and `SendSlackMessage` refuse URLs that are not `http(s)` or whose host resolves to a private / reserved address (`UrlGuard`), unless `http.block_private_networks` is off or the host is in `http.allowed_hosts`. Requests have a timeout (15 s default) and per-node retries; placeholder values in the URL are URL-encoded.

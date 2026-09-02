@@ -2,52 +2,70 @@
 
 namespace Packstub\Flow\Support;
 
+use Illuminate\Database\Eloquent\Model;
 use Packstub\Flow\Flow;
 use Throwable;
 
 /**
- * Reads the secrets store for placeholder resolution. Values are cached per
- * process for the length of a run and forgotten when a secret is saved.
+ * Reads the secrets store for placeholder resolution. Global secrets apply
+ * everywhere; a tenant's secret with the same key shadows the global one
+ * while that tenant's workflow runs. Values are cached per process and
+ * forgotten when a secret is saved.
  */
 class Secrets
 {
-    /** @var array<string, string|null>|null */
-    protected static ?array $values = null;
+    /** @var array<string, array<string, string|null>> keyed by tenant ("" for global) */
+    protected static array $values = [];
 
-    public static function get(string $key): ?string
+    public static function get(string $key, ?Model $tenant = null): ?string
     {
-        if (static::$values === null) {
-            static::$values = static::load();
+        $tenant ??= Tenancy::current();
+
+        if ($tenant !== null) {
+            $value = static::load(static::tenantKey($tenant), $tenant)[$key] ?? null;
+
+            if ($value !== null) {
+                return $value;
+            }
         }
 
-        return static::$values[$key] ?? null;
+        return static::load('', null)[$key] ?? null;
     }
 
-    public static function has(string $key): bool
+    public static function has(string $key, ?Model $tenant = null): bool
     {
-        return static::get($key) !== null;
+        return static::get($key, $tenant) !== null;
     }
 
     /** @return array<int, string> */
-    public static function keys(): array
+    public static function keys(?Model $tenant = null): array
     {
-        if (static::$values === null) {
-            static::$values = static::load();
+        $tenant ??= Tenancy::current();
+        $keys = array_keys(static::load('', null));
+
+        if ($tenant !== null) {
+            $keys = [...$keys, ...array_keys(static::load(static::tenantKey($tenant), $tenant))];
         }
 
-        return array_keys(static::$values);
+        return array_values(array_unique($keys));
     }
 
     public static function flush(): void
     {
-        static::$values = null;
+        static::$values = [];
     }
 
     /** @return array<string, string|null> */
-    protected static function load(): array
+    protected static function load(string $cacheKey, ?Model $tenant): array
     {
+        if (isset(static::$values[$cacheKey])) {
+            return static::$values[$cacheKey];
+        }
+
         try {
-            return Flow::secretModel()::query()
+            return static::$values[$cacheKey] = Flow::secretModel()::query()
+                ->withoutGlobalScopes()
+                ->ofTenant($tenant)
                 ->get()
                 ->mapWithKeys(fn ($secret): array => [(string) $secret->key => $secret->value === null ? null : (string) $secret->value])
                 ->all();
@@ -55,5 +73,10 @@ class Secrets
             // Table not migrated yet.
             return [];
         }
+    }
+
+    protected static function tenantKey(Model $tenant): string
+    {
+        return $tenant->getMorphClass().':'.$tenant->getKey();
     }
 }

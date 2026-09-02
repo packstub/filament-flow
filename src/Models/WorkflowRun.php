@@ -10,11 +10,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Flow;
+use Packstub\Flow\Models\Concerns\BelongsToTenant;
 use Packstub\Flow\NodeRegistry;
 
 /**
  * @property string $id
  * @property string $workflow_id
+ * @property string|null $version_id
+ * @property string|null $tenant_type
+ * @property string|null $tenant_id
  * @property string|null $trigger_type
  * @property class-string<Model>|null $subject_type
  * @property string|null $subject_id
@@ -29,6 +33,7 @@ use Packstub\Flow\NodeRegistry;
  */
 class WorkflowRun extends Model
 {
+    use BelongsToTenant;
     use HasUuids;
 
     protected $guarded = [];
@@ -50,6 +55,11 @@ class WorkflowRun extends Model
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Flow::workflowModel(), 'workflow_id');
+    }
+
+    public function version(): BelongsTo
+    {
+        return $this->belongsTo(Flow::versionModel(), 'version_id');
     }
 
     public function steps(): HasMany

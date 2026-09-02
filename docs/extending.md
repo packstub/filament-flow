@@ -282,6 +282,9 @@ Flow::expireWaits();
 
 // What packstub-flow:cron does for "Date on a record" triggers
 Flow::poll(now());
+
+// Multi-tenancy: which tenant a payload belongs to
+Flow::resolveTenantUsing(fn (array $payload) => $payload['model']?->team);
 ```
 
 `Flow::run()` returns `null` when the workflow is inactive, has no trigger node, or the run was queued; otherwise the finished `WorkflowRun`.

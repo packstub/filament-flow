@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\URL;
 use Packstub\Flow\Flow;
+use Packstub\Flow\Models\Concerns\BelongsToTenant;
 
 /**
  * A run paused on an "Ask for approval" or "Wait for signal" node. Holds
@@ -35,6 +36,7 @@ use Packstub\Flow\Flow;
  */
 class WorkflowWait extends Model
 {
+    use BelongsToTenant;
     use HasUuids;
 
     public const PENDING = 'pending';

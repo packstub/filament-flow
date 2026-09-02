@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Log;
 use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\Flow;
+use Packstub\Flow\Models\Concerns\BelongsToTenant;
 use Throwable;
 
 /**
@@ -23,9 +24,12 @@ use Throwable;
  * @property int|null $max_consecutive_failures
  * @property int $consecutive_failures
  * @property string|null $on_failure_workflow_id
+ * @property string|null $tenant_type
+ * @property string|null $tenant_id
  */
 class Workflow extends Model
 {
+    use BelongsToTenant;
     use HasUuids;
 
     protected $guarded = [];
@@ -71,6 +75,43 @@ class Workflow extends Model
     public function onFailureWorkflow(): BelongsTo
     {
         return $this->belongsTo(Flow::workflowModel(), 'on_failure_workflow_id');
+    }
+
+    public function versions(): HasMany
+    {
+        return $this->hasMany(Flow::versionModel(), 'workflow_id')->orderByDesc('number');
+    }
+
+    public function latestVersion(): HasOne
+    {
+        return $this->hasOne(Flow::versionModel(), 'workflow_id')->ofMany('number', 'max');
+    }
+
+    /**
+     * Store the current definition as a new version (called by the observer
+     * whenever the definition changes) and prune the oldest ones.
+     */
+    public function snapshotVersion(?string $by = null): WorkflowVersion
+    {
+        $number = (int) $this->versions()->max('number') + 1;
+
+        /** @var WorkflowVersion $version */
+        $version = $this->versions()->create([
+            'number' => $number,
+            'definition' => $this->definition,
+            'created_by' => $by,
+            'created_at' => now(),
+        ]);
+
+        $keep = (int) config('packstub-flow.versions.keep', 50);
+
+        if ($keep > 0 && $number > $keep) {
+            $this->versions()->where('number', '<=', $number - $keep)->delete();
+        }
+
+        $this->setRelation('latestVersion', $version);
+
+        return $version;
     }
 
     /** @return array<int, array<string, mixed>> */

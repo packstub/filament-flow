@@ -26,6 +26,7 @@ use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\Filament\Widgets\RunsOverview;
 use Packstub\Flow\FlowPlugin;
 use Packstub\Flow\Models\WorkflowRun;
+use Packstub\Flow\Support\Tenancy;
 use UnitEnum;
 
 /**
@@ -92,7 +93,10 @@ class WorkflowRuns extends Page implements HasTable
         $resource = static::plugin()?->getResource() ?? WorkflowResource::class;
 
         return $table
-            ->query(fn (): Builder => Flow::runModel()::query()->with('workflow')->withCount('steps'))
+            ->query(fn (): Builder => Flow::runModel()::query()
+                ->when(Tenancy::panelTenant(), fn (Builder $query, $tenant) => $query->ofTenant($tenant))
+                ->with('workflow')
+                ->withCount('steps'))
             ->defaultSort('started_at', 'desc')
             ->columns([
                 TextColumn::make('status')
@@ -100,7 +104,7 @@ class WorkflowRuns extends Page implements HasTable
                     ->badge(),
                 TextColumn::make('workflow.name')
                     ->label(__('packstub-flow::flow.resource.label'))
-                    ->url(fn (WorkflowRun $record): ?string => $record->workflow ? $resource::getUrl('edit', ['record' => $record->workflow]) : null)
+                    ->url(fn (WorkflowRun $record): ?string => $record->workflow && ($record->workflow->isGlobal() ? Tenancy::panelTenant() === null : true) ? $resource::getUrl('edit', ['record' => $record->workflow]) : null)
                     ->searchable()
                     ->sortable(),
                 IconColumn::make('is_test')
@@ -142,7 +146,7 @@ class WorkflowRuns extends Page implements HasTable
                 SelectFilter::make('status')->options(RunStatus::class)->multiple(),
                 SelectFilter::make('workflow_id')
                     ->label(__('packstub-flow::flow.resource.label'))
-                    ->options(fn (): array => Flow::workflowModel()::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->options(fn (): array => Flow::workflowModel()::query()->forTenant(Tenancy::panelTenant())->orderBy('name')->pluck('name', 'id')->all())
                     ->searchable(),
                 TernaryFilter::make('is_test')->label(__('packstub-flow::flow.runs.test'))->default(false),
                 Filter::make('started_at')
