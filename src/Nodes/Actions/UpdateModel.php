@@ -1,11 +1,11 @@
 <?php
 
-namespace Xlited\LaravelFlow\Nodes\Actions;
+namespace Packstub\Flow\Nodes\Actions;
 
 use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\TextInput;
-use Xlited\LaravelFlow\Base\Action;
-use Xlited\LaravelFlow\Support\ModelFinder;
+use Packstub\Flow\Base\Action;
+use Packstub\Flow\Support\ModelFinder;
 use Illuminate\Database\Eloquent\Model;
 
 class UpdateModel extends Action

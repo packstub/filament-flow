@@ -15,7 +15,7 @@ export default defineConfig({
         lib: {
             entry: resolve(__dirname, 'resources/js/index.js'),
             name: 'LaravelFlow',
-            fileName: 'laravel-flow',
+            fileName: 'packstub-flow',
             formats: ['es', 'umd'],
         },
         outDir: 'dist',

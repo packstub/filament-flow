@@ -1,9 +1,9 @@
 <?php
 
-namespace Xlited\LaravelFlow\Nodes\Actions;
+namespace Packstub\Flow\Nodes\Actions;
 
-use Xlited\LaravelFlow\Base\Action;
-use Xlited\LaravelFlow\Models\Workflow;
+use Packstub\Flow\Base\Action;
+use Packstub\Flow\Models\Workflow;
 use Filament\Forms\Components\Select;
 
 class DispatchWorkflow extends Action
@@ -42,8 +42,8 @@ class DispatchWorkflow extends Action
             return;
         }
 
-        app('laravel-flow')->dispatch(
-            \Xlited\LaravelFlow\Nodes\Triggers\SubWorkflowTriggered::class,
+        app('packstub-flow')->dispatch(
+            \Packstub\Flow\Nodes\Triggers\SubWorkflowTriggered::class,
             array_merge($payload, [
                 'target_workflow_id' => $targetWorkflowId,
             ])

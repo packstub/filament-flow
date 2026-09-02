@@ -1,9 +1,9 @@
 <?php
 
-namespace Xlited\LaravelFlow\Engines;
+namespace Packstub\Flow\Engines;
 
-use Xlited\LaravelFlow\Models\Workflow;
-use Xlited\LaravelFlow\Models\WorkflowLog;
+use Packstub\Flow\Models\Workflow;
+use Packstub\Flow\Models\WorkflowLog;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -130,7 +130,7 @@ class WorkflowRunner
             return true;
         }
 
-        $condition = app('laravel-flow-manager')->getCondition($identifier);
+        $condition = app('packstub-flow.registry')->getCondition($identifier);
 
         if (!$condition) {
             $this->recordStep('condition_error', "Condition component not found: {$identifier}");
@@ -151,7 +151,7 @@ class WorkflowRunner
             return true;
         }
 
-        $action = app('laravel-flow-manager')->getAction($identifier);
+        $action = app('packstub-flow.registry')->getAction($identifier);
 
         if (!$action) {
             $this->recordStep('action_error', "Action component not found: {$identifier}");
@@ -159,7 +159,7 @@ class WorkflowRunner
         }
 
         // Check if action is delayable and needs to pause
-        if ($action instanceof \Xlited\LaravelFlow\Contracts\DelayableAction) {
+        if ($action instanceof \Packstub\Flow\Contracts\DelayableAction) {
             $delaySeconds = $action->getDelaySeconds($config, $this->payload);
 
             if ($delaySeconds !== null && $delaySeconds > 0) {
@@ -173,7 +173,7 @@ class WorkflowRunner
                     $resumeNodeId = $firstNextNode['id'];
 
                     // Dispatch delayed job
-                    \Xlited\LaravelFlow\Jobs\ResumeWorkflowJob::dispatch(
+                    \Packstub\Flow\Jobs\ResumeWorkflowJob::dispatch(
                         $this->workflow->id,
                         $this->log->id,
                         $this->payload,

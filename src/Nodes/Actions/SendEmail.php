@@ -1,8 +1,8 @@
 <?php
 
-namespace Xlited\LaravelFlow\Nodes\Actions;
+namespace Packstub\Flow\Nodes\Actions;
 
-use Xlited\LaravelFlow\Base\Action;
+use Packstub\Flow\Base\Action;
 
 class SendEmail extends Action
 {
@@ -53,7 +53,7 @@ class SendEmail extends Action
         }
 
         \Illuminate\Support\Facades\Mail::to($recipient)->send(
-            new \Xlited\LaravelFlow\Mail\GenericEmail($subject, $body)
+            new \Packstub\Flow\Mail\GenericEmail($subject, $body)
         );
     }
 

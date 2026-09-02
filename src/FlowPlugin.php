@@ -1,16 +1,16 @@
 <?php
 
-namespace Xlited\LaravelFlow;
+namespace Packstub\Flow;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
-use Xlited\LaravelFlow\Filament\Resources\WorkflowResource;
+use Packstub\Flow\Filament\Resources\WorkflowResource;
 
-class LaravelFlowPlugin implements Plugin
+class FlowPlugin implements Plugin
 {
     public function getId(): string
     {
-        return 'laravel-flow';
+        return 'packstub-flow';
     }
 
     public function register(Panel $panel): void
@@ -34,7 +34,7 @@ class LaravelFlowPlugin implements Plugin
     public static function get(): static
     {
         /** @var static $plugin */
-        $plugin = filament()->getPlugin('laravel-flow');
+        $plugin = filament()->getPlugin('packstub-flow');
 
         return $plugin;
     }

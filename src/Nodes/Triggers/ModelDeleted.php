@@ -1,9 +1,9 @@
 <?php
 
-namespace Xlited\LaravelFlow\Nodes\Triggers;
+namespace Packstub\Flow\Nodes\Triggers;
 
-use Xlited\LaravelFlow\Base\Trigger;
-use Xlited\LaravelFlow\Support\ModelFinder;
+use Packstub\Flow\Base\Trigger;
+use Packstub\Flow\Support\ModelFinder;
 
 class ModelDeleted extends Trigger
 {

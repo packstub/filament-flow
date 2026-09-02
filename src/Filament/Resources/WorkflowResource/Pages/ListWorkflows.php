@@ -1,8 +1,8 @@
 <?php
 
-namespace Xlited\LaravelFlow\Filament\Resources\WorkflowResource\Pages;
+namespace Packstub\Flow\Filament\Resources\WorkflowResource\Pages;
 
-use Xlited\LaravelFlow\Filament\Resources\WorkflowResource;
+use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 

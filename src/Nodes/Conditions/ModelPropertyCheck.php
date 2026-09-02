@@ -1,9 +1,9 @@
 <?php
 
-namespace Xlited\LaravelFlow\Nodes\Conditions;
+namespace Packstub\Flow\Nodes\Conditions;
 
-use Xlited\LaravelFlow\Base\Condition;
-use Xlited\LaravelFlow\Support\ModelFinder;
+use Packstub\Flow\Base\Condition;
+use Packstub\Flow\Support\ModelFinder;
 use Illuminate\Database\Eloquent\Model;
 
 class ModelPropertyCheck extends Condition

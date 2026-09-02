@@ -1,13 +1,13 @@
 <?php
 
-namespace Xlited\LaravelFlow\Nodes\Actions;
+namespace Packstub\Flow\Nodes\Actions;
 
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Support\Facades\Http;
-use Xlited\LaravelFlow\Base\Action;
+use Packstub\Flow\Base\Action;
 
 class HttpRequest extends Action
 {

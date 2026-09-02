@@ -1,27 +1,27 @@
 <?php
 
-namespace Xlited\LaravelFlow\Traits;
+namespace Packstub\Flow\Traits;
 
 use Illuminate\Database\Eloquent\Model;
-use Xlited\LaravelFlow\Facades\LaravelFlow;
-use Xlited\LaravelFlow\Nodes\Triggers\ModelCreated;
-use Xlited\LaravelFlow\Nodes\Triggers\ModelUpdated;
-use Xlited\LaravelFlow\Nodes\Triggers\ModelDeleted;
+use Packstub\Flow\Facades\Flow;
+use Packstub\Flow\Nodes\Triggers\ModelCreated;
+use Packstub\Flow\Nodes\Triggers\ModelUpdated;
+use Packstub\Flow\Nodes\Triggers\ModelDeleted;
 
 trait HasWorkflows
 {
     public static function bootHasWorkflows()
     {
         static::created(function (Model $model) {
-            LaravelFlow::dispatch(ModelCreated::class, ['model' => $model]);
+            Flow::dispatch(ModelCreated::class, ['model' => $model]);
         });
 
         static::updated(function (Model $model) {
-            LaravelFlow::dispatch(ModelUpdated::class, ['model' => $model]);
+            Flow::dispatch(ModelUpdated::class, ['model' => $model]);
         });
 
         static::deleted(function (Model $model) {
-            LaravelFlow::dispatch(ModelDeleted::class, ['model' => $model]);
+            Flow::dispatch(ModelDeleted::class, ['model' => $model]);
         });
     }
 }

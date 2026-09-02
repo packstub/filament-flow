@@ -1,10 +1,10 @@
 <?php
 
-namespace Xlited\LaravelFlow\Tests;
+namespace Packstub\Flow\Tests;
 
 use Orchestra\Testbench\TestCase as BaseTestCase;
 // use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
-use Xlited\LaravelFlow\LaravelFlowServiceProvider;
+use Packstub\Flow\FlowServiceProvider;
 use Filament\FilamentServiceProvider;
 use Livewire\LivewireServiceProvider;
 
@@ -18,7 +18,7 @@ class TestCase extends BaseTestCase
     protected function getPackageProviders($app)
     {
         return [
-            LaravelFlowServiceProvider::class,
+            FlowServiceProvider::class,
             FilamentServiceProvider::class,
             LivewireServiceProvider::class,
         ];

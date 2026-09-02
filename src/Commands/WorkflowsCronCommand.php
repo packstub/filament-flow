@@ -1,9 +1,9 @@
 <?php
 
-namespace Xlited\LaravelFlow\Commands;
+namespace Packstub\Flow\Commands;
 
 use Illuminate\Console\Command;
-use Xlited\LaravelFlow\Engines\WorkflowDispatcher;
+use Packstub\Flow\Engines\WorkflowDispatcher;
 
 class WorkflowsCronCommand extends Command
 {
@@ -29,9 +29,9 @@ class WorkflowsCronCommand extends Command
         $this->info('Checking cron workflows...');
 
         /** @var WorkflowDispatcher $dispatcher */
-        $dispatcher = app('laravel-flow');
+        $dispatcher = app('packstub-flow');
 
-        $dispatcher->dispatch(\Xlited\LaravelFlow\Nodes\Triggers\Cron::class);
+        $dispatcher->dispatch(\Packstub\Flow\Nodes\Triggers\Cron::class);
 
         $this->info('Cron workflows dispatched.');
     }

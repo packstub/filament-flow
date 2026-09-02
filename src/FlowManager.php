@@ -1,10 +1,10 @@
 <?php
 
-namespace Xlited\LaravelFlow;
+namespace Packstub\Flow;
 
-use Xlited\LaravelFlow\Base\Trigger;
-use Xlited\LaravelFlow\Base\Action;
-use Xlited\LaravelFlow\Base\Condition;
+use Packstub\Flow\Base\Trigger;
+use Packstub\Flow\Base\Action;
+use Packstub\Flow\Base\Condition;
 
 class FlowManager
 {

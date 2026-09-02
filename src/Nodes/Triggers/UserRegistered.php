@@ -1,8 +1,8 @@
 <?php
 
-namespace Xlited\LaravelFlow\Nodes\Triggers;
+namespace Packstub\Flow\Nodes\Triggers;
 
-use Xlited\LaravelFlow\Base\Trigger;
+use Packstub\Flow\Base\Trigger;
 
 class UserRegistered extends Trigger
 {

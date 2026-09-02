@@ -1,6 +1,6 @@
 <?php
 
-namespace Xlited\LaravelFlow\Mail;
+namespace Packstub\Flow\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;

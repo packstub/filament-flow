@@ -1,5 +1,5 @@
 {
-    "name": "xlited/laravel-flow",
+    "name": "packstub/filament-flow",
     "description": "Visual Workflow Builder for Filament PHP",
     "keywords": [
         "laravel",
@@ -30,22 +30,22 @@
     },
     "autoload": {
         "psr-4": {
-            "Xlited\\LaravelFlow\\": "src/",
-            "Xlited\\LaravelFlow\\Database\\Factories\\": "database/factories/"
+            "Packstub\\Flow\\": "src/",
+            "Packstub\\Flow\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Xlited\\LaravelFlow\\Tests\\": "tests/"
+            "Packstub\\Flow\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Xlited\\LaravelFlow\\LaravelFlowServiceProvider"
+                "Packstub\\Flow\\FlowServiceProvider"
             ],
             "aliases": {
-                "LaravelFlow": "Xlited\\LaravelFlow\\Facades\\LaravelFlow"
+                "LaravelFlow": "Packstub\\Flow\\Facades\\LaravelFlow"
             }
         }
     },

@@ -1,9 +1,9 @@
 <?php
 
-namespace Xlited\LaravelFlow\Engines;
+namespace Packstub\Flow\Engines;
 
-use Xlited\LaravelFlow\Models\Workflow;
-use Xlited\LaravelFlow\Models\WorkflowTrigger;
+use Packstub\Flow\Models\Workflow;
+use Packstub\Flow\Models\WorkflowTrigger;
 use Illuminate\Support\Facades\Log;
 
 class WorkflowDispatcher
@@ -50,9 +50,9 @@ class WorkflowDispatcher
         // Specific logic for Model triggers
         if (
             in_array($triggerType, [
-                \Xlited\LaravelFlow\Nodes\Triggers\ModelCreated::class,
-                \Xlited\LaravelFlow\Nodes\Triggers\ModelUpdated::class,
-                \Xlited\LaravelFlow\Nodes\Triggers\ModelDeleted::class,
+                \Packstub\Flow\Nodes\Triggers\ModelCreated::class,
+                \Packstub\Flow\Nodes\Triggers\ModelUpdated::class,
+                \Packstub\Flow\Nodes\Triggers\ModelDeleted::class,
             ])
         ) {
             if (isset($config['model_class']) && isset($payload['model'])) {
@@ -65,7 +65,7 @@ class WorkflowDispatcher
             }
         }
 
-        if ($triggerType === \Xlited\LaravelFlow\Nodes\Triggers\Cron::class) {
+        if ($triggerType === \Packstub\Flow\Nodes\Triggers\Cron::class) {
             $expression = $config['expression'] ?? null;
             if (!$expression) {
                 return false;
@@ -80,7 +80,7 @@ class WorkflowDispatcher
             }
         }
 
-        if ($triggerType === \Xlited\LaravelFlow\Nodes\Triggers\SubWorkflowTriggered::class) {
+        if ($triggerType === \Packstub\Flow\Nodes\Triggers\SubWorkflowTriggered::class) {
             // Match explicitly by target_workflow_id
             return isset($payload['target_workflow_id']) &&
                 (string) $payload['target_workflow_id'] === (string) $trigger->workflow_id;

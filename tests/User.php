@@ -1,10 +1,10 @@
 <?php
 
-namespace Xlited\LaravelFlow\Tests;
+namespace Packstub\Flow\Tests;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Xlited\LaravelFlow\Traits\HasWorkflows;
+use Packstub\Flow\Traits\HasWorkflows;
 
 class User extends Authenticatable
 {

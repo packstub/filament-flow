@@ -1,6 +1,6 @@
 <?php
 
-namespace Xlited\LaravelFlow\Filament\Livewire;
+namespace Packstub\Flow\Filament\Livewire;
 
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -12,7 +12,7 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\Action;
-use Xlited\LaravelFlow\FlowManager;
+use Packstub\Flow\FlowManager;
 
 class ManageNode extends Component implements HasForms, HasActions
 {
@@ -53,7 +53,7 @@ class ManageNode extends Component implements HasForms, HasActions
         }
 
         // Resolve the node class to get its schema
-        // $manager = app('laravel-flow-manager');
+        // $manager = app('packstub-flow.registry');
         // We need a way to get the instance or class. Accessing static method if possible or creating instance.
 
         $schema = [];
@@ -82,7 +82,7 @@ class ManageNode extends Component implements HasForms, HasActions
 
     public function render()
     {
-        return view('laravel-flow::livewire.manage-node');
+        return view('packstub-flow::livewire.manage-node');
     }
 
     public function manageNodeAction(): Action

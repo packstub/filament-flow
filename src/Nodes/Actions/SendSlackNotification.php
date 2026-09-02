@@ -1,8 +1,8 @@
 <?php
 
-namespace Xlited\LaravelFlow\Nodes\Actions;
+namespace Packstub\Flow\Nodes\Actions;
 
-use Xlited\LaravelFlow\Base\Action;
+use Packstub\Flow\Base\Action;
 use Illuminate\Support\Facades\Http;
 
 class SendSlackNotification extends Action

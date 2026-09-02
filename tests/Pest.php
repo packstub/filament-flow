@@ -11,7 +11,7 @@
 |
 */
 
-pest()->extend(Xlited\LaravelFlow\Tests\TestCase::class)
+pest()->extend(Packstub\Flow\Tests\TestCase::class)
     // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature')
     ->in('Unit')

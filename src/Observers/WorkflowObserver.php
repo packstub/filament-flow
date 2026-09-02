@@ -1,8 +1,8 @@
 <?php
 
-namespace Xlited\LaravelFlow\Observers;
+namespace Packstub\Flow\Observers;
 
-use Xlited\LaravelFlow\Models\Workflow;
+use Packstub\Flow\Models\Workflow;
 
 class WorkflowObserver
 {

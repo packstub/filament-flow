@@ -1,8 +1,8 @@
 <?php
 
-namespace Xlited\LaravelFlow\Nodes\Conditions;
+namespace Packstub\Flow\Nodes\Conditions;
 
-use Xlited\LaravelFlow\Base\Condition;
+use Packstub\Flow\Base\Condition;
 use Carbon\Carbon;
 
 class TimeOfDay extends Condition

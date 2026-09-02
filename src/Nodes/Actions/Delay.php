@@ -1,9 +1,9 @@
 <?php
 
-namespace Xlited\LaravelFlow\Nodes\Actions;
+namespace Packstub\Flow\Nodes\Actions;
 
-use Xlited\LaravelFlow\Base\Action;
-use Xlited\LaravelFlow\Contracts\DelayableAction;
+use Packstub\Flow\Base\Action;
+use Packstub\Flow\Contracts\DelayableAction;
 
 class Delay extends Action implements DelayableAction
 {

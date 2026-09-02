@@ -1,22 +1,22 @@
 <?php
 
-namespace Xlited\LaravelFlow\Tests\Feature;
+namespace Packstub\Flow\Tests\Feature;
 
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
-use Xlited\LaravelFlow\Models\Workflow;
-use Xlited\LaravelFlow\Nodes\Actions\HttpRequest;
-use Xlited\LaravelFlow\Nodes\Actions\SendEmail;
-use Xlited\LaravelFlow\Nodes\Actions\UpdateModel;
-use Xlited\LaravelFlow\Nodes\Conditions\ModelPropertyCheck;
-use Xlited\LaravelFlow\Nodes\Triggers\ModelCreated;
-use Xlited\LaravelFlow\Nodes\Triggers\ModelUpdated;
-use Xlited\LaravelFlow\Nodes\Triggers\UserRegistered;
-use Xlited\LaravelFlow\Tests\TestCase;
-use Xlited\LaravelFlow\Tests\User;
+use Packstub\Flow\Models\Workflow;
+use Packstub\Flow\Nodes\Actions\HttpRequest;
+use Packstub\Flow\Nodes\Actions\SendEmail;
+use Packstub\Flow\Nodes\Actions\UpdateModel;
+use Packstub\Flow\Nodes\Conditions\ModelPropertyCheck;
+use Packstub\Flow\Nodes\Triggers\ModelCreated;
+use Packstub\Flow\Nodes\Triggers\ModelUpdated;
+use Packstub\Flow\Nodes\Triggers\UserRegistered;
+use Packstub\Flow\Tests\TestCase;
+use Packstub\Flow\Tests\User;
 
 uses(TestCase::class, RefreshDatabase::class);
 
@@ -70,7 +70,7 @@ test('workflow sends email when user registers', function () {
     event(new Registered($user));
 
     // Assert GenericEmail Sent
-    Mail::assertSent(function (\Xlited\LaravelFlow\Mail\GenericEmail $mail) use ($user) {
+    Mail::assertSent(function (\Packstub\Flow\Mail\GenericEmail $mail) use ($user) {
         return $mail->hasTo($user->email) &&
             $mail->subject === 'Welcome Test User' &&
             $mail->body === 'Hello test@example.com';

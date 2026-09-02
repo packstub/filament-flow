@@ -1,12 +1,12 @@
 <?php
 
-namespace Xlited\LaravelFlow\Filament\Resources;
+namespace Packstub\Flow\Filament\Resources;
 
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
-use Xlited\LaravelFlow\Filament\Resources\WorkflowResource\Pages;
-use Xlited\LaravelFlow\Models\Workflow;
-use Xlited\LaravelFlow\Filament\Forms\Components\FlowBuilder;
+use Packstub\Flow\Filament\Resources\WorkflowResource\Pages;
+use Packstub\Flow\Models\Workflow;
+use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;

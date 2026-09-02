@@ -20,7 +20,7 @@
             data: {
                 label: "User Registered",
                 identifier:
-                    "Xlited\\LaravelFlow\\Nodes\\Triggers\\UserRegistered",
+                    "Packstub\\Flow\\Nodes\\Triggers\\UserRegistered",
                 description: "Triggers when a new user signs up.",
             },
         },
@@ -30,7 +30,7 @@
             position: { x: 350, y: 50 },
             data: {
                 label: "Send Welcome Email",
-                identifier: "Xlited\\LaravelFlow\\Nodes\\Actions\\SendEmail",
+                identifier: "Packstub\\Flow\\Nodes\\Actions\\SendEmail",
                 description: "Sends a welcome email to the user.",
                 config: {
                     to: "{{model.email}}",

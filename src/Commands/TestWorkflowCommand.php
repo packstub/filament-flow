@@ -1,10 +1,10 @@
 <?php
 
-namespace Xlited\LaravelFlow\Commands;
+namespace Packstub\Flow\Commands;
 
 use Illuminate\Console\Command;
-use Xlited\LaravelFlow\Models\Workflow;
-use Xlited\LaravelFlow\Facades\LaravelFlow;
+use Packstub\Flow\Models\Workflow;
+use Packstub\Flow\Facades\Flow;
 
 class TestWorkflowCommand extends Command
 {
@@ -35,7 +35,7 @@ class TestWorkflowCommand extends Command
 
         $this->info("Testing workflow: {$workflow->name} ({$workflow->id}) with trigger: {$trigger->type}");
 
-        LaravelFlow::dispatch($trigger->type, ['debug' => true]);
+        Flow::dispatch($trigger->type, ['debug' => true]);
 
         $this->info("Workflow dispatched. Check workflow_logs for results.");
     }

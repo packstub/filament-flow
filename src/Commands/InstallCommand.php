@@ -1,17 +1,17 @@
 <?php
 
-namespace Xlited\LaravelFlow\Commands;
+namespace Packstub\Flow\Commands;
 
 use Illuminate\Console\Command;
 
 class InstallCommand extends Command
 {
     protected $signature = 'flow:install';
-    protected $description = 'Install Laravel Flow - runs migrations and publishes assets';
+    protected $description = 'Install Filament Flow - runs migrations and publishes assets';
 
     public function handle(): int
     {
-        $this->info('Installing Laravel Flow...');
+        $this->info('Installing Filament Flow...');
         $this->newLine();
 
         // Run migrations
@@ -35,11 +35,11 @@ class InstallCommand extends Command
         });
 
         $this->newLine();
-        $this->components->info('Laravel Flow installed successfully!');
+        $this->components->info('Filament Flow installed successfully!');
         $this->newLine();
         $this->line('  Next steps:');
         $this->line('  1. Add the HasWorkflows trait to models you want to track');
-        $this->line('  2. Register the LaravelFlowPlugin in your Filament panel');
+        $this->line('  2. Register the FlowPlugin in your Filament panel');
         $this->line('  3. Visit /admin/workflows to create your first workflow');
         $this->newLine();
 

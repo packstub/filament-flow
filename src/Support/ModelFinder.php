@@ -1,6 +1,6 @@
 <?php
 
-namespace Xlited\LaravelFlow\Support;
+namespace Packstub\Flow\Support;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Model;

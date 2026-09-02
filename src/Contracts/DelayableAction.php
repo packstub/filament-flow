@@ -1,6 +1,6 @@
 <?php
 
-namespace Xlited\LaravelFlow\Contracts;
+namespace Packstub\Flow\Contracts;
 
 /**
  * Interface for actions that can pause workflow execution.

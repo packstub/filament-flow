@@ -1,15 +1,15 @@
 <?php
 
-namespace Xlited\LaravelFlow\Jobs;
+namespace Packstub\Flow\Jobs;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Xlited\LaravelFlow\Models\Workflow;
-use Xlited\LaravelFlow\Models\WorkflowLog;
-use Xlited\LaravelFlow\Engines\WorkflowRunner;
+use Packstub\Flow\Models\Workflow;
+use Packstub\Flow\Models\WorkflowLog;
+use Packstub\Flow\Engines\WorkflowRunner;
 
 class ResumeWorkflowJob implements ShouldQueue
 {

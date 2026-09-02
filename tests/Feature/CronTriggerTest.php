@@ -1,13 +1,13 @@
 <?php
 
-namespace Xlited\LaravelFlow\Tests\Feature;
+namespace Packstub\Flow\Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
-use Xlited\LaravelFlow\Models\Workflow;
-use Xlited\LaravelFlow\Nodes\Actions\HttpRequest;
-use Xlited\LaravelFlow\Nodes\Triggers\Cron;
-use Xlited\LaravelFlow\Tests\TestCase;
+use Packstub\Flow\Models\Workflow;
+use Packstub\Flow\Nodes\Actions\HttpRequest;
+use Packstub\Flow\Nodes\Triggers\Cron;
+use Packstub\Flow\Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 

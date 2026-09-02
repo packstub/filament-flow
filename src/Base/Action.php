@@ -1,6 +1,6 @@
 <?php
 
-namespace Xlited\LaravelFlow\Base;
+namespace Packstub\Flow\Base;
 
 abstract class Action extends Node
 {

@@ -1,18 +1,18 @@
 <?php
 
-namespace Xlited\LaravelFlow\Tests\Feature;
+namespace Packstub\Flow\Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
-use Xlited\LaravelFlow\Contracts\DelayableAction;
-use Xlited\LaravelFlow\Jobs\ResumeWorkflowJob;
-use Xlited\LaravelFlow\Models\Workflow;
-use Xlited\LaravelFlow\Models\WorkflowLog;
-use Xlited\LaravelFlow\Nodes\Actions\Delay;
-use Xlited\LaravelFlow\Nodes\Actions\SendEmail;
-use Xlited\LaravelFlow\Nodes\Triggers\ModelCreated;
-use Xlited\LaravelFlow\Tests\TestCase;
-use Xlited\LaravelFlow\Tests\User;
+use Packstub\Flow\Contracts\DelayableAction;
+use Packstub\Flow\Jobs\ResumeWorkflowJob;
+use Packstub\Flow\Models\Workflow;
+use Packstub\Flow\Models\WorkflowLog;
+use Packstub\Flow\Nodes\Actions\Delay;
+use Packstub\Flow\Nodes\Actions\SendEmail;
+use Packstub\Flow\Nodes\Triggers\ModelCreated;
+use Packstub\Flow\Tests\TestCase;
+use Packstub\Flow\Tests\User;
 use Illuminate\Support\Facades\Mail;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -168,7 +168,7 @@ test('resume workflow job continues execution from specified node', function () 
     $job->handle();
 
     // Assert email was sent
-    Mail::assertSent(\Xlited\LaravelFlow\Mail\GenericEmail::class, function ($mail) {
+    Mail::assertSent(\Packstub\Flow\Mail\GenericEmail::class, function ($mail) {
         return $mail->subject === 'Resumed Email';
     });
 
