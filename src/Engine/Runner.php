@@ -8,6 +8,7 @@ use Packstub\Flow\Contracts\Delayable;
 use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Events\WorkflowCompleted;
+use Packstub\Flow\Events\WorkflowDeactivated;
 use Packstub\Flow\Events\WorkflowFailed;
 use Packstub\Flow\Events\WorkflowStarted;
 use Packstub\Flow\Exceptions\WorkflowException;
@@ -18,6 +19,7 @@ use Packstub\Flow\Models\WorkflowRun;
 use Packstub\Flow\NodeRegistry;
 use Packstub\Flow\Nodes\Action;
 use Packstub\Flow\Support\PayloadSerializer;
+use Packstub\Flow\Support\Placeholders;
 use Throwable;
 
 /**
@@ -37,6 +39,9 @@ class Runner
     public const RETRY_AFTER = '_retry_after';
 
     public const ON_ERROR = '_on_error';
+
+    /** How many runs are executing synchronously in this process, one inside another. */
+    protected static int $depth = 0;
 
     protected Graph $graph;
 
@@ -135,6 +140,11 @@ class Runner
         return $this->run;
     }
 
+    public static function depth(): int
+    {
+        return static::$depth;
+    }
+
     /** @return array<string, mixed> */
     public function getPayload(): array
     {
@@ -143,6 +153,8 @@ class Runner
 
     protected function execute(callable $callback): void
     {
+        static::$depth++;
+
         try {
             $callback();
 
@@ -150,15 +162,9 @@ class Runner
 
             $this->finish($this->paused || $this->run->pending_resumes > 0 ? RunStatus::Delayed : RunStatus::Success);
         } catch (Throwable $exception) {
-            $this->run->forceFill([
-                'status' => RunStatus::Failed,
-                'error' => $exception->getMessage(),
-                'finished_at' => Date::now(),
-            ])->save();
-
-            report($exception);
-
-            event(new WorkflowFailed($this->workflow, $this->run, $this->payload, $exception));
+            $this->fail($exception);
+        } finally {
+            static::$depth--;
         }
     }
 
@@ -173,8 +179,55 @@ class Runner
         $this->run->save();
 
         if ($status === RunStatus::Success) {
+            if ($this->workflow->consecutive_failures > 0) {
+                $this->workflow->newQuery()->whereKey($this->workflow->getKey())->update(['consecutive_failures' => 0]);
+                $this->workflow->consecutive_failures = 0;
+            }
+
             event(new WorkflowCompleted($this->workflow, $this->run, $this->payload));
         }
+    }
+
+    protected function fail(Throwable $exception): void
+    {
+        $this->run->forceFill([
+            'status' => RunStatus::Failed,
+            'error' => Placeholders::mask($exception->getMessage()),
+            'finished_at' => Date::now(),
+        ])->save();
+
+        report($exception);
+
+        event(new WorkflowFailed($this->workflow, $this->run, $this->payload, $exception));
+
+        $this->countFailure();
+    }
+
+    /**
+     * "Deactivate after N consecutive failures": count this failure and
+     * switch the workflow off when the limit is reached.
+     */
+    protected function countFailure(): void
+    {
+        $limit = (int) ($this->workflow->max_consecutive_failures ?? 0);
+
+        $this->workflow->newQuery()->whereKey($this->workflow->getKey())->increment('consecutive_failures');
+        $failures = (int) $this->workflow->newQuery()->whereKey($this->workflow->getKey())->value('consecutive_failures');
+        $this->workflow->consecutive_failures = $failures;
+
+        if ($limit <= 0 || $failures < $limit || ! $this->workflow->is_active) {
+            return;
+        }
+
+        $this->workflow->update(['is_active' => false]);
+
+        event(new WorkflowDeactivated($this->workflow, $this->run, $failures));
+
+        $this->workflow->notifyAdmins(
+            __('packstub-flow::flow.notifications.deactivated_title', ['name' => $this->workflow->name]),
+            __('packstub-flow::flow.notifications.deactivated_body', ['count' => $failures, 'error' => (string) $this->run->error]),
+            'danger',
+        );
     }
 
     /**
@@ -306,7 +359,7 @@ class Runner
 
         for ($attempt = 1; ; $attempt++) {
             try {
-                $action->handle($config, $payload);
+                Placeholders::allowSecrets(fn () => $action->handle($config, $payload));
 
                 return;
             } catch (Throwable $exception) {
@@ -388,10 +441,10 @@ class Runner
             'node_id' => (string) $node['id'],
             'type' => $node['type'] ?? null,
             'label' => $this->label($node),
-            'message' => $message,
+            'message' => Placeholders::mask($message),
             'status' => $status,
             'duration_ms' => $startedAt !== null ? (int) round((microtime(true) - $startedAt) * 1000) : null,
-            'output' => $output !== null ? $this->truncateOutput($output) : null,
+            'output' => $output !== null ? $this->truncateOutput(Placeholders::mask($output)) : null,
         ], fn ($value): bool => $value !== null);
 
         $this->run->getConnection()->transaction(function () use ($step): void {

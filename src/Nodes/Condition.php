@@ -11,6 +11,14 @@ abstract class Condition extends Node
         return NodeType::Condition;
     }
 
+    public function getOutputs(): array
+    {
+        return [
+            'true' => __('packstub-flow::flow.builder.true'),
+            'false' => __('packstub-flow::flow.builder.false'),
+        ];
+    }
+
     /**
      * True continues along the "true" edge, false along the "false" edge.
      *

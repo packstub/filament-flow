@@ -15,6 +15,8 @@ class WorkflowMail extends Mailable
     public function __construct(
         public string $mailSubject,
         public string $body,
+        public ?string $actionLabel = null,
+        public ?string $actionUrl = null,
     ) {}
 
     public function envelope(): Envelope
@@ -24,6 +26,10 @@ class WorkflowMail extends Mailable
 
     public function content(): Content
     {
-        return new Content(markdown: 'packstub-flow::mail.workflow', with: ['body' => $this->body]);
+        return new Content(markdown: 'packstub-flow::mail.workflow', with: [
+            'body' => $this->body,
+            'actionLabel' => $this->actionLabel,
+            'actionUrl' => $this->actionUrl,
+        ]);
     }
 }

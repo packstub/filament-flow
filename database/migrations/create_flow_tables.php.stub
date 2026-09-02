@@ -11,6 +11,7 @@ return new class extends Migration
         $workflows = config('packstub-flow.tables.workflows', 'flow_workflows');
         $triggers = config('packstub-flow.tables.triggers', 'flow_workflow_triggers');
         $runs = config('packstub-flow.tables.runs', 'flow_workflow_runs');
+        $secrets = config('packstub-flow.tables.secrets', 'flow_secrets');
 
         Schema::create($workflows, function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -18,6 +19,11 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->json('definition')->nullable();
             $table->boolean('is_active')->default(false)->index();
+            // Per-workflow run retention (null = the global prune_runs_after_days).
+            $table->unsignedInteger('prune_after_days')->nullable();
+            // Switch the workflow off after this many failed runs in a row (null = never).
+            $table->unsignedSmallInteger('max_consecutive_failures')->nullable();
+            $table->unsignedInteger('consecutive_failures')->default(0);
             $table->timestamps();
         });
 
@@ -49,10 +55,19 @@ return new class extends Migration
             $table->index(['workflow_id', 'subject_type', 'subject_id'], 'flow_runs_subject_index');
             $table->index('started_at');
         });
+
+        Schema::create($secrets, function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('key', 80)->unique();
+            $table->text('value');
+            $table->string('description')->nullable();
+            $table->timestamps();
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists(config('packstub-flow.tables.secrets', 'flow_secrets'));
         Schema::dropIfExists(config('packstub-flow.tables.runs', 'flow_workflow_runs'));
         Schema::dropIfExists(config('packstub-flow.tables.triggers', 'flow_workflow_triggers'));
         Schema::dropIfExists(config('packstub-flow.tables.workflows', 'flow_workflows'));

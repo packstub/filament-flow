@@ -41,9 +41,10 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
+            ->resources([OrderResource::class])
             ->plugin(
                 FlowPlugin::make()
-                    ->actions([SetStatusAction::class, FlakyAction::class])
+                    ->actions([SetStatusAction::class, FlakyAction::class, EchoAction::class, UnavailableAction::class])
                     ->navigationGroup('Automation'),
             );
     }

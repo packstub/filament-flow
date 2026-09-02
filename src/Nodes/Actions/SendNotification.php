@@ -2,6 +2,7 @@
 
 namespace Packstub\Flow\Nodes\Actions;
 
+use Filament\Actions\Action as NotificationAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -57,6 +58,15 @@ class SendNotification extends Action
                 ->placeholder('admin@example.com, {{ model.owner.email }}')
                 ->helperText(__('packstub-flow::flow.nodes.send_notification.recipients_help'))
                 ->required(),
+            TextInput::make('action_label')
+                ->label(__('packstub-flow::flow.nodes.send_notification.action_label'))
+                ->placeholder(__('packstub-flow::flow.nodes.send_notification.action_label_placeholder'))
+                ->helperText(__('packstub-flow::flow.nodes.send_notification.action_label_help'))
+                ->maxLength(60),
+            TextInput::make('action_url')
+                ->label(__('packstub-flow::flow.nodes.send_notification.action_url'))
+                ->placeholder('{{ model.url }}')
+                ->default('{{ model.url }}'),
         ];
     }
 
@@ -78,6 +88,15 @@ class SendNotification extends Action
             'danger' => $notification->danger(),
             default => $notification->info(),
         };
+
+        $label = $this->interpolate($config['action_label'] ?? '', $payload);
+        $url = $this->interpolate($config['action_url'] ?? '', $payload);
+
+        if ($label !== '' && $url !== '') {
+            $notification->actions([
+                NotificationAction::make('open')->label($label)->url($url)->markAsRead(),
+            ]);
+        }
 
         $notification->sendToDatabase($users);
     }

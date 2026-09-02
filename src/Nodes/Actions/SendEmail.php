@@ -46,6 +46,14 @@ class SendEmail extends Action
                 ->placeholder(__('packstub-flow::flow.nodes.send_email.body_placeholder'))
                 ->rows(6)
                 ->required(),
+            TextInput::make('action_label')
+                ->label(__('packstub-flow::flow.nodes.send_email.action_label'))
+                ->placeholder(__('packstub-flow::flow.nodes.send_email.action_label_placeholder'))
+                ->helperText(__('packstub-flow::flow.nodes.send_email.action_label_help'))
+                ->maxLength(60),
+            TextInput::make('action_url')
+                ->label(__('packstub-flow::flow.nodes.send_email.action_url'))
+                ->placeholder('{{ model.url }}'),
         ];
     }
 
@@ -57,9 +65,14 @@ class SendEmail extends Action
             return;
         }
 
+        $label = $this->interpolate($config['action_label'] ?? '', $payload);
+        $url = $this->interpolate($config['action_url'] ?? '', $payload);
+
         Mail::to($recipients)->send(new WorkflowMail(
             $this->interpolate($config['subject'] ?? '', $payload),
             $this->interpolate($config['body'] ?? '', $payload),
+            $label !== '' && $url !== '' ? $label : null,
+            $label !== '' && $url !== '' ? $url : null,
         ));
     }
 }

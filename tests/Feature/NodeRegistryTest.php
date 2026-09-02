@@ -3,10 +3,12 @@
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\NodeRegistry;
 use Packstub\Flow\Nodes\Actions\SendEmail;
+use Packstub\Flow\Nodes\Actions\Wait;
 use Packstub\Flow\Nodes\Conditions\TimeOfDay;
 use Packstub\Flow\Nodes\Triggers\Manual;
 use Packstub\Flow\Nodes\Triggers\Schedule;
 use Packstub\Flow\Tests\Fixtures\SetStatusAction;
+use Packstub\Flow\Tests\Fixtures\UnavailableAction;
 
 it('registers the built-in nodes from config and the plugin', function (): void {
     $registry = app(NodeRegistry::class);
@@ -43,4 +45,14 @@ it('can forget nodes and rejects unknown classes', function (): void {
     expect($registry->actions())->toBe([]);
 
     expect(fn () => $registry->register(stdClass::class))->toThrow(InvalidArgumentException::class);
+});
+
+it('never registers a node whose package is not installed', function (): void {
+    $registry = app(NodeRegistry::class);
+
+    expect($registry->has(UnavailableAction::class))->toBeFalse()
+        ->and($registry->action(UnavailableAction::class))->toBeNull()
+        ->and(collect($registry->toArray()['actions'])->pluck('identifier')->all())->not->toContain(UnavailableAction::class)
+        ->and(collect($registry->toArray()['actions'])->firstWhere('identifier', Wait::class)['outputs'])->toBe([['id' => 'output', 'label' => 'Next']])
+        ->and(collect($registry->toArray()['conditions'])->first()['outputs'])->toHaveCount(2);
 });

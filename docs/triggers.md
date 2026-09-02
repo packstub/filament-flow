@@ -19,11 +19,16 @@ Every trigger's payload is also available to your own code through the `Workflow
 
 ## Manual
 
-Starts from the **Run now** button (table row and edit page header), from the console with `packstub-flow:run`, or from code with `Flow::run()`. No settings.
+Starts from the **Run now** button (table row and edit page header), from a **Run workflow** action on any resource, from the console with `packstub-flow:run`, or from code with `Flow::run()`.
+
+| Setting | |
+| --- | --- |
+| Record type | Optional. When set, the workflow is offered by the **Run workflow** resource action only for records of that type, and its nodes can rely on `{{ model.* }}` |
 
 | Payload | From |
 | --- | --- |
-| `manual` | `true` when started with **Run now** |
+| `manual` | `true` when started with **Run now** or a resource action |
+| `model` | The record, when started from a resource action (alias `record`) |
 | anything else | Whatever you pass to `Flow::run()` or `--payload` |
 
 **Run now** passes `['manual' => true]` and nothing else, so nodes that need a record (record conditions, **Update record**) fail on such a run. Use it to try schedules, webhooks, notifications and logging.
@@ -31,6 +36,24 @@ Starts from the **Run now** button (table row and edit page header), from the co
 ```php
 Flow::run($workflow, ['answer' => 42]);
 ```
+
+### From a resource action
+
+`RunWorkflowAction` turns any Filament resource into an entry point: a **Run workflow** button on a row (or a bulk action on a selection) that lists the active workflows whose Manual trigger accepts the record type, and starts the chosen one with the record as `{{ model }}`.
+
+```php
+use Packstub\Flow\Filament\Actions\RunWorkflowAction;
+use Packstub\Flow\Filament\Actions\RunWorkflowBulkAction;
+
+public static function table(Table $table): Table
+{
+    return $table
+        ->recordActions([RunWorkflowAction::make()])
+        ->toolbarActions([RunWorkflowBulkAction::make()]);
+}
+```
+
+Both actions are hidden when no workflow qualifies. `->workflows([$id, ...])` (or a closure) restricts the list; `->payload(fn (Model $record) => ['source' => 'orders-table'])` adds keys to the payload. The result is reported as a notification: how many records ran, were queued, or failed (with the errors).
 
 ## Schedule
 
@@ -102,9 +125,11 @@ class Order extends Model
 | --- | --- |
 | Record type | The model class. The list contains every non-abstract model in `app/Models` that uses `HasWorkflows`, plus the classes in `models_for_triggers` (config) and `FlowPlugin::make()->models([...])` |
 | Run once per record | Skips a record the workflow has already run for (any status). Welcome series, surveys and reminders should not fire twice |
+| Not more than once per record every N days | A dedup window: skips a record the workflow ran for in the last N days (abandoned-cart nudges, payment reminders). Shown when **Run once per record** is off |
 | Only when these attributes change | **Record updated** only: attribute names; the trigger fires only when at least one of them is in `changes`. Empty fires on every update |
+| Changed from / Changed to | **Record updated** only, with attributes to watch: the old and / or new value one of them must have. `status` from `pending` to `paid` fires once, when that exact change happens (case-insensitive) |
 
-A node matches when the payload's model is an instance of the chosen class (subclasses included). "Status becomes *paid*" is **Record updated** watching `status`, followed by a **Record attribute** condition `status = paid`; `{{ original.status }}` still holds the previous value. Runs remember the record they started for (`subject_type` / `subject_id`), which the Runs tab shows and searches.
+A node matches when the payload's model is an instance of the chosen class (subclasses included). "Status becomes *paid*" is **Record updated** watching `status` with **Changed to** `paid` — or, for a condition further down the graph, a **Record attribute** condition with the *changed to* operator; `{{ original.status }}` still holds the previous value. Runs remember the record they started for (`subject_type` / `subject_id`), which the Runs tab shows and searches.
 
 | Payload | Provided by |
 | --- | --- |
@@ -126,6 +151,12 @@ You can dispatch the same triggers from code, e.g. from an observer, a job or a 
 Flow::dispatch(RecordCreated::class, ['model' => $order]);
 Flow::dispatch(RecordUpdated::class, ['model' => $order, 'original' => $before, 'changes' => $order->getChanges()]);
 Flow::dispatch(RecordDeleted::class, ['model' => $order]);
+```
+
+And you can switch every trigger off for a block of code — imports, seeders, backfills — with `Flow::suppress()`; explicit `Flow::run()` calls still work inside it:
+
+```php
+Flow::suppress(fn () => Order::factory()->count(1000)->create());
 ```
 
 ## User registered
@@ -168,6 +199,40 @@ class OrderShipped
 Starts when another workflow reaches a **Call workflow** action pointing at this workflow. The calling workflow's payload is passed along, plus `flow_depth`, the number of nested calls so far. No settings.
 
 A workflow can have both this trigger and others; the caller always enters through this node. See the [Call workflow action](actions.md#call-workflow) for the depth limit and failure handling.
+
+## State transitioned
+
+Available when [spatie/laravel-model-states](https://github.com/spatie/laravel-model-states) is installed. Fires on the package's `StateChanged` event, i.e. every `$order->status->transitionTo(Paid::class)`.
+
+| Setting | |
+| --- | --- |
+| Record type | The model class |
+| State field | Optional: only transitions of this state attribute (`status`). Empty matches any state field of the model |
+| From state / To state | Optional: the state's name (as stored in the column, `paid`), its class (`App\States\Paid`) or short class name (`Paid`), case-insensitive. Empty matches any |
+
+| Payload | |
+| --- | --- |
+| `model` | The record |
+| `field` | The state attribute |
+| `from`, `to` | The state names (`{{ from }} → {{ to }}`) |
+| `from_state`, `to_state` | The state objects |
+
+The **Transition state** [action](actions.md#transition-state) moves a record to another state from a workflow.
+
+## Status changed
+
+Available when [spatie/laravel-model-status](https://github.com/spatie/laravel-model-status) is installed. Fires on the package's `StatusUpdated` event, i.e. every `$ticket->setStatus('approved', 'Looks fine')`.
+
+| Setting | |
+| --- | --- |
+| Record type | The model class |
+| From status / To status | Optional status names, case-insensitive |
+
+| Payload | |
+| --- | --- |
+| `model` | The record |
+| `from`, `to` | The previous and new status names |
+| `reason` | The reason given with the new status |
 
 ## Writing your own trigger
 

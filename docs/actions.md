@@ -13,6 +13,7 @@ Sends a plain Markdown email through your default mailer, using the `Packstub\Fl
 | To | One or more addresses separated by commas; placeholders allowed. Defaults to `{{ model.email }}` |
 | Subject | Placeholders allowed |
 | Message | Plain text; line breaks are kept. Placeholders allowed |
+| Button label / Button URL | Optional: a button under the message. `{{ model.url }}` is the record's page in the panel (see [Placeholders](placeholders.md#syntax)). The button appears only when both are filled in |
 
 When the recipient list is empty after placeholders are filled in (for example `{{ model.email }}` on a run without a record), the action does nothing and the run continues. The mail is sent immediately from the run; put the workflow on the queue to keep it out of the request (see [Queue & scheduling](queue-and-scheduling.md)).
 
@@ -26,6 +27,7 @@ Sends a Filament **database notification** — the bell in the topbar — to pan
 | Body | Optional; placeholders allowed |
 | Style | Info (default), Success, Warning or Danger |
 | Recipients | Email addresses separated by commas; placeholders allowed, e.g. `admin@example.com, {{ model.owner.email }}` |
+| Button label / Button URL | Optional: an action button on the notification, marked as read when clicked. The URL defaults to `{{ model.url }}`, the record's page in the panel; the button appears only when both resolve to something |
 
 Recipients are looked up by `email` on the model configured in `auth.providers.users.model`; addresses that match no user are skipped, and nothing is sent when none match. Your panel needs `->databaseNotifications()` and the `notifications` table for users to see them.
 
@@ -35,10 +37,58 @@ Posts a message to a Slack [incoming webhook](https://api.slack.com/messaging/we
 
 | Setting | |
 | --- | --- |
-| Webhook URL | The `https://hooks.slack.com/services/...` URL; placeholders allowed |
+| Webhook URL | The `https://hooks.slack.com/services/...` URL, or `{{ secrets.slack_webhook }}` from the [Secrets](secrets.md) store; other placeholders allowed too |
 | Message | The text to post; placeholders allowed |
 
 The action sends `{"text": "<message>"}` and fails the run if Slack answers with an error status. An empty URL skips the action.
+
+## Send Discord message
+
+Posts to a Discord channel [webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks).
+
+| Setting | |
+| --- | --- |
+| Webhook URL | The `https://discord.com/api/webhooks/...` URL or `{{ secrets.discord_webhook }}` |
+| Message | Up to 2000 characters; placeholders allowed |
+| Sender name | Optional; overrides the webhook's display name |
+
+## Send Teams message
+
+Posts to a Microsoft Teams channel.
+
+| Setting | |
+| --- | --- |
+| Webhook URL | The URL of a Teams **Workflows** webhook ("Post to a channel when a webhook request is received") or of a classic Incoming Webhook connector; `{{ secrets.teams_webhook }}` works |
+| Title | Optional; placeholders allowed |
+| Message | Placeholders allowed |
+| Webhook type | **Workflows webhook (Adaptive Card)** — the default, what new Teams webhooks expect — or **Classic incoming webhook connector (text)** |
+
+## Send Telegram message
+
+Sends a message through a Telegram bot with the Bot API's `sendMessage`.
+
+| Setting | |
+| --- | --- |
+| Bot token | From @BotFather. Keep it in the [Secrets](secrets.md) store: `{{ secrets.telegram_bot_token }}` |
+| Chat | A chat or channel id (`-1001234567890`) or `@channelusername` for public channels; placeholders allowed |
+| Message | Up to 4096 characters; placeholders allowed |
+| Formatting | Plain text, `MarkdownV2` or `HTML` |
+
+Exposes `{{ last.message_id }}`. Errors are reported with Telegram's description, never with the URL (which carries the token).
+
+## Send SMS (Twilio)
+
+Sends an SMS — or a WhatsApp message — through the Twilio Messages API.
+
+| Setting | |
+| --- | --- |
+| Account SID / Auth token | Your Twilio credentials; keep them in the [Secrets](secrets.md) store |
+| From | A Twilio number (`+15551234567`) or a Messaging Service SID (`MG...`) |
+| To | The recipient; placeholders allowed (`{{ model.phone }}`) |
+| Message | Up to 1600 characters; placeholders allowed |
+| Send as WhatsApp message | Prefixes both numbers with `whatsapp:` |
+
+Exposes `{{ last.sid }}` and `{{ last.status }}`. Other providers and any REST API — Vonage, Brevo, Mailchimp, Klaviyo — are one **HTTP request** action away, with the credentials in secrets: `Authorization: Bearer {{ secrets.brevo_key }}`.
 
 ## HTTP request
 
@@ -82,6 +132,17 @@ Sets attributes on the record that started the run — the `model` in the payloa
 Attributes go through the model's `$fillable` / `$guarded` rules: writing a guarded attribute fails the run with a message naming it. Turn on **Bypass mass-assignment protection** to use `forceFill()` instead — only when everyone who can edit workflows may write any column. The action exposes the saved changes as `{{ last.changes.status }}`. With **Save without firing events** on, the record is saved with `saveQuietly()`: no Eloquent events, no observers, and no **Record updated** trigger — which keeps a workflow that reacts to updates from starting itself again. Turn it off when you want observers and other workflows to see the change.
 
 The action fails the run when the payload has no record, and does nothing when no attributes are configured.
+
+## Transition state
+
+Available when [spatie/laravel-model-states](https://github.com/spatie/laravel-model-states) is installed. Moves the record's state through the package, so the transition class configured on the model runs and the `StateChanged` event fires (which can start a **State transitioned** workflow).
+
+| Setting | |
+| --- | --- |
+| State field | The state attribute, `status` by default |
+| To state | The state name (as stored) or class; placeholders allowed |
+
+Exposes `{{ last.from }}` and `{{ last.to }}`. A transition the model does not allow fails the run with a message naming both states.
 
 ## Wait
 

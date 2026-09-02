@@ -13,6 +13,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -112,6 +113,12 @@ class WorkflowResource extends Resource
                     ]),
                 ])
                 ->columnSpanFull(),
+            Section::make(__('packstub-flow::flow.fields.settings'))
+                ->description(__('packstub-flow::flow.fields.settings_help'))
+                ->collapsed()
+                ->columns(['default' => 1, 'lg' => 3])
+                ->schema(static::settingsSchema())
+                ->columnSpanFull(),
             FlowBuilder::make('definition')
                 ->hiddenLabel()
                 ->columnSpanFull(),
@@ -172,6 +179,30 @@ class WorkflowResource extends Resource
                 ]),
             ])
             ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['triggers', 'latestRun']));
+    }
+
+    /**
+     * The per-workflow settings shown under the name: retention and the
+     * failure limit. Override to add your own columns.
+     *
+     * @return array<int, Component>
+     */
+    public static function settingsSchema(): array
+    {
+        return [
+            TextInput::make('prune_after_days')
+                ->label(__('packstub-flow::flow.fields.prune_after_days'))
+                ->helperText(__('packstub-flow::flow.fields.prune_after_days_help', ['default' => (int) config('packstub-flow.prune_runs_after_days', 30)]))
+                ->numeric()
+                ->minValue(1)
+                ->maxValue(3650),
+            TextInput::make('max_consecutive_failures')
+                ->label(__('packstub-flow::flow.fields.max_consecutive_failures'))
+                ->helperText(__('packstub-flow::flow.fields.max_consecutive_failures_help'))
+                ->numeric()
+                ->minValue(1)
+                ->maxValue(1000),
+        ];
     }
 
     public static function runNowAction(): Action

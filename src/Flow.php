@@ -4,6 +4,7 @@ namespace Packstub\Flow;
 
 use Illuminate\Database\Eloquent\Model;
 use Packstub\Flow\Engine\Dispatcher;
+use Packstub\Flow\Models\Secret;
 use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\Models\WorkflowRun;
 use Packstub\Flow\Models\WorkflowTrigger;
@@ -13,6 +14,8 @@ use Packstub\Flow\Models\WorkflowTrigger;
  */
 class Flow
 {
+    protected static int $suppressed = 0;
+
     public function __construct(
         protected NodeRegistry $registry,
         protected Dispatcher $dispatcher,
@@ -38,6 +41,31 @@ class Flow
     public function run(Workflow $workflow, array $payload = [], ?string $startNodeId = null, ?bool $queue = null): ?WorkflowRun
     {
         return $this->dispatcher->run($workflow, $payload, $startNodeId, $queue);
+    }
+
+    /**
+     * Run a callback without any trigger starting a workflow — imports,
+     * seeders, bulk fixes. Flow::run() still works inside it.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public function suppress(callable $callback): mixed
+    {
+        static::$suppressed++;
+
+        try {
+            return $callback();
+        } finally {
+            static::$suppressed--;
+        }
+    }
+
+    public function isSuppressed(): bool
+    {
+        return static::$suppressed > 0;
     }
 
     public function registry(): NodeRegistry
@@ -69,6 +97,12 @@ class Flow
     public static function runModel(): string
     {
         return config('packstub-flow.models.run', WorkflowRun::class);
+    }
+
+    /** @return class-string<Secret> */
+    public static function secretModel(): string
+    {
+        return config('packstub-flow.models.secret', Secret::class);
     }
 
     /** @return class-string<Model> */

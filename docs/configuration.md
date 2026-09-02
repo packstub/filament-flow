@@ -29,6 +29,10 @@ FlowPlugin::make()
     // Replace the resource with your own subclass, or register none
     ->resource(App\Filament\Resources\WorkflowResource::class)
     ->withoutResource()
+
+    // Same for the Secrets page
+    ->secretResource(App\Filament\Resources\SecretResource::class)
+    ->withoutSecrets()
 ```
 
 | Method | Default | Notes |
@@ -41,6 +45,8 @@ FlowPlugin::make()
 | `navigationSort()` | `navigation.sort` (`null`) | |
 | `resource()` | `Packstub\Flow\Filament\Resources\WorkflowResource` | Extend the built-in resource to change the table, the form or the pages |
 | `withoutResource()` | resource registered | Use `FlowBuilder::make('definition')` in a resource of your own |
+| `secretResource()` | `Packstub\Flow\Filament\Resources\SecretResource` | The [Secrets](secrets.md) page |
+| `withoutSecrets()` | page registered | Hide the Secrets page (placeholders keep working for secrets created in code) |
 
 `FlowPlugin::get()` returns the plugin instance of the current panel. Nodes and models are registered in application-wide singletons, so a class added on one panel is known to all panels.
 
@@ -96,6 +102,14 @@ The user model used by **Send notification** is `auth.providers.users.model`.
 
 ```php
 'max_steps' => 1000,
+'max_nesting' => 5,
+'max_output_bytes' => 16384,
+```
+
+`max_nesting` caps how deep runs may start other runs (see [Runs](runs.md#safety-guards)).
+
+```php
+'max_steps' => 1000,
 'max_output_bytes' => 16384,
 ```
 
@@ -125,9 +139,13 @@ Applies to the **HTTP request** and **Send Slack message** actions.
 
 ```php
 'register_schedule' => true,
+'schedule_catch_up_minutes' => (int) env('PACKSTUB_FLOW_SCHEDULE_CATCH_UP', 0),
+'schedule_on_one_server' => (bool) env('PACKSTUB_FLOW_SCHEDULE_ONE_SERVER', false),
 ```
 
-Adds `packstub-flow:cron` to Laravel's scheduler every minute (`withoutOverlapping()`). Set to `false` to register the command yourself.
+`register_schedule` adds `packstub-flow:cron` to Laravel's scheduler every minute (`withoutOverlapping()`). Set to `false` to register the command yourself.
+
+`schedule_catch_up_minutes` makes the command evaluate the minutes that were missed since its last run (a deploy, a crash, a paused scheduler), up to that many; `0` evaluates the current minute only. `schedule_on_one_server` adds `onOneServer()` to the scheduled command for setups where the scheduler runs on several servers (needs a cache driver with locks). See [Queue & scheduling](queue-and-scheduling.md#schedules).
 
 ### Webhooks
 
@@ -209,7 +227,17 @@ Defaults for the Workflows resource, overridden per panel by `navigationGroup()`
 'prune_runs_after_days' => 30,
 ```
 
-How old a finished run must be before `packstub-flow:prune` deletes it. With `register_schedule` on, the command is scheduled daily; set the value to `null` to keep runs forever (and not schedule the command). See [Runs](runs.md#packstub-flowprune).
+How old a finished run must be before `packstub-flow:prune` deletes it; a workflow's own **Keep runs for (days)** setting overrides it. With `register_schedule` on, the command is scheduled daily; set the value to `null` to keep runs forever (and not schedule the command). See [Runs](runs.md#packstub-flowprune).
+
+### Notifications
+
+```php
+'notifications' => [
+    'recipients' => [...explode(',', env('PACKSTUB_FLOW_NOTIFY', ''))],
+],
+```
+
+Panel users, by email, who receive a database notification when a workflow is deactivated after failing too many times in a row (`PACKSTUB_FLOW_NOTIFY=ops@example.com,cto@example.com`). See [Runs](runs.md#retention-and-failure-limits).
 
 ### Authorization
 

@@ -13,6 +13,8 @@ All nodes extend `Packstub\Flow\Nodes\Node` through one of three base classes an
 | `getIcon(): ?string` | no | A Heroicon name (`heroicon-o-bolt`) or raw `<svg>` markup, shown in the sidebar |
 | `getFormSchema(): array` | no | Filament form components for the node's settings. The values are stored on the node as `config` and passed to `matches()` / `handle()` / `evaluate()` |
 | `getPlaceholders(): array` | no | `['{{ model.name }}' => 'The record name', ...]`, listed in the slide-over's Placeholders section |
+| `isAvailable(): bool` (static) | no | Return `false` when a package the node needs is missing; the node is then never registered nor offered (the spatie state triggers work this way) |
+| `getOutputs(): array` | no | The output handles drawn on the canvas, `['output' => 'Next']` by default |
 
 Nodes are resolved from the container (`Node::make()` is `app(static::class)`), so constructor injection works. Names and descriptions are usually translation strings, but plain text is fine.
 
@@ -252,6 +254,9 @@ $run = Flow::run($workflow, ['model' => $order], startNodeId: 'trigger-xyz', que
 // Reach the registry
 Flow::registry()->actions();
 Flow::registry()->has(AssignToTeam::class);
+
+// Run code without any trigger starting a workflow (imports, seeders)
+Flow::suppress(fn () => Order::query()->update([...]));
 ```
 
 `Flow::run()` returns `null` when the workflow is inactive, has no trigger node, or the run was queued; otherwise the finished `WorkflowRun`.

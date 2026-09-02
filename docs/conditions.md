@@ -26,6 +26,10 @@ Compares any two values, so it works with webhook and event payloads as well as 
 
 When **Value to check** is a single bare placeholder (`{{ webhook.total }}` and nothing else), the raw value is used, so numbers stay numbers, booleans stay booleans and arrays stay arrays. Anything else is rendered to text first (`Order {{ webhook.id }}` becomes `Order 7`).
 
+## Multiple conditions
+
+Several comparisons in one node, joined with **All rules are true (AND)** or **Any rule is true (OR)**. Each rule is a **Compare values** row: a value to check (a placeholder, usually), an operator and a value. A node with no rules is false.
+
 ## Time of day
 
 True while the current time is inside a daily window. Useful in front of a notification you only want during office hours.
@@ -57,8 +61,20 @@ A window that ends before it starts (22:00 to 05:00) crosses midnight and works 
 | is not empty | The opposite (`filled()`) |
 | is true | `true`, `1`, `"1"`, `"yes"`, `"on"`, `"true"`; other values fall back to their boolean cast |
 | is false | The opposite |
+| is null | The left value is exactly `null` (an empty string is not null) |
+| is not null | The opposite |
+| matches regular expression | The text of the left value matches the pattern: `^ORD-\d+$`, or with delimiters and flags, `/^ord/i`. An invalid pattern is false |
+| is a date before / after | Both sides are parsed as dates; the right side may be relative — `now`, `-3 days`, `next monday`, `2026-01-01`. Unparseable dates are false |
 
-The last four operators need no **Value**; the field disappears when you pick one. An unknown operator evaluates to false.
+**Record attribute** adds three operators that read the **Record updated** trigger's `changes` and `original`:
+
+| Operator | True when |
+| --- | --- |
+| changed (record updated) | The attribute is in `changes` |
+| changed from | The attribute changed and its previous value equals the **Value** |
+| changed to | The attribute changed and its new value equals the **Value** |
+
+Operators without a right-hand side (is empty, is not empty, is true, is false, is null, is not null, changed) need no **Value**; the field disappears when you pick one. An unknown operator evaluates to false.
 
 ## How values are compared
 

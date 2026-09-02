@@ -2,12 +2,15 @@
 
 namespace Packstub\Flow\Models;
 
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Log;
 use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\Flow;
+use Throwable;
 
 /**
  * @property string $id
@@ -15,6 +18,9 @@ use Packstub\Flow\Flow;
  * @property string|null $description
  * @property array{nodes?: array<int, array<string, mixed>>, edges?: array<int, array<string, mixed>>}|null $definition
  * @property bool $is_active
+ * @property int|null $prune_after_days
+ * @property int|null $max_consecutive_failures
+ * @property int $consecutive_failures
  */
 class Workflow extends Model
 {
@@ -25,6 +31,9 @@ class Workflow extends Model
     protected $casts = [
         'definition' => 'array',
         'is_active' => 'boolean',
+        'prune_after_days' => 'integer',
+        'max_consecutive_failures' => 'integer',
+        'consecutive_failures' => 'integer',
     ];
 
     public function getTable(): string
@@ -66,6 +75,42 @@ class Workflow extends Model
             $this->nodes(),
             fn (array $node): bool => ($node['type'] ?? null) === NodeType::Trigger->value,
         ));
+    }
+
+    /**
+     * Send a Filament database notification to the panel users listed in
+     * packstub-flow.notifications.recipients (and log it either way).
+     */
+    public function notifyAdmins(string $title, string $body, string $status = 'warning'): void
+    {
+        Log::warning("[flow] {$title} {$body}");
+
+        $emails = array_values(array_filter(array_map('trim', (array) config('packstub-flow.notifications.recipients', []))));
+
+        if ($emails === []) {
+            return;
+        }
+
+        try {
+            $users = Flow::userModel()::query()->whereIn('email', $emails)->get();
+
+            if ($users->isEmpty()) {
+                return;
+            }
+
+            $notification = Notification::make()->title($title)->body($body);
+
+            match ($status) {
+                'danger' => $notification->danger(),
+                'success' => $notification->success(),
+                'info' => $notification->info(),
+                default => $notification->warning(),
+            };
+
+            $notification->sendToDatabase($users);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     /**

@@ -49,6 +49,15 @@ class RecordAttribute extends Condition
         ];
     }
 
+    protected function extraOperators(): array
+    {
+        return [
+            'changed' => __('packstub-flow::flow.nodes.compare.operators.changed'),
+            'changed_from' => __('packstub-flow::flow.nodes.compare.operators.changed_from'),
+            'changed_to' => __('packstub-flow::flow.nodes.compare.operators.changed_to'),
+        ];
+    }
+
     public function evaluate(array $config, array $payload): bool
     {
         $model = $payload['model'] ?? null;
@@ -58,10 +67,22 @@ class RecordAttribute extends Condition
             return false;
         }
 
-        return $this->compare(
-            data_get($model, $attribute),
-            (string) ($config['operator'] ?? '='),
-            $this->interpolate($config['value'] ?? '', $payload),
-        );
+        $operator = (string) ($config['operator'] ?? '=');
+        $expected = $this->interpolate($config['value'] ?? '', $payload);
+
+        // "changed" operators read the "Record updated" trigger's changes / original.
+        if (in_array($operator, ['changed', 'changed_from', 'changed_to'], true)) {
+            if (! array_key_exists($attribute, (array) ($payload['changes'] ?? []))) {
+                return false;
+            }
+
+            return match ($operator) {
+                'changed' => true,
+                'changed_from' => $this->compare(data_get((array) ($payload['original'] ?? []), $attribute), '=', $expected),
+                default => $this->compare(data_get($model, $attribute), '=', $expected),
+            };
+        }
+
+        return $this->compare(data_get($model, $attribute), $operator, $expected);
     }
 }

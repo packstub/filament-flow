@@ -27,7 +27,7 @@ class NodeRegistry
     /** @param array<int, class-string<Trigger>> $classes */
     public function registerTriggers(array $classes): static
     {
-        $this->triggers = array_values(array_unique([...$this->triggers, ...$classes]));
+        $this->triggers = array_values(array_unique([...$this->triggers, ...static::available($classes)]));
 
         return $this;
     }
@@ -35,7 +35,7 @@ class NodeRegistry
     /** @param array<int, class-string<Action>> $classes */
     public function registerActions(array $classes): static
     {
-        $this->actions = array_values(array_unique([...$this->actions, ...$classes]));
+        $this->actions = array_values(array_unique([...$this->actions, ...static::available($classes)]));
 
         return $this;
     }
@@ -43,7 +43,7 @@ class NodeRegistry
     /** @param array<int, class-string<Condition>> $classes */
     public function registerConditions(array $classes): static
     {
-        $this->conditions = array_values(array_unique([...$this->conditions, ...$classes]));
+        $this->conditions = array_values(array_unique([...$this->conditions, ...static::available($classes)]));
 
         return $this;
     }
@@ -74,6 +74,17 @@ class NodeRegistry
         $this->triggers = $this->actions = $this->conditions = [];
 
         return $this;
+    }
+
+    /**
+     * @template T of Node
+     *
+     * @param  array<int, class-string<T>>  $classes
+     * @return array<int, class-string<T>>
+     */
+    protected static function available(array $classes): array
+    {
+        return array_values(array_filter($classes, fn (string $class): bool => is_a($class, Node::class, true) && $class::isAvailable()));
     }
 
     /** @return array<int, class-string<Trigger>> */

@@ -19,8 +19,6 @@ class DispatchEventTriggers
     /** @var array<string, true>|null */
     protected static ?array $watched = null;
 
-    protected static bool $dispatching = false;
-
     protected static bool $loading = false;
 
     /** Seconds a worker keeps its copy of the list before re-reading the cache. */
@@ -30,7 +28,7 @@ class DispatchEventTriggers
 
     public function handle(string $eventName, array $data): void
     {
-        if (static::$dispatching || ! static::isWatched($eventName)) {
+        if (! static::isWatched($eventName)) {
             return;
         }
 
@@ -40,13 +38,7 @@ class DispatchEventTriggers
             return;
         }
 
-        static::$dispatching = true;
-
-        try {
-            Flow::dispatch(EventFired::class, ['event' => $event]);
-        } finally {
-            static::$dispatching = false;
-        }
+        Flow::dispatch(EventFired::class, ['event' => $event]);
     }
 
     public static function flush(): void

@@ -20,6 +20,7 @@ use Packstub\Flow\Engine\Runner;
 use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\NodeRegistry;
 use Packstub\Flow\Nodes\Node;
+use Packstub\Flow\Support\Placeholders;
 
 /**
  * The slide-over that edits one node's label and settings. Opened by the
@@ -81,6 +82,10 @@ class ManageNode extends Component implements HasActions, HasForms
         $node = $this->node();
         $settings = $node?->getFormSchema() ?? [];
         $placeholders = $node?->getPlaceholders() ?? [];
+
+        if ($node?->getType() === NodeType::Action && $placeholders !== []) {
+            $placeholders = [...$placeholders, ...Placeholders::actionDocumentation()];
+        }
 
         $components = [
             Section::make(__('packstub-flow::flow.node_settings.general'))

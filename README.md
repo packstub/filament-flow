@@ -16,11 +16,12 @@ Visual workflow automations for your Filament panel: draw triggers, conditions a
 ## Features
 
 - **[Visual builder](#the-builder)** — a drag-and-drop canvas inside a Filament resource: add nodes from a sidebar, connect them, branch on true / false, and edit each node's settings in a slide-over built from Filament form components.
-- **[Triggers](#triggers)** — record created / updated / deleted (optionally only when chosen attributes change, or once per record), user registered, any Laravel event, a cron schedule with its own timezone, a signed webhook, a manual run, or a call from another workflow.
-- **[Conditions](#conditions)** — compare a record attribute or any two values with fifteen operators, or check the time of day.
-- **[Actions](#actions)** — send an email, a Filament database notification or a Slack message, call an HTTP endpoint and use its response in later nodes, update the record, wait for a duration or until a date from the payload, call another workflow, or write to the log. Every action has retries and a continue-on-error switch.
-- **[Placeholders](#placeholders)** — `{{ model.name }}`, `{{ webhook.order.id }}`, `{{ last.body.id }}` and friends, with filters such as `| date:Y-m-d`, `| upper` and `| default:none`, resolved from the run's payload wherever you type text.
-- **[Run history](#runs)** — every run is stored with its status, trigger, record, payload summary, a step-by-step log with timings and outputs, and any error, browsable from a Runs tab; **Run now** and **Run again** buttons for quick checks and repeats.
+- **[Triggers](#triggers)** — record created / updated / deleted (only when chosen attributes change, from one value to another, once per record, or not more than once every N days), spatie model-state transitions, user registered, any Laravel event, a cron schedule with its own timezone and catch-up, a signed webhook, a manual run, a **Run workflow** action on any resource, or a call from another workflow.
+- **[Conditions](#conditions)** — compare a record attribute (including "changed from / to") or any two values with twenty operators, combine several rules with AND / OR, or check the time of day.
+- **[Actions](#actions)** — send an email, a Filament database notification, a Slack, Discord, Teams or Telegram message, an SMS or WhatsApp message through Twilio, call an HTTP endpoint and use its response in later nodes, update the record or transition its state, wait for a duration or until a date from the payload, call another workflow, or write to the log. Every action has retries and a continue-on-error switch.
+- **[Placeholders](#placeholders)** — `{{ model.name }}`, `{{ webhook.order.id }}`, `{{ last.body.id }}`, `{{ model.url }}` and friends, with filters such as `| date:Y-m-d`, `| upper` and `| default:none`, resolved from the run's payload wherever you type text.
+- **[Secrets](#secrets)** — an encrypted store for API tokens and webhook URLs, used as `{{ secrets.slack_webhook }}` in actions only and masked in run logs.
+- **[Run history](#runs)** — every run is stored with its status, trigger, record, payload summary, a step-by-step log with timings and outputs, and any error, browsable from a Runs tab; **Run now** and **Run again** buttons for quick checks and repeats; per-workflow retention and a "deactivate after N consecutive failures" guard.
 - **[Queue & scheduling](#queue--scheduling)** — run workflows inline or on your queue (dispatched after your transaction commits), pause them for minutes or days with a Wait step, and start them from cron expressions with one scheduler entry.
 - **[Webhooks](#webhooks)** — a tokenised, optionally HMAC-signed POST endpoint per workflow that answers `202 Accepted` and exposes the request body to your nodes.
 - **Safe by default** — outgoing requests cannot reach private networks unless you allow it, record updates respect mass-assignment rules, credential headers never reach the run log, hidden model attributes never reach a template, and the Workflows resource can sit behind a policy, a Gate ability or a callback.
@@ -91,10 +92,11 @@ A trigger starts a run and decides what the payload contains. Pick one from the 
 
 | Trigger | Fires when |
 | --- | --- |
-| Manual | You press **Run now**, run `packstub-flow:run`, or call `Flow::run()` |
-| Schedule | A cron expression is due (checked every minute by `packstub-flow:cron`) |
+| Manual | You press **Run now**, use a **Run workflow** action on a resource, run `packstub-flow:run`, or call `Flow::run()` |
+| Schedule | A cron expression is due (checked every minute by `packstub-flow:cron`, with optional catch-up of missed minutes) |
 | Webhook | A `POST` hits `/flow/webhooks/{workflow}/{token}` |
-| Record created / updated / deleted | A model using `HasWorkflows` is created, updated or deleted |
+| Record created / updated / deleted | A model using `HasWorkflows` is created, updated or deleted — optionally only when given attributes change from one value to another, once per record, or not more than once every N days |
+| State transitioned / Status changed | A `spatie/laravel-model-states` state or `spatie/laravel-model-status` status changes (offered when the package is installed) |
 | User registered | Laravel's `Illuminate\Auth\Events\Registered` event is dispatched |
 | Event | Any Laravel event of the configured class is dispatched |
 | Called by another workflow | Another workflow runs a **Call workflow** action pointing at this one |
@@ -108,13 +110,19 @@ use Packstub\Flow\Nodes\Triggers\RecordUpdated;
 Flow::dispatch(RecordUpdated::class, ['model' => $order]);
 ```
 
+Any Filament resource can start a workflow for a record with `RunWorkflowAction` (and `RunWorkflowBulkAction` for a selection):
+
+```php
+->recordActions([\Packstub\Flow\Filament\Actions\RunWorkflowAction::make()])
+```
+
 Read more: [Triggers](https://packstub.dev/docs/filament-flow/triggers).
 
 ## Conditions
 
-A condition has a **True** and a **False** output; the run follows the branch that matches. **Record attribute** checks a column, accessor or dotted relationship path (`customer.country`) on the record that started the run; **Compare values** compares any two values, placeholders allowed on both sides; **Time of day** is true inside a daily window in a timezone of your choice.
+A condition has a **True** and a **False** output; the run follows the branch that matches. **Record attribute** checks a column, accessor or dotted relationship path (`customer.country`) on the record that started the run, and knows whether it *changed*, *changed from* or *changed to* a value; **Compare values** compares any two values, placeholders allowed on both sides; **Multiple conditions** joins several rules with AND / OR; **Time of day** is true inside a daily window in a timezone of your choice.
 
-Operators: equals, does not equal, greater / less than (or equal), contains, does not contain, starts with, ends with, is one of, is empty, is not empty, is true, is false.
+Operators: equals, does not equal, greater / less than (or equal), contains, does not contain, starts with, ends with, is one of, is empty, is not empty, is true, is false, is null, is not null, matches regular expression, is a date before / after.
 
 Read more: [Conditions](https://packstub.dev/docs/filament-flow/conditions).
 
@@ -126,11 +134,13 @@ Actions do the work. Each one's settings are a small Filament form; text fields 
 
 | Action | What it does |
 | --- | --- |
-| Send email | A plain Markdown email to one or more addresses |
-| Send notification | A Filament database notification to panel users, picked by email |
-| Send Slack message | Posts to a Slack incoming webhook |
+| Send email | A plain Markdown email to one or more addresses, with an optional button (`{{ model.url }}` opens the record in the panel) |
+| Send notification | A Filament database notification to panel users, picked by email, with an optional action button |
+| Send Slack / Discord / Teams / Telegram message | Posts to a Slack or Discord webhook, a Teams Workflows webhook, or a Telegram bot chat |
+| Send SMS (Twilio) | An SMS or WhatsApp message through the Twilio Messages API |
 | HTTP request | Calls any URL with headers and a JSON body; can fail the run on a 4xx / 5xx response |
 | Update record | Sets attributes on the record that started the run, quietly by default |
+| Transition state | Moves a `spatie/laravel-model-states` state to another one |
 | Wait | Pauses the run for seconds, minutes, hours or days; the rest continues through the queue |
 | Call workflow | Runs another workflow with the current payload |
 | Write to log | Writes a line to the application log at the chosen level |
@@ -147,9 +157,15 @@ Previously {{ original.status }} — changed: {{ changes.status }}
 Webhook said {{ webhook.order.total }}; the event carrier is {{ event.carrier }}
 ```
 
-`{{ record.x }}` is an alias of `{{ model.x }}`. Each node's settings panel lists the placeholders its trigger provides.
+`{{ record.x }}` is an alias of `{{ model.x }}`; `{{ model.url }}` is the record's page in the panel. Each node's settings panel lists the placeholders its trigger provides.
 
 Read more: [Placeholders](https://packstub.dev/docs/filament-flow/placeholders).
+
+## Secrets
+
+Tokens and webhook URLs live on the **Secrets** page, encrypted with your app key and never shown again. Actions reference them as `{{ secrets.slack_webhook }}`; conditions and triggers cannot read them, and every resolved value is masked in the run log.
+
+Read more: [Secrets](https://packstub.dev/docs/filament-flow/secrets).
 
 ## Runs
 
@@ -161,7 +177,7 @@ Open a run to see each step in order.
 
 ![A run's steps and payload in the details modal](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/run-detail.png)
 
-**Run now** (in the table and on the edit page) starts an active workflow from its first trigger, and `packstub-flow:run` does the same from the console. `packstub-flow:prune` deletes finished runs older than the configured retention.
+**Run now** (in the table and on the edit page) starts an active workflow from its first trigger, and `packstub-flow:run` does the same from the console. `packstub-flow:prune` deletes finished runs older than the configured retention (or the workflow's own). A workflow can switch itself off after N consecutive failures and notify your admins.
 
 ```bash
 php artisan packstub-flow:run "Welcome sequence" --payload='{"answer": 42}'

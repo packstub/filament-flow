@@ -20,6 +20,14 @@ class Placeholders
 {
     public const PATTERN = '/\{\{\s*([A-Za-z0-9_.\-]+)((?:\s*\|\s*[A-Za-z_]+(?::[^|}]*?)?)*)\s*\}\}/';
 
+    public const MASK = '••••••';
+
+    /** Secrets resolve only while an action runs (see allowSecrets()). */
+    protected static bool $secretsAllowed = false;
+
+    /** @var array<string, true> values of the secrets resolved in this process, masked in run logs */
+    protected static array $usedSecrets = [];
+
     /**
      * @param  array<string, mixed>  $payload
      */
@@ -67,6 +75,10 @@ class Placeholders
             $path = 'model'.substr($path, 6);
         }
 
+        if ($path === 'secrets' || str_starts_with($path, 'secrets.')) {
+            return self::applyFilters(self::secret(substr($path, 8)), $filters);
+        }
+
         $value = $payload;
 
         foreach (explode('.', $path) as $segment) {
@@ -75,7 +87,14 @@ class Placeholders
                 return null;
             }
 
-            $value = data_get($value, $segment);
+            $resolved = data_get($value, $segment);
+
+            // {{ model.url }}: the record's page in the panel when a resource exists for it.
+            if ($resolved === null && $segment === 'url' && $value instanceof Model) {
+                $resolved = ResourceUrl::for($value);
+            }
+
+            $value = $resolved;
 
             if ($value === null) {
                 break;
@@ -83,6 +102,74 @@ class Placeholders
         }
 
         return self::applyFilters($value, $filters);
+    }
+
+    /**
+     * Run a callback with {{ secrets.* }} resolvable. Outside of it (in
+     * conditions, trigger settings, previews) a secret resolves to nothing.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function allowSecrets(callable $callback): mixed
+    {
+        $previous = self::$secretsAllowed;
+        self::$secretsAllowed = true;
+
+        try {
+            return $callback();
+        } finally {
+            self::$secretsAllowed = $previous;
+        }
+    }
+
+    public static function secretsAllowed(): bool
+    {
+        return self::$secretsAllowed;
+    }
+
+    /**
+     * Replace every secret value resolved in this process with a mask, so a
+     * secret that ends up in an error message or an action output is not
+     * stored on the run.
+     */
+    public static function mask(mixed $value): mixed
+    {
+        if (self::$usedSecrets === []) {
+            return $value;
+        }
+
+        if (is_array($value)) {
+            return array_map(self::mask(...), $value);
+        }
+
+        if (! is_string($value) || $value === '') {
+            return $value;
+        }
+
+        return str_ireplace(array_keys(self::$usedSecrets), self::MASK, $value);
+    }
+
+    public static function forgetUsedSecrets(): void
+    {
+        self::$usedSecrets = [];
+    }
+
+    protected static function secret(string $key): ?string
+    {
+        if (! self::$secretsAllowed || $key === '') {
+            return null;
+        }
+
+        $value = Secrets::get($key);
+
+        if ($value !== null && $value !== '') {
+            self::$usedSecrets[$value] = true;
+        }
+
+        return $value;
     }
 
     /**
@@ -200,6 +287,19 @@ class Placeholders
             '{{ last.body.id }}' => __('packstub-flow::flow.placeholders.last'),
             '{{ outputs.node_id.status }}' => __('packstub-flow::flow.placeholders.outputs'),
             '{{ model.created_at | date:Y-m-d }}' => __('packstub-flow::flow.placeholders.filters'),
+        ];
+    }
+
+    /**
+     * Placeholders that only actions can use.
+     *
+     * @return array<string, string>
+     */
+    public static function actionDocumentation(): array
+    {
+        return [
+            '{{ model.url }}' => __('packstub-flow::flow.placeholders.url'),
+            '{{ secrets.api_key }}' => __('packstub-flow::flow.placeholders.secrets'),
         ];
     }
 
