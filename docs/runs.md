@@ -105,6 +105,8 @@ Test runs are stored like any run, flagged with a beaker icon, hidden from the R
 
 ## The Runs page
 
+![The Runs page with its stats and filters](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/runs-page.png)
+
 Besides the Runs tab under each workflow, the **Runs** page (next to Workflows in the navigation) lists every run across workflows, with filters by status, workflow, date and test runs, the details modal, **Run again**, and **Open on the canvas** — which opens the workflow with the failing node selected and centred. Step labels in the details modal link to their node the same way. Four stats sit above the table: runs today, failed today, runs waiting, and the 7-day success rate.
 
 Steps are stored one row per step in the `flow_workflow_steps` table (`WorkflowStep` model; `$run->steps` returns them as arrays, `$run->steps()` as the relationship) rather than in a JSON column, so a run with hundreds of steps costs one insert per step and the Runs page can count and filter them.

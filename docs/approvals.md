@@ -4,6 +4,8 @@ Two actions pause a run until something outside the workflow happens. **Ask for 
 
 ## Ask for approval
 
+![An Ask for approval node with Approved, Rejected and Timed out outputs](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/canvas-approval.png)
+
 | Setting | |
 | --- | --- |
 | Approvers | Email addresses of panel users, comma separated; placeholders allowed (`{{ model.owner.email }}`). Empty lets anyone who can open the Approvals page decide |
@@ -22,6 +24,8 @@ Outputs: **Approved**, **Rejected**, **Timed out**. After the decision the nodes
 | `{{ approval.at }}` | When it was decided |
 
 ### Deciding
+
+![The Approvals page with a pending request](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/approvals.png)
 
 - **The Approvals page** (next to Workflows in the navigation, with a badge counting the pending requests for the signed-in user) lists the requests the user may decide, with Approve / Reject buttons and an optional comment. Users who may manage workflows see every request and can **cancel** one, which continues the run along **Timed out**.
 - **The notification buttons and email links** are signed URLs (`flow/approvals/{wait}/{outcome}`, valid for `approvals.link_lifetime_hours`, 72 by default) that need a signed-in user who is one of the approvers; they decide and redirect to the Approvals page. A request that was already decided shows a warning and changes nothing.

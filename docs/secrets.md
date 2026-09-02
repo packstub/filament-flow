@@ -4,6 +4,8 @@ Slack webhook URLs, API tokens, bot tokens and passwords do not belong in a node
 
 ## Storing a secret
 
+![The Secrets page listing keys, never values](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/secrets.png)
+
 | Field | |
 | --- | --- |
 | Key | Letters, digits and underscores, e.g. `slack_webhook`, `telegram_bot_token`. Unique |
