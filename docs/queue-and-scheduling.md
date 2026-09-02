@@ -56,7 +56,7 @@ The connection and queue name from the config apply to resume jobs too.
 
 ## Schedules
 
-Workflows with a **Schedule** trigger are started by the `packstub-flow:cron` command, which dispatches the trigger with the current time; every active workflow whose cron expression is due at that minute starts, in the timezone set on the trigger (the application timezone by default).
+Workflows with a **Schedule** trigger are started by the `packstub-flow:cron` command, which dispatches the trigger with the current time; every active workflow whose cron expression is due at that minute starts, in the timezone set on the trigger (the application timezone by default). The same command polls the **Date on a record** triggers for the records due that minute, and times out [waits](approvals.md) past their deadline.
 
 With `register_schedule` on (the default), the plugin adds the command to Laravel's scheduler:
 

@@ -12,7 +12,7 @@ it('prunes runs per workflow retention and the global default otherwise', functi
     $default = manualWorkflow(attributes: ['name' => 'Default retention']);
 
     $make = fn ($workflow, int $daysAgo) => WorkflowRun::query()->create([
-        'workflow_id' => $workflow->getKey(), 'status' => RunStatus::Success, 'steps' => [], 'started_at' => now()->subDays($daysAgo), 'finished_at' => now()->subDays($daysAgo),
+        'workflow_id' => $workflow->getKey(), 'status' => RunStatus::Success, 'started_at' => now()->subDays($daysAgo), 'finished_at' => now()->subDays($daysAgo),
     ]);
 
     $make($custom, 3);

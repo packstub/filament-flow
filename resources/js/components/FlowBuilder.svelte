@@ -6,6 +6,7 @@
     import ActionNode from "./nodes/ActionNode.svelte";
     import ConditionNode from "./nodes/ConditionNode.svelte";
     import { setLabels } from "./labels";
+    import { setNodeDefinitions } from "./nodeDefinitions";
 
     const nodeTypes = {
         trigger: TriggerNode,
@@ -22,6 +23,7 @@
     } = $props();
 
     setLabels(untrack(() => labels));
+    setNodeDefinitions(untrack(() => availableNodes));
 
     let nodes = $state.raw<Node[]>(untrack(() => incomingNodes));
     let edges = $state.raw<Edge[]>(untrack(() => incomingEdges));

@@ -20,6 +20,8 @@ const defaults: Record<string, string> = {
     delete: "Delete",
     true: "True",
     false: "False",
+    next: "Next",
+    error: "Error",
     empty_title: "Start with a trigger",
     empty_description: "Add the event that starts this workflow, then connect actions and conditions to it.",
     add_trigger: "Add a trigger",

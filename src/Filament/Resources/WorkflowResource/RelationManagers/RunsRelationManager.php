@@ -8,12 +8,15 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Enums\Width;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
+use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\Models\WorkflowRun;
 
 class RunsRelationManager extends RelationManager
@@ -33,6 +36,12 @@ class RunsRelationManager extends RelationManager
                 TextColumn::make('status')
                     ->label(__('packstub-flow::flow.runs.status_label'))
                     ->badge(),
+                IconColumn::make('is_test')
+                    ->label(__('packstub-flow::flow.runs.test'))
+                    ->boolean()
+                    ->trueIcon('heroicon-o-beaker')
+                    ->falseIcon('')
+                    ->tooltip(fn (WorkflowRun $record): ?string => $record->is_test ? __('packstub-flow::flow.runs.test_tooltip') : null),
                 TextColumn::make('trigger_type')
                     ->label(__('packstub-flow::flow.runs.trigger'))
                     ->formatStateUsing(fn (WorkflowRun $record): ?string => $record->triggerName())
@@ -52,9 +61,9 @@ class RunsRelationManager extends RelationManager
                     ->label(__('packstub-flow::flow.runs.duration'))
                     ->state(fn (WorkflowRun $record): ?string => $record->getDurationInSeconds() !== null ? $record->getDurationInSeconds().' s' : null)
                     ->placeholder('—'),
-                TextColumn::make('steps')
+                TextColumn::make('steps_count')
                     ->label(__('packstub-flow::flow.runs.steps'))
-                    ->state(fn (WorkflowRun $record): int => count($record->steps ?? []))
+                    ->counts('steps')
                     ->numeric(),
                 TextColumn::make('error')
                     ->label(__('packstub-flow::flow.runs.error'))
@@ -66,6 +75,7 @@ class RunsRelationManager extends RelationManager
             ->defaultSort('started_at', 'desc')
             ->filters([
                 SelectFilter::make('status')->options(RunStatus::class),
+                TernaryFilter::make('is_test')->label(__('packstub-flow::flow.runs.test')),
             ])
             ->recordActions([
                 Action::make('view')
@@ -75,14 +85,14 @@ class RunsRelationManager extends RelationManager
                     ->modalWidth(Width::ThreeExtraLarge)
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel(__('packstub-flow::flow.runs.close'))
-                    ->modalContent(fn (WorkflowRun $record) => view('packstub-flow::runs.detail', ['run' => $record])),
+                    ->modalContent(fn (WorkflowRun $record) => view('packstub-flow::runs.detail', ['run' => $record, 'canvasUrl' => WorkflowResource::getUrl('edit', ['record' => $record->workflow_id])])),
                 Action::make('rerun')
                     ->label(__('packstub-flow::flow.runs.rerun'))
                     ->icon('heroicon-o-arrow-path')
                     ->color('gray')
                     ->requiresConfirmation()
                     ->modalDescription(__('packstub-flow::flow.runs.rerun_description'))
-                    ->visible(fn (WorkflowRun $record): bool => $record->status->isFinished() && $record->workflow?->is_active)
+                    ->visible(fn (WorkflowRun $record): bool => $record->status->isFinished() && ! $record->is_test && $record->workflow?->is_active)
                     ->action(function (WorkflowRun $record): void {
                         $workflow = $record->workflow;
                         $startNode = $record->trigger_type ? $workflow->triggerNode($record->trigger_type) : null;

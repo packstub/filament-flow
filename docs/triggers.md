@@ -200,6 +200,25 @@ Starts when another workflow reaches a **Call workflow** action pointing at this
 
 A workflow can have both this trigger and others; the caller always enters through this node. See the [Call workflow action](actions.md#call-workflow) for the depth limit and failure handling.
 
+## Date on a record
+
+"Three days before the due date", "one hour after the appointment starts", "when the trial ends": fires for every record whose date column, shifted by the offset, falls in the current minute. Evaluated by `packstub-flow:cron` — a running scheduler is all it needs, and [catch-up](queue-and-scheduling.md#missed-minutes) covers minutes the scheduler missed.
+
+| Setting | |
+| --- | --- |
+| Record type | The model class |
+| Date attribute | A datetime column: `due_at`, `trial_ends_at`, `starts_at` |
+| Offset / unit / When | `3` `days` **before** the date, `1` `hour` **after** it, or `0` **at** it |
+| Run once per record | On by default: a record starts this workflow once, whatever happens to the cron schedule |
+
+| Payload | |
+| --- | --- |
+| `model` | The record |
+| `date` | The value of the date column |
+| `now` | The minute being evaluated |
+
+Records are read in batches of at most `max_records` (config, 1000) per minute. Combine with **Find records** + **For each** when one run should handle a whole batch instead.
+
 ## State transitioned
 
 Available when [spatie/laravel-model-states](https://github.com/spatie/laravel-model-states) is installed. Fires on the package's `StateChanged` event, i.e. every `$order->status->transitionTo(Paid::class)`.

@@ -5,6 +5,7 @@ namespace Packstub\Flow\Engine;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Packstub\Flow\Contracts\Pollable;
 use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\Flow;
 use Packstub\Flow\Jobs\RunWorkflowJob;
@@ -77,6 +78,57 @@ class Dispatcher
 
             if ($run) {
                 $runs[] = $run;
+            }
+        }
+
+        return $runs;
+    }
+
+    /**
+     * Ask every active Pollable trigger (a date on a record) for the runs
+     * due at this moment and start them.
+     *
+     * @return array<int, WorkflowRun>
+     */
+    public function poll(\DateTimeInterface $now): array
+    {
+        $types = array_values(array_filter($this->registry->triggers(), fn (string $class): bool => is_a($class, Pollable::class, true)));
+
+        if ($types === []) {
+            return [];
+        }
+
+        $runs = [];
+
+        try {
+            $rows = Flow::triggerModel()::query()
+                ->whereIn('type', $types)
+                ->whereHas('workflow', fn ($query) => $query->where('is_active', true))
+                ->with('workflow')
+                ->get();
+        } catch (Throwable) {
+            return [];
+        }
+
+        foreach ($rows as $row) {
+            $trigger = $this->registry->trigger($row->type);
+
+            if (! $trigger instanceof Pollable) {
+                continue;
+            }
+
+            $config = $row->config ?? [];
+
+            foreach ($trigger->poll($config, $now) as $payload) {
+                if (($config['once'] ?? true) && $this->alreadyRanFor($row->workflow, $payload)) {
+                    continue;
+                }
+
+                $run = $this->run($row->workflow, $payload, $row->node_id);
+
+                if ($run) {
+                    $runs[] = $run;
+                }
             }
         }
 
@@ -175,6 +227,7 @@ class Dispatcher
             ->where('workflow_id', $workflow->getKey())
             ->where('subject_type', $model::class)
             ->where('subject_id', (string) $model->getKey())
+            ->where('is_test', false)
             ->when($withinDays !== null, fn ($query) => $query->where('started_at', '>=', now()->subDays($withinDays)))
             ->exists();
     }

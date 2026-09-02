@@ -20,7 +20,7 @@ class RunScheduledWorkflowsCommand extends Command
 
     protected $signature = 'packstub-flow:cron {--catch-up= : Also evaluate up to this many missed minutes}';
 
-    protected $description = 'Start every active workflow whose Schedule trigger is due right now.';
+    protected $description = 'Start every active workflow whose Schedule or "Date on a record" trigger is due right now, and time out expired waits.';
 
     public function handle(): int
     {
@@ -30,13 +30,21 @@ class RunScheduledWorkflowsCommand extends Command
 
         foreach ($minutes as $minute) {
             $started += count(Flow::dispatch(Schedule::class, ['now' => $minute]));
+            $started += count(Flow::poll($minute));
         }
 
         Cache::forever(self::LAST_RUN_KEY, $now->getTimestamp());
 
+        $expired = Flow::expireWaits();
+
         $caughtUp = count($minutes) - 1;
 
-        $this->components->info(sprintf('%d scheduled workflow run(s) started%s.', $started, $caughtUp > 0 ? " ({$caughtUp} missed minute(s) caught up)" : ''));
+        $this->components->info(sprintf(
+            '%d scheduled workflow run(s) started%s%s.',
+            $started,
+            $caughtUp > 0 ? " ({$caughtUp} missed minute(s) caught up)" : '',
+            $expired > 0 ? ", {$expired} wait(s) timed out" : '',
+        ));
 
         return self::SUCCESS;
     }

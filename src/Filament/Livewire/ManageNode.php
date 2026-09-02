@@ -130,7 +130,9 @@ class ManageNode extends Component implements HasActions, HasForms
                         ->options([
                             'fail' => __('packstub-flow::flow.node_settings.on_error_fail'),
                             'continue' => __('packstub-flow::flow.node_settings.on_error_continue'),
+                            'branch' => __('packstub-flow::flow.node_settings.on_error_branch'),
                         ])
+                        ->helperText(__('packstub-flow::flow.node_settings.on_error_branch_help'))
                         ->default('fail'),
                 ]);
         }

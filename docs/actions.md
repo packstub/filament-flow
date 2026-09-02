@@ -1,6 +1,6 @@
 # Actions
 
-An action does the work of a workflow. Its settings are a Filament form in the node's slide-over; every text field accepts [placeholders](placeholders.md), which are filled in from the run's payload when the action runs. An action that throws marks the run as **Failed** with the exception message and stops that branch.
+An action does the work of a workflow. Its settings are a Filament form in the node's slide-over; every text field accepts [placeholders](placeholders.md), which are filled in from the run's payload when the action runs. An action that throws marks the run as **Failed** with the exception message and stops that branch — unless its *Error handling* section says to retry, continue, or follow an **Error** branch (see [Runs](runs.md#failures)).
 
 ![The settings slide-over for an action](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/node-settings.png)
 
@@ -132,6 +132,76 @@ Sets attributes on the record that started the run — the `model` in the payloa
 Attributes go through the model's `$fillable` / `$guarded` rules: writing a guarded attribute fails the run with a message naming it. Turn on **Bypass mass-assignment protection** to use `forceFill()` instead — only when everyone who can edit workflows may write any column. The action exposes the saved changes as `{{ last.changes.status }}`. With **Save without firing events** on, the record is saved with `saveQuietly()`: no Eloquent events, no observers, and no **Record updated** trigger — which keeps a workflow that reacts to updates from starting itself again. Turn it off when you want observers and other workflows to see the change.
 
 The action fails the run when the payload has no record, and does nothing when no attributes are configured.
+
+## Create record
+
+Creates a record — on its own, or through a relationship of the record that started the run ("add a note to this order").
+
+| Setting | |
+| --- | --- |
+| Record type | The model class |
+| Through relationship | Optional: a `hasMany` / `morphMany` relationship of `{{ model }}` (`notes`); the new record is created on it, so the foreign key is set for you |
+| Attributes | Attribute / value pairs; placeholders allowed, a bare placeholder keeps its type |
+| Create without firing events | On by default (`Model::withoutEvents()`), so a **Record created** trigger does not start another workflow |
+| Bypass mass-assignment protection | Off by default; otherwise attributes must be fillable |
+| Continue with the new record as `{{ model }}` | The nodes after this one see the new record instead of the original |
+
+Exposes `{{ last.id }}`, `{{ last.type }}` and `{{ last.record.<attribute> }}`.
+
+## Assign owner
+
+Sets a user on the record that started the run.
+
+| Setting | |
+| --- | --- |
+| Attribute | `user_id` by default |
+| Assign | **A specific user** — an email or id, placeholders allowed — or **The next user in turn**: a list of emails, assigned round robin (the turn counter lives in the cache) |
+| Save without firing events | On by default |
+
+Exposes `{{ last.owner_id }}`, `{{ last.owner_email }}` and `{{ last.owner_name }}`. Fails the run when no user matches.
+
+## Add tag
+
+Available when [spatie/laravel-tags](https://github.com/spatie/laravel-tags) is installed and the model uses `HasTags`.
+
+| Setting | |
+| --- | --- |
+| Tags | Comma separated; placeholders allowed (`vip, {{ model.country }}`) |
+| Tag type | Optional |
+| Mode | Attach (default), Detach or Sync (replace) |
+
+## Find records
+
+Queries records for a **For each** loop: "orders unpaid for three days", "users without a login this month".
+
+| Setting | |
+| --- | --- |
+| Record type | The model class |
+| Conditions | Attribute, operator, value — all must match. Operators: equals, does not equal, greater / less than (or equal), contains, does not contain, is one of, is not one of, is null, is not null, is a date before / after. Values accept placeholders (a bare placeholder keeps its type); the date operators accept relative dates: `-3 days`, `now`, `next monday` |
+| Order by / Direction | Optional |
+| Limit | 100 by default, never more than `max_records` (config, 1000) |
+
+The action changes nothing, so a [test run](runs.md#test-runs) executes it for real. Exposes `{{ last.count }}`, `{{ last.ids }}` and `{{ last.records }}` — the step log keeps the count and the first ids; the branch gets the records.
+
+## For each
+
+Runs the nodes on its **Each item** output once per item of a list, then continues along **Done**.
+
+| Setting | |
+| --- | --- |
+| Items | A placeholder for a list — `{{ last.records }}` after **Find records**, `{{ webhook.items }}`, or comma-separated text |
+| Item name | The current item is `{{ item }}` (or the name you choose: `{{ order.reference }}`) |
+| Maximum iterations | The run fails when the list is longer (100 by default, never more than `max_records`) |
+
+Inside the loop body, `{{ loop.index }}` (from 0), `{{ loop.number }}` (from 1), `{{ loop.count }}`, `{{ loop.first }}` and `{{ loop.last }}` are available too; a **Wait** inside the body pauses that iteration only. Outputs made inside the body do not leak to the **Done** branch, which sees `{{ last.count }}` — the number of items. Loops nest.
+
+## Ask for approval
+
+Pauses the run until an approver decides, from the notification, an email link or the Approvals page. Outputs **Approved**, **Rejected** and **Timed out**. See [Approvals & signals](approvals.md).
+
+## Wait for signal
+
+Pauses the run until your code calls `Flow::signal('<key>', [...])`. Outputs **Received** and **Timed out**. See [Approvals & signals](approvals.md).
 
 ## Transition state
 

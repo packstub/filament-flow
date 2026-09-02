@@ -15,6 +15,7 @@ use Packstub\Flow\Commands\RunScheduledWorkflowsCommand;
 use Packstub\Flow\Commands\RunWorkflowCommand;
 use Packstub\Flow\Engine\Dispatcher;
 use Packstub\Flow\Filament\Livewire\ManageNode;
+use Packstub\Flow\Http\Controllers\ApprovalController;
 use Packstub\Flow\Http\Controllers\WebhookController;
 use Packstub\Flow\Listeners\DispatchEventTriggers;
 use Packstub\Flow\Listeners\DispatchStateChanged;
@@ -93,6 +94,10 @@ class FlowServiceProvider extends PackageServiceProvider
                 ->middleware(config('packstub-flow.webhooks.middleware', ['api']))
                 ->name('packstub-flow.webhook');
         }
+
+        Route::get(trim((string) config('packstub-flow.approvals.prefix', 'flow/approvals'), '/').'/{wait}/{outcome}', ApprovalController::class)
+            ->middleware([...(array) config('packstub-flow.approvals.middleware', ['web', 'auth']), 'signed'])
+            ->name('packstub-flow.approval');
 
         if (config('packstub-flow.register_schedule', true)) {
             $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {

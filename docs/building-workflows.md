@@ -18,7 +18,7 @@ The sidebar lists **Triggers**, **Actions** and **Conditions**; open a category 
 
 ## Connecting nodes
 
-Drag from a node's output handle (on its right) to another node's input handle (on its left). Triggers have one output and no input; actions have one input and one output; conditions have one input and two outputs, **True** (green) and **False** (red).
+Drag from a node's output handle (on its right) to another node's input handle (on its left). Triggers have one output and no input; most actions have one input and one output; conditions have one input and two outputs, **True** (green) and **False** (red). Some actions have several named outputs — **For each** (*Each item* / *Done*), **Ask for approval** (*Approved* / *Rejected* / *Timed out*), **Wait for signal** (*Received* / *Timed out*) — and an action whose error handling is set to *Follow the error branch* shows a red **Error** output.
 
 - Every node connected to the same output runs, in the order the edges were drawn, one branch after the other.
 - A condition follows only the edges leaving the output that matches its result. Leave an output unconnected when nothing should happen on that branch.

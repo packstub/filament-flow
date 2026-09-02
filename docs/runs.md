@@ -97,6 +97,18 @@ Event::listen(WorkflowFailed::class, function (WorkflowFailed $event): void {
 });
 ```
 
+## Test runs
+
+The **Test** button on a workflow's edit page performs a dry run: pick the trigger to start from, optionally a record (as `{{ model }}`) and extra JSON payload (a webhook body, for instance). Conditions are evaluated for real and read-only actions (**Find records**) execute; every other action is *simulated* — the step log shows what it would have used, with placeholders filled in (secrets excluded), instead of sending, calling or writing anything. **Wait** steps are skipped, approvals and signals follow their first outcome, **Call workflow** is not called.
+
+Test runs are stored like any run, flagged with a beaker icon, hidden from the Runs page by default, and never counted for "run once per record", dedup windows or consecutive-failure limits; they fire no `WorkflowStarted` / `WorkflowCompleted` events. `Flow::test($workflow, $payload, $startNodeId)` does the same from code.
+
+## The Runs page
+
+Besides the Runs tab under each workflow, the **Runs** page (next to Workflows in the navigation) lists every run across workflows, with filters by status, workflow, date and test runs, the details modal, **Run again**, and **Open on the canvas** — which opens the workflow with the failing node selected and centred. Step labels in the details modal link to their node the same way. Four stats sit above the table: runs today, failed today, runs waiting, and the 7-day success rate.
+
+Steps are stored one row per step in the `flow_workflow_steps` table (`WorkflowStep` model; `$run->steps` returns them as arrays, `$run->steps()` as the relationship) rather than in a JSON column, so a run with hundreds of steps costs one insert per step and the Runs page can count and filter them.
+
 ## Failures
 
 When a node throws, the run is marked Failed with the exception message and `finished_at`, the exception is passed to Laravel's `report()` — so it reaches your log and error tracker as usual — and `WorkflowFailed` is dispatched. The exception is not rethrown: the request, model event or job that triggered the workflow carries on. Branches leaving the same node run one after another in the order their edges were drawn, so the branches after the failing one do not run, and side effects of the ones before it stand. A resume job for a run that another branch has since failed does nothing.
@@ -107,9 +119,13 @@ Every action node has an **Error handling** section in its settings:
 | --- | --- |
 | Retries | How many extra attempts to make when the action throws (0–10) |
 | Seconds between retries | A pause between attempts |
-| After the last failure | **Fail the run** (default) or **Log it and continue** — the failure is reported and logged as a step, and the branch carries on |
+| After the last failure | **Fail the run** (default), **Log it and continue** — the failure is reported and logged as a step, and the branch carries on — or **Follow the error branch** |
 
 Retries repeat the whole action, so use them for actions that are safe to repeat (an HTTP call to an idempotent endpoint, a notification) rather than ones that are not.
+
+**Follow the error branch** adds a red **Error** output to the node on the canvas. Connect it to the steps that handle the failure — a Slack message, a "needs attention" flag, a **Call workflow** — and they run with `{{ error.message }}`, `{{ error.node }}` and `{{ error.node_id }}` in the payload; the run then succeeds. With nothing connected to the Error output the node fails the run as usual.
+
+For failures anywhere in a workflow, the **On failure, run** setting (in *Run settings*) names another workflow — one with a **Called by another workflow** trigger — that starts whenever a run fails, with the failing run's payload plus `{{ error.message }}` and `{{ failed_run.workflow }}` / `{{ failed_run.id }}` / `{{ failed_run.error }}`. A handler cannot trigger itself.
 
 Typical failure messages:
 
@@ -134,5 +150,6 @@ Typical failure messages:
 - **Nesting depth** — a run can start other runs (a record update saved with events on fires **Record updated**, a mail fires an event…). Runs nested more than `max_nesting` levels deep (5 by default) are not started, so a workflow that updates its own record without *Save without firing events* stops instead of looping forever.
 - **Failure limit** — an optional per-workflow "deactivate after N consecutive failures" (see above).
 - **Suppression** — `Flow::suppress(fn () => ...)` runs a block of code with every trigger disabled.
+- **Loop limits** — a **For each** node fails the run when its list is longer than its maximum iterations (never more than `max_records`).
 
 Next: [Queue & scheduling](queue-and-scheduling.md).

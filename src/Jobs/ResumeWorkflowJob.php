@@ -33,6 +33,8 @@ class ResumeWorkflowJob implements ShouldQueueAfterCommit
         public array $payload,
         public array $nodeIds,
         public array $graph,
+        public ?string $message = null,
+        public ?string $originNodeId = null,
     ) {
         $this->timeout = (int) config('packstub-flow.queue.timeout', 300);
     }
@@ -51,6 +53,6 @@ class ResumeWorkflowJob implements ShouldQueueAfterCommit
             new Graph($this->graph['nodes'] ?? [], $this->graph['edges'] ?? []),
         );
 
-        $runner->resume($run, $this->nodeIds);
+        $runner->resume($run, $this->nodeIds, $this->message, $this->originNodeId);
     }
 }

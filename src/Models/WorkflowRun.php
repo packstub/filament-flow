@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Flow;
 use Packstub\Flow\NodeRegistry;
@@ -18,8 +19,9 @@ use Packstub\Flow\NodeRegistry;
  * @property class-string<Model>|null $subject_type
  * @property string|null $subject_id
  * @property RunStatus $status
+ * @property bool $is_test
  * @property array<string, mixed>|null $context
- * @property array<int, array<string, mixed>>|null $steps
+ * @property-read array<int, array<string, mixed>> $steps
  * @property string|null $error
  * @property int $pending_resumes
  * @property CarbonInterface|null $started_at
@@ -33,8 +35,8 @@ class WorkflowRun extends Model
 
     protected $casts = [
         'status' => RunStatus::class,
+        'is_test' => 'boolean',
         'context' => 'array',
-        'steps' => 'array',
         'pending_resumes' => 'integer',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
@@ -48,6 +50,34 @@ class WorkflowRun extends Model
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Flow::workflowModel(), 'workflow_id');
+    }
+
+    public function steps(): HasMany
+    {
+        return $this->hasMany(Flow::stepModel(), 'run_id')->orderBy('sequence');
+    }
+
+    public function waits(): HasMany
+    {
+        return $this->hasMany(Flow::waitModel(), 'run_id');
+    }
+
+    /**
+     * The step log as plain arrays (at, node_id, type, label, message,
+     * status, duration_ms, output), in execution order.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getStepsAttribute(): array
+    {
+        $steps = $this->relationLoaded('steps') ? $this->getRelation('steps') : $this->steps()->get();
+
+        return $steps->map(fn (WorkflowStep $step): array => $step->toStep())->all();
+    }
+
+    public function scopeReal(Builder $query): Builder
+    {
+        return $query->where('is_test', false);
     }
 
     /**

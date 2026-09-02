@@ -27,6 +27,7 @@ use Packstub\Flow\Tests\Fixtures\AdminPanelProvider;
 use Packstub\Flow\Tests\Fixtures\User;
 use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
 use Spatie\ModelStatus\Status;
+use Spatie\Tags\TagsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -60,6 +61,7 @@ abstract class TestCase extends Orchestra
             WidgetsServiceProvider::class,
             // Real apps discover filament/* before livewire; keep that order.
             LivewireServiceProvider::class,
+            TagsServiceProvider::class,
             FlowServiceProvider::class,
             AdminPanelProvider::class,
         ];
@@ -81,6 +83,7 @@ abstract class TestCase extends Orchestra
         $app['config']->set('packstub-flow.models_for_triggers', [Fixtures\Order::class, Fixtures\Ticket::class]);
         $app['config']->set('packstub-flow.http.block_private_networks', false);
         $app['config']->set('model-status.status_model', Status::class);
+
     }
 
     protected function migrate(): void
@@ -101,7 +104,30 @@ abstract class TestCase extends Orchestra
             $table->string('status')->default('pending');
             $table->decimal('total', 10, 2)->default(0);
             $table->string('state')->nullable();
+            $table->timestamp('due_at')->nullable();
             $table->timestamps();
+        });
+
+        Schema::create('notes', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('order_id');
+            $table->string('body');
+            $table->timestamps();
+        });
+
+        Schema::create('tags', function (Blueprint $table): void {
+            $table->id();
+            $table->json('name');
+            $table->json('slug');
+            $table->string('type')->nullable();
+            $table->integer('order_column')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('taggables', function (Blueprint $table): void {
+            $table->foreignId('tag_id')->constrained()->cascadeOnDelete();
+            $table->morphs('taggable');
+            $table->unique(['tag_id', 'taggable_id', 'taggable_type']);
         });
 
         Schema::create('tickets', function (Blueprint $table): void {
