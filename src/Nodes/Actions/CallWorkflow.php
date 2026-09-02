@@ -53,6 +53,10 @@ class CallWorkflow extends Action
             throw new WorkflowException('The workflow to call no longer exists.');
         }
 
+        if (! $workflow->is_active) {
+            throw new WorkflowException("Workflow [{$workflow->name}] is inactive and cannot be called.");
+        }
+
         $node = $workflow->triggerNode(WorkflowCalled::class);
 
         if (! $node) {

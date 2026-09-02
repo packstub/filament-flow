@@ -29,6 +29,17 @@ it('fails when the called workflow has no matching trigger', function (): void {
         ->and($run->error)->toContain('Called by another workflow');
 });
 
+it('refuses to call an inactive workflow', function (): void {
+    $child = createWorkflow([triggerNode('t', WorkflowCalled::class)], [], ['name' => 'Off', 'is_active' => false]);
+    $parent = createWorkflow([triggerNode('t', Manual::class), actionNode('call', CallWorkflow::class, ['workflow_id' => $child->id])], [edge('t', 'call')]);
+
+    $run = Flow::run($parent);
+
+    expect($run->status)->toBe(RunStatus::Failed)
+        ->and($run->error)->toContain('inactive')
+        ->and(Flow::dispatch(WorkflowCalled::class))->toBe([]);
+});
+
 it('stops workflows that call each other endlessly', function (): void {
     $a = createWorkflow([triggerNode('t', WorkflowCalled::class), actionNode('call', CallWorkflow::class, [])], [edge('t', 'call')], ['name' => 'A']);
     $b = createWorkflow([triggerNode('t', WorkflowCalled::class), actionNode('call', CallWorkflow::class, ['workflow_id' => $a->id])], [edge('t', 'call')], ['name' => 'B']);

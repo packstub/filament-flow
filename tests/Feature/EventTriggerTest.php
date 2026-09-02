@@ -33,6 +33,17 @@ it('ignores events that no workflow watches', function (): void {
     expect(SetStatusAction::$calls)->toBe([]);
 });
 
+it('fires for subclasses of the configured event', function (): void {
+    createWorkflow([
+        triggerNode('t', EventFired::class, ['event_class' => OrderShipped::class]),
+        actionNode('a', SetStatusAction::class, ['status' => 'x']),
+    ], [edge('t', 'a')]);
+
+    event(new class(createOrder()) extends OrderShipped {});
+
+    expect(SetStatusAction::$calls)->toHaveCount(1);
+});
+
 it('matches subclasses and tolerates a leading backslash', function (): void {
     $trigger = new EventFired;
     $event = new OrderShipped(createOrder());

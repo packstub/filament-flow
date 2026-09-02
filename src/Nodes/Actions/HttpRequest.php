@@ -117,6 +117,7 @@ class HttpRequest extends Action
 
     protected function maskPlaceholders(string $json): string
     {
-        return (string) preg_replace('/\{\{\s*[A-Za-z0-9_.\-]+\s*\}\}/', 'x', $json);
+        // A placeholder may stand for a bare number or a quoted string; "0" is valid in both positions.
+        return (string) preg_replace('/\{\{\s*[A-Za-z0-9_.\-]+\s*\}\}/', '0', $json);
     }
 }

@@ -27,8 +27,9 @@ class WorkflowCalled extends Trigger
 
     public function matches(array $config, array $payload): bool
     {
-        // The dispatcher only offers this trigger to the workflow named by
-        // the calling action; see CallWorkflow.
-        return true;
+        // Only the "Call workflow" action starts these, through Flow::run()
+        // with the node id; a broadcast Flow::dispatch() must not start every
+        // workflow that has this trigger.
+        return false;
     }
 }

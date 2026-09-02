@@ -22,7 +22,7 @@ return [
     'actions' => [
         'run' => 'Run now',
         'run_heading' => 'Run ":name" now?',
-        'run_description' => 'The workflow starts from its first trigger with an empty payload. Steps that need a record (record conditions, "Update record") will fail; use it to try schedules, webhooks and notifications.',
+        'run_description' => 'The workflow starts from its first trigger with a minimal payload. Steps that need a record (record conditions, "Update record") will fail; use it to try schedules, webhooks and notifications.',
         'run_queued' => 'The run was queued.',
         'run_finished' => 'Run finished: :status',
         'copy_of' => ':name (copy)',

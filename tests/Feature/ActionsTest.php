@@ -78,6 +78,23 @@ it('sends HTTP requests with an interpolated JSON body and headers', function ()
     });
 });
 
+it('accepts placeholders in the JSON body validation rule', function (): void {
+    $rule = collect((new HttpRequest)->getFormSchema())->first(fn ($component) => $component->getName() === 'body');
+    $closure = collect($rule->getValidationRules())->first(fn ($r) => $r instanceof Closure);
+
+    expect($closure)->toBeInstanceOf(Closure::class);
+
+    $errors = [];
+    $closure('body', '{"total": {{ model.total }}, "name": "{{ model.name }}"}', function (string $message) use (&$errors): void {
+        $errors[] = $message;
+    });
+    $closure('body', '{not json', function (string $message) use (&$errors): void {
+        $errors[] = $message;
+    });
+
+    expect($errors)->toHaveCount(1);
+});
+
 it('sends GET requests without a body and can fail the run on errors', function (): void {
     Http::fake(['api.example.com/ok' => Http::response('', 200), 'api.example.com/bad' => Http::response('', 500)]);
 

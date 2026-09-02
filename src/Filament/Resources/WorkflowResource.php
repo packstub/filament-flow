@@ -83,7 +83,7 @@ class WorkflowResource extends Resource
                             ->label(__('packstub-flow::flow.fields.name'))
                             ->required()
                             ->maxLength(120)
-                            ->columnSpan(['lg' => 5]),
+                            ->columnSpan(['lg' => 4]),
                         TextInput::make('description')
                             ->label(__('packstub-flow::flow.fields.description'))
                             ->maxLength(255)
@@ -92,7 +92,7 @@ class WorkflowResource extends Resource
                             ->label(__('packstub-flow::flow.fields.is_active'))
                             ->helperText(__('packstub-flow::flow.fields.is_active_help'))
                             ->inline(false)
-                            ->columnSpan(['lg' => 2]),
+                            ->columnSpan(['lg' => 3]),
                     ]),
                 ])
                 ->columnSpanFull(),

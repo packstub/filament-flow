@@ -259,7 +259,7 @@
             bind:edges
             {colorMode}
             fitView
-            fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
+            fitViewOptions={{ padding: 0.15, maxZoom: 1.1 }}
             deleteKey={["Backspace", "Delete"]}
             onnodeclick={closeOverlays}
             onnodecontextmenu={({ event, node }) => menuAt(event as MouseEvent, node.id, "node")}
@@ -268,7 +268,7 @@
         >
             <Controls showLock={false} />
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
-            <MiniMap pannable zoomable />
+            <MiniMap pannable zoomable width={160} height={100} />
         </SvelteFlow>
 
         {#if menu}

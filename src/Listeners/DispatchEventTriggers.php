@@ -23,9 +23,14 @@ class DispatchEventTriggers
 
     protected static bool $loading = false;
 
+    /** Seconds a worker keeps its copy of the list before re-reading the cache. */
+    public const REFRESH_AFTER = 60;
+
+    protected static int $loadedAt = 0;
+
     public function handle(string $eventName, array $data): void
     {
-        if (static::$dispatching || ! isset(static::watched()[$eventName])) {
+        if (static::$dispatching || ! static::isWatched($eventName)) {
             return;
         }
 
@@ -53,9 +58,31 @@ class DispatchEventTriggers
     /**
      * @return array<string, true>
      */
+    protected static function isWatched(string $eventName): bool
+    {
+        $watched = static::watched();
+
+        if ($watched === []) {
+            return false;
+        }
+
+        if (isset($watched[$eventName])) {
+            return true;
+        }
+
+        // A trigger configured with a parent class fires for subclasses too.
+        foreach ($watched as $class => $_) {
+            if (is_a($eventName, $class, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     protected static function watched(): array
     {
-        if (static::$watched !== null) {
+        if (static::$watched !== null && time() - static::$loadedAt < self::REFRESH_AFTER) {
             return static::$watched;
         }
 
@@ -85,6 +112,8 @@ class DispatchEventTriggers
         } finally {
             static::$loading = false;
         }
+
+        static::$loadedAt = time();
 
         return static::$watched = array_fill_keys($classes, true);
     }
