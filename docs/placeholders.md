@@ -20,7 +20,44 @@ A placeholder is a path of letters, digits, `_`, `-` and dots between double bra
 | `{{ event.order.reference }}` | A public property of the event, then an attribute of the model inside it |
 | `{{ headers.x-signature }}` | A request header of a webhook call |
 
-A path that resolves to nothing renders as an empty string — the run does not fail. Text without `{{` is returned untouched.
+A path that resolves to nothing renders as an empty string — the run does not fail. Text without `{{` is returned untouched. Attributes in a model's `$hidden` list (passwords, tokens) always resolve to nothing, even through a relationship.
+
+## Filters
+
+A value can be passed through filters with `|`, several in a row:
+
+```text
+{{ model.created_at | date:Y-m-d }}
+{{ model.name | upper }}
+{{ webhook.note | default:none }}
+{{ model.total | number:2 }}
+{{ tags | join:, | truncate:80 }}
+```
+
+| Filter | |
+| --- | --- |
+| `date:<format>` | Formats a date (`Carbon`, a `DateTime` or a parseable string) with a PHP date format |
+| `upper`, `lower`, `title`, `trim` | Text transforms |
+| `truncate:<n>` | Cuts to *n* characters and adds `...` |
+| `number:<decimals>` | `number_format()` with that many decimals |
+| `default:<value>` | Uses the value when the placeholder is empty |
+| `json` | JSON of the value (a model becomes its attributes) |
+| `count` | Number of items in an array or collection |
+| `join:<glue>` | Joins an array or collection; spaces around the glue are trimmed |
+| `first`, `last` | First or last item of an array or collection |
+
+An unknown filter leaves the value unchanged; a filter that cannot be applied (a date that does not parse) does too.
+
+## Outputs of earlier actions
+
+Some actions expose a result to the nodes after them on the same branch:
+
+| Placeholder | |
+| --- | --- |
+| `{{ last.status }}`, `{{ last.body.id }}` | The output of the most recent action that produced one — an **HTTP request**'s status, body and headers, or the `changes` of **Update record** |
+| `{{ outputs.<node id>.body.id }}` | The output of a specific node, by its id (shown in the definition; see [Building workflows](building-workflows.md#how-a-definition-is-stored)) |
+
+Outputs follow the branch: a node on another branch leaving the same trigger does not see them. They are stored on the run's step log (up to `max_output_bytes`) and shown in the run details. Your own actions expose values with `$this->output([...])` — see [Extending](extending.md#actions).
 
 ## Aliases
 

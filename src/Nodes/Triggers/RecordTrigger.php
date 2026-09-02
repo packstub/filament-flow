@@ -3,6 +3,7 @@
 namespace Packstub\Flow\Nodes\Triggers;
 
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Illuminate\Database\Eloquent\Model;
 use Packstub\Flow\Nodes\Trigger;
 use Packstub\Flow\Support\ModelFinder;
@@ -18,6 +19,10 @@ abstract class RecordTrigger extends Trigger
                 ->searchable()
                 ->required()
                 ->helperText(__('packstub-flow::flow.nodes.record.model_help')),
+            Toggle::make('once')
+                ->label(__('packstub-flow::flow.nodes.record.once'))
+                ->helperText(__('packstub-flow::flow.nodes.record.once_help'))
+                ->default(false),
         ];
     }
 

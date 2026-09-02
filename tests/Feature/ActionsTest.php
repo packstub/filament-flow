@@ -17,6 +17,7 @@ use Packstub\Flow\Nodes\Actions\UpdateRecord;
 use Packstub\Flow\Nodes\Actions\WriteLog;
 use Packstub\Flow\Nodes\Triggers\Manual;
 use Packstub\Flow\Nodes\Triggers\RecordUpdated;
+use Packstub\Flow\Tests\Fixtures\GuardedOrder;
 use Packstub\Flow\Tests\Fixtures\Order;
 use Packstub\Flow\Tests\Fixtures\SetStatusAction;
 
@@ -157,4 +158,70 @@ it('lets a custom action registered through the plugin run inside a workflow', f
 
     expect($run->status)->toBe(RunStatus::Success)
         ->and(SetStatusAction::$calls[0]['config'])->toBe(['status' => 'custom']);
+});
+
+it('builds the JSON body without letting placeholder values break out of their position', function (): void {
+    Http::fake(['api.example.com/*' => Http::response(['ok' => true])]);
+
+    $order = createOrder(['reference' => 'ORD-"x", "admin": true, "y": "', 'total' => 12.5]);
+
+    (new HttpRequest)->handle([
+        'method' => 'POST',
+        'url' => 'https://api.example.com/orders',
+        'body' => '{"ref": "{{ model.reference }}", "note": "Order {{ model.reference }}!", "total": {{ model.total }}, "raw": {{ model }}, "flag": {{ missing.flag }}}',
+    ], ['model' => $order]);
+
+    Http::assertSent(function ($request) use ($order): bool {
+        $body = $request->data();
+
+        return $body['ref'] === $order->reference
+            && $body['note'] === "Order {$order->reference}!"
+            && $body['total'] === 12.5
+            && ! array_key_exists('admin', $body)
+            && $body['raw']['reference'] === $order->reference
+            && $body['flag'] === null;
+    });
+});
+
+it('url-encodes placeholder values in the URL', function (): void {
+    Http::fake();
+
+    (new HttpRequest)->handle(['method' => 'GET', 'url' => 'https://api.example.com/search?q={{ webhook.q }}'], ['webhook' => ['q' => 'a b&c=d']]);
+
+    Http::assertSent(fn ($request) => $request->url() === 'https://api.example.com/search?q=a%20b%26c%3Dd');
+});
+
+it('applies a timeout and retries to HTTP requests', function (): void {
+    Http::fake([
+        'flaky.example.com/*' => Http::sequence()->pushStatus(500)->push(['ok' => true]),
+    ]);
+
+    $action = new HttpRequest;
+    $action->handle(['method' => 'GET', 'url' => 'https://flaky.example.com/', 'retries' => 0, 'throw_on_error' => false], []);
+
+    expect($action->pullOutput())->toMatchArray(['status' => 500, 'ok' => false]);
+});
+
+it('respects mass-assignment protection unless the node bypasses it', function (): void {
+    $order = GuardedOrder::query()->create(['reference' => 'G-1']);
+
+    expect(fn () => (new UpdateRecord)->handle(['attributes' => ['status' => 'paid']], ['model' => $order]))
+        ->toThrow(WorkflowException::class, 'not fillable');
+
+    expect($order->fresh()->status)->toBe('pending');
+
+    (new UpdateRecord)->handle(['attributes' => ['status' => 'paid'], 'force' => true], ['model' => $order]);
+
+    expect($order->fresh()->status)->toBe('paid');
+});
+
+it('keeps the type of a bare placeholder when updating a record', function (): void {
+    $order = createOrder(['total' => 10]);
+
+    $action = new UpdateRecord;
+    $action->handle(['attributes' => ['total' => '{{ webhook.total }}', 'status' => 'paid-{{ webhook.id }}']], ['model' => $order, 'webhook' => ['total' => 99.5, 'id' => 7]]);
+
+    expect($order->fresh()->total)->toBe(99.5)
+        ->and($order->fresh()->status)->toBe('paid-7')
+        ->and($action->pullOutput()['changes'])->toHaveKeys(['total', 'status']);
 });

@@ -4,16 +4,21 @@ namespace Packstub\Flow\Support;
 
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Stringable;
+use Throwable;
 
 /**
  * Renders {{ path }} placeholders against a run's payload. Paths are resolved
  * with data_get(), so {{ model.name }}, {{ model.team.name }},
- * {{ webhook.order.total }} and {{ event.order.id }} all work.
+ * {{ webhook.order.total }} and {{ event.order.id }} all work. A value can be
+ * passed through filters: {{ model.created_at | date:Y-m-d }},
+ * {{ model.name | upper }}, {{ webhook.note | default:none }}.
  */
 class Placeholders
 {
-    protected const PATTERN = '/\{\{\s*([A-Za-z0-9_.\-]+)\s*\}\}/';
+    public const PATTERN = '/\{\{\s*([A-Za-z0-9_.\-]+)((?:\s*\|\s*[A-Za-z_]+(?::[^|}]*?)?)*)\s*\}\}/';
 
     /**
      * @param  array<string, mixed>  $payload
@@ -26,7 +31,7 @@ class Placeholders
 
         return (string) preg_replace_callback(
             self::PATTERN,
-            fn (array $matches): string => self::stringify(self::resolve($matches[1], $payload)),
+            fn (array $matches): string => self::stringify(self::resolve($matches[1], $payload, $matches[2] ?? '')),
             $template,
         );
     }
@@ -50,11 +55,11 @@ class Placeholders
     }
 
     /**
-     * Resolve a single placeholder path to its raw value.
+     * Resolve a single placeholder path (with optional filters) to its raw value.
      *
      * @param  array<string, mixed>  $payload
      */
-    public static function resolve(string $path, array $payload): mixed
+    public static function resolve(string $path, array $payload, string $filters = ''): mixed
     {
         // "model" is the record that fired a trigger; "record" is an alias
         // so both read naturally in a template.
@@ -62,7 +67,108 @@ class Placeholders
             $path = 'model'.substr($path, 6);
         }
 
-        return data_get($payload, $path);
+        $value = $payload;
+
+        foreach (explode('.', $path) as $segment) {
+            // Hidden attributes (passwords, tokens) never leave the model.
+            if ($value instanceof Model && in_array($segment, $value->getHidden(), true)) {
+                return null;
+            }
+
+            $value = data_get($value, $segment);
+
+            if ($value === null) {
+                break;
+            }
+        }
+
+        return self::applyFilters($value, $filters);
+    }
+
+    /**
+     * When a template is exactly one placeholder, return its raw value so
+     * numbers, booleans and arrays keep their type. Otherwise null.
+     */
+    public static function raw(string $template, array $payload): mixed
+    {
+        if (! preg_match('/^\s*'.substr(self::PATTERN, 1, -1).'\s*$/', $template, $matches)) {
+            return null;
+        }
+
+        return self::resolve($matches[1], $payload, $matches[2] ?? '');
+    }
+
+    public static function isSingle(string $template): bool
+    {
+        return (bool) preg_match('/^\s*'.substr(self::PATTERN, 1, -1).'\s*$/', $template);
+    }
+
+    protected static function applyFilters(mixed $value, string $filters): mixed
+    {
+        if (trim($filters) === '') {
+            return $value;
+        }
+
+        foreach (array_filter(array_map('trim', explode('|', $filters))) as $filter) {
+            [$name, $argument] = array_pad(explode(':', $filter, 2), 2, null);
+
+            $value = self::applyFilter($value, strtolower(trim($name)), $argument);
+        }
+
+        return $value;
+    }
+
+    protected static function applyFilter(mixed $value, string $name, ?string $argument): mixed
+    {
+        try {
+            return match ($name) {
+                'default' => blank($value) ? $argument : $value,
+                'upper' => mb_strtoupper(self::stringify($value)),
+                'lower' => mb_strtolower(self::stringify($value)),
+                'title' => Str::title(self::stringify($value)),
+                'trim' => trim(self::stringify($value)),
+                'truncate' => Str::limit(self::stringify($value), (int) ($argument ?? 100)),
+                'date' => self::formatDate($value, $argument ?? 'Y-m-d'),
+                'number' => is_numeric($n = self::loose($value)) ? number_format((float) $n, (int) ($argument ?? 0)) : self::stringify($value),
+                'json' => json_encode(self::jsonable($value), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                'count' => match (true) {
+                    is_countable($value) => count($value),
+                    $value instanceof Arrayable => count($value->toArray()),
+                    default => blank($value) ? 0 : 1,
+                },
+                'join' => is_iterable($value) ? implode($argument ?? ', ', array_map(self::stringify(...), collect($value)->all())) : self::stringify($value),
+                'first' => is_iterable($value) ? collect($value)->first() : $value,
+                'last' => is_iterable($value) ? collect($value)->last() : $value,
+                default => $value,
+            };
+        } catch (Throwable) {
+            return $value;
+        }
+    }
+
+    protected static function formatDate(mixed $value, string $format): string
+    {
+        if (blank($value)) {
+            return '';
+        }
+
+        $date = $value instanceof \DateTimeInterface ? Carbon::instance($value) : Carbon::parse(self::stringify($value));
+
+        return $date->format($format);
+    }
+
+    protected static function loose(mixed $value): mixed
+    {
+        return $value instanceof \BackedEnum ? $value->value : $value;
+    }
+
+    protected static function jsonable(mixed $value): mixed
+    {
+        return match (true) {
+            $value instanceof Model => $value->attributesToArray(),
+            $value instanceof Arrayable => $value->toArray(),
+            default => $value,
+        };
     }
 
     public static function stringify(mixed $value): string
@@ -71,6 +177,7 @@ class Placeholders
             $value === null => '',
             is_bool($value) => $value ? '1' : '0',
             is_scalar($value) => (string) $value,
+            $value instanceof \BackedEnum => (string) $value->value,
             $value instanceof Model => (string) $value->getKey(),
             $value instanceof \DateTimeInterface => $value->format(\DateTimeInterface::ATOM),
             $value instanceof Stringable => (string) $value,
@@ -90,6 +197,9 @@ class Placeholders
             '{{ model.team.name }}' => __('packstub-flow::flow.placeholders.model_relation'),
             '{{ webhook.order.id }}' => __('packstub-flow::flow.placeholders.webhook'),
             '{{ event.order.total }}' => __('packstub-flow::flow.placeholders.event'),
+            '{{ last.body.id }}' => __('packstub-flow::flow.placeholders.last'),
+            '{{ outputs.node_id.status }}' => __('packstub-flow::flow.placeholders.outputs'),
+            '{{ model.created_at | date:Y-m-d }}' => __('packstub-flow::flow.placeholders.filters'),
         ];
     }
 

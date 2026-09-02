@@ -16,13 +16,14 @@ Visual workflow automations for your Filament panel: draw triggers, conditions a
 ## Features
 
 - **[Visual builder](#the-builder)** — a drag-and-drop canvas inside a Filament resource: add nodes from a sidebar, connect them, branch on true / false, and edit each node's settings in a slide-over built from Filament form components.
-- **[Triggers](#triggers)** — record created / updated / deleted, user registered, any Laravel event, a cron schedule, a webhook, a manual run, or a call from another workflow.
+- **[Triggers](#triggers)** — record created / updated / deleted (optionally only when chosen attributes change, or once per record), user registered, any Laravel event, a cron schedule with its own timezone, a signed webhook, a manual run, or a call from another workflow.
 - **[Conditions](#conditions)** — compare a record attribute or any two values with fifteen operators, or check the time of day.
-- **[Actions](#actions)** — send an email, a Filament database notification or a Slack message, call an HTTP endpoint, update the record, wait, call another workflow, or write to the log.
-- **[Placeholders](#placeholders)** — `{{ model.name }}`, `{{ webhook.order.id }}`, `{{ event.carrier }}` and friends, resolved from the run's payload wherever you type text.
-- **[Run history](#runs)** — every run is stored with its status, trigger, payload summary, a step-by-step log and any error, browsable from a Runs tab; a **Run now** button for quick checks.
-- **[Queue & scheduling](#queue--scheduling)** — run workflows inline or on your queue, pause them for minutes or days with a Wait step, and start them from cron expressions with one scheduler entry.
-- **[Webhooks](#webhooks)** — a tokenised POST endpoint per workflow that answers `202 Accepted` and exposes the request body to your nodes.
+- **[Actions](#actions)** — send an email, a Filament database notification or a Slack message, call an HTTP endpoint and use its response in later nodes, update the record, wait for a duration or until a date from the payload, call another workflow, or write to the log. Every action has retries and a continue-on-error switch.
+- **[Placeholders](#placeholders)** — `{{ model.name }}`, `{{ webhook.order.id }}`, `{{ last.body.id }}` and friends, with filters such as `| date:Y-m-d`, `| upper` and `| default:none`, resolved from the run's payload wherever you type text.
+- **[Run history](#runs)** — every run is stored with its status, trigger, record, payload summary, a step-by-step log with timings and outputs, and any error, browsable from a Runs tab; **Run now** and **Run again** buttons for quick checks and repeats.
+- **[Queue & scheduling](#queue--scheduling)** — run workflows inline or on your queue (dispatched after your transaction commits), pause them for minutes or days with a Wait step, and start them from cron expressions with one scheduler entry.
+- **[Webhooks](#webhooks)** — a tokenised, optionally HMAC-signed POST endpoint per workflow that answers `202 Accepted` and exposes the request body to your nodes.
+- **Safe by default** — outgoing requests cannot reach private networks unless you allow it, record updates respect mass-assignment rules, credential headers never reach the run log, hidden model attributes never reach a template, and the Workflows resource can sit behind a policy, a Gate ability or a callback.
 - **[Extensible](#extending)** — write your own trigger, action or condition class with a Filament form schema and register it on the plugin, in the config, or with `Flow::register()`.
 - **Dark mode ready** and **translatable** — the canvas follows Filament's theme, and every string, node name and description lives in a language file.
 

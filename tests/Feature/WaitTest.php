@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Queue;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
@@ -124,4 +125,45 @@ it('uses a snapshot of the graph taken when the wait started', function (): void
     Queue::pushedJobs()[ResumeWorkflowJob::class][0]['job']->handle();
 
     expect(SetStatusAction::$calls[0]['config']['status'])->toBe('original');
+});
+
+it('waits until a date from the payload with an offset', function (): void {
+    Date::setTestNow('2026-09-02 10:00:00');
+
+    $wait = new Wait;
+    $order = createOrder(['created_at' => '2026-09-03 10:00:00']);
+
+    expect($wait->getDelaySeconds(['mode' => 'until', 'until' => '{{ model.created_at }}', 'duration' => 1, 'unit' => 'hours', 'direction' => 'before'], ['model' => $order]))->toBe(23 * 3600)
+        ->and($wait->getDelaySeconds(['mode' => 'until', 'until' => '{{ model.created_at }}', 'duration' => 2, 'unit' => 'hours', 'direction' => 'after'], ['model' => $order]))->toBe(26 * 3600)
+        ->and($wait->getDelaySeconds(['mode' => 'until', 'until' => '2026-09-02 10:30:00', 'duration' => 0], []))->toBe(1800)
+        ->and($wait->getDelaySeconds(['mode' => 'until', 'until' => '{{ model.created_at }}', 'duration' => 3, 'unit' => 'days', 'direction' => 'before'], ['model' => $order]))->toBeNull()
+        ->and($wait->getDelaySeconds(['mode' => 'until', 'until' => '{{ missing }}', 'duration' => 1, 'unit' => 'days'], []))->toBeNull()
+        ->and($wait->getDelaySeconds(['mode' => 'until', 'until' => 'not a date'], []))->toBeNull();
+
+    Date::setTestNow();
+});
+
+it('does not resume a run that another branch already failed', function (): void {
+    Queue::fake();
+
+    $workflow = createWorkflow([
+        triggerNode('t', Manual::class),
+        actionNode('w', Wait::class, ['duration' => 1, 'unit' => 'minutes']),
+        actionNode('after', SetStatusAction::class, ['status' => 'after']),
+        actionNode('boom', SetStatusAction::class, ['status' => 'boom']),
+    ], [edge('t', 'w'), edge('w', 'after'), edge('t', 'boom')]);
+
+    $run = Flow::run($workflow);
+
+    expect($run->status)->toBe(RunStatus::Failed);
+
+    Queue::assertPushed(ResumeWorkflowJob::class, function (ResumeWorkflowJob $job): bool {
+        $job->handle();
+
+        return true;
+    });
+
+    expect($run->fresh()->status)->toBe(RunStatus::Failed)
+        ->and($run->fresh()->pending_resumes)->toBe(0)
+        ->and(collect(SetStatusAction::$calls)->pluck('config.status')->all())->toBe(['boom']);
 });

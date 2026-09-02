@@ -7,6 +7,7 @@ use Filament\Forms\Components\TextInput;
 use Illuminate\Support\Facades\Http;
 use Packstub\Flow\Nodes\Action;
 use Packstub\Flow\Nodes\Concerns\InterpolatesPlaceholders;
+use Packstub\Flow\Support\UrlGuard;
 
 /**
  * Posts to a Slack incoming webhook.
@@ -54,6 +55,10 @@ class SendSlackMessage extends Action
             return;
         }
 
-        Http::post($url, ['text' => $this->interpolate($config['message'] ?? '', $payload)])->throw();
+        UrlGuard::assertAllowed($url);
+
+        Http::timeout((int) config('packstub-flow.http.timeout', 15))
+            ->post($url, ['text' => $this->interpolate($config['message'] ?? '', $payload)])
+            ->throw();
     }
 }

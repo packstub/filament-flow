@@ -133,3 +133,18 @@ it('validates node settings', function (): void {
         ->callMountedAction()
         ->assertHasActionErrors(['label', 'recipient']);
 });
+
+it('runs a finished run again with the same payload', function (): void {
+    $order = createOrder();
+    $workflow = manualWorkflow(['status' => 'again']);
+    $run = Flow::run($workflow, ['model' => $order]);
+
+    Livewire::test(RunsRelationManager::class, ['ownerRecord' => $workflow, 'pageClass' => EditWorkflow::class])
+        ->callTableAction('rerun', $run)
+        ->assertNotified();
+
+    expect(WorkflowRun::query()->count())->toBe(2)
+        ->and(SetStatusAction::$calls)->toHaveCount(2)
+        ->and(SetStatusAction::$calls[1]['payload']['model']->is($order))->toBeTrue()
+        ->and(WorkflowRun::query()->latest('started_at')->first()->subject_id)->toBe((string) $order->id);
+});

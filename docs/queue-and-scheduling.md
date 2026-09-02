@@ -31,6 +31,8 @@ With the queue enabled, a `Packstub\Flow\Jobs\RunWorkflowJob` is dispatched per 
 
 The choice can be made per call: `Flow::run($workflow, $payload, queue: false)` forces a synchronous run, `queue: true` forces a job.
 
+Both jobs are dispatched **after the surrounding database transaction commits** (`ShouldQueueAfterCommit`), so a run never sees a record that is rolled back. They have `tries = 1` — a run that fails is recorded as failed rather than retried, since retrying would repeat the actions that already ran; use the per-node retries in a node's **Error handling** settings instead — and a `timeout` from `queue.timeout` (300 s by default).
+
 The job re-checks that the workflow is still active when it runs. Eloquent models in the payload are stored as class + key (+ the attributes they had) and fetched fresh when the job runs; a record that has been deleted in the meantime is rebuilt from the stored attributes so placeholders keep working. Other objects in the payload (an event object, for instance) are serialised by the queue as usual, so they need to be serialisable — Laravel's `SerializesModels` on the event takes care of models inside it.
 
 ## Wait steps
@@ -54,7 +56,7 @@ The connection and queue name from the config apply to resume jobs too.
 
 ## Schedules
 
-Workflows with a **Schedule** trigger are started by the `packstub-flow:cron` command, which dispatches the trigger with the current time; every active workflow whose cron expression is due at that minute starts (in the application timezone).
+Workflows with a **Schedule** trigger are started by the `packstub-flow:cron` command, which dispatches the trigger with the current time; every active workflow whose cron expression is due at that minute starts, in the timezone set on the trigger (the application timezone by default).
 
 With `register_schedule` on (the default), the plugin adds the command to Laravel's scheduler:
 
@@ -76,6 +78,8 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('packstub-flow:cron')->everyMinute()->onOneServer();
 ```
 
-Scheduled runs follow the same sync / queued rule as every other run: with the queue enabled, the cron command only dispatches jobs and returns quickly.
+Scheduled runs follow the same sync / queued rule as every other run: with the queue enabled, the cron command only dispatches jobs and returns quickly. Without it, due workflows run inside the scheduler tick one after another, under `withoutOverlapping()` — fine for a few quick workflows, and a reason to enable the queue once schedules do real work.
+
+With `register_schedule` on and a `prune_runs_after_days` value, `packstub-flow:prune` is scheduled daily too.
 
 Next: [Extending](extending.md).

@@ -20,15 +20,16 @@ Every time a workflow starts, a `WorkflowRun` row is created and updated step by
 | Column | |
 | --- | --- |
 | `trigger_type` | The class of the trigger node the run started from |
+| `subject_type`, `subject_id` | The record the run started for (the `model` in the payload), used by "Run once per record" and shown in the Runs tab |
 | `context` | A JSON summary of the payload: models become `{"type": "App\\Models\\Order", "key": 42}`, other objects `{"type": "App\\Events\\OrderShipped"}`, scalars and arrays as they are |
-| `steps` | The step log, one entry per visited node: `at`, `node_id`, `type`, `label`, `message` |
+| `steps` | The step log, one entry per visited node: `at`, `node_id`, `type`, `label`, `message`, `status` (`ok`, `retry` or `failed`), `duration_ms`, and `output` when the action produced one |
 | `error` | The exception message when the run failed |
 | `pending_resumes` | How many delayed resumes are still due |
 | `started_at`, `finished_at` | Timestamps; the Runs table shows the duration between them |
 
-Step messages are, in order of appearance: "Triggered", "Condition met, following the "true" branch" / "Condition not met, following the "false" branch", "Done" after an action, "Waiting *n* seconds before continuing" at a Wait, "Nothing to run after the wait; finished", and "Resumed after waiting" when a delayed job picks the run back up.
+Step messages are, in order of appearance: "Triggered", "Condition met, following the "true" branch" / "Condition not met, following the "false" branch", "Done" after an action, "Waiting *n* seconds before continuing" at a Wait, "Nothing to run after the wait; finished", and "Resumed after waiting" when a delayed job picks the run back up. A retried action logs "Attempt *n* of *m* failed (…), retrying"; an action set to continue on error logs "Failed (…), continuing as configured"; the step that fails a run carries the error message.
 
-The **Details** action on a run opens a modal with the status, trigger, start time, duration, the error (if any), the numbered steps with their time, and the payload summary.
+The **Details** action on a run opens a modal with the status, trigger, record, start time, duration, the error (if any), the numbered steps with their time, duration and output, and the payload summary. **Run again** on a finished run starts the workflow once more from the same trigger with the same payload — records are fetched fresh by key — so a failed HTTP call or email can be repeated after the cause is fixed.
 
 ![A run's details modal](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/run-detail.png)
 
@@ -89,7 +90,17 @@ Event::listen(WorkflowFailed::class, function (WorkflowFailed $event): void {
 
 ## Failures
 
-When a node throws, the run is marked Failed with the exception message and `finished_at`, the exception is passed to Laravel's `report()` — so it reaches your log and error tracker as usual — and `WorkflowFailed` is dispatched. The exception is not rethrown: the request, model event or job that triggered the workflow carries on. Other branches of the same run that had not been visited yet do not run.
+When a node throws, the run is marked Failed with the exception message and `finished_at`, the exception is passed to Laravel's `report()` — so it reaches your log and error tracker as usual — and `WorkflowFailed` is dispatched. The exception is not rethrown: the request, model event or job that triggered the workflow carries on. Branches leaving the same node run one after another in the order their edges were drawn, so the branches after the failing one do not run, and side effects of the ones before it stand. A resume job for a run that another branch has since failed does nothing.
+
+Every action node has an **Error handling** section in its settings:
+
+| Setting | |
+| --- | --- |
+| Retries | How many extra attempts to make when the action throws (0–10) |
+| Seconds between retries | A pause between attempts |
+| After the last failure | **Fail the run** (default) or **Log it and continue** — the failure is reported and logged as a step, and the branch carries on |
+
+Retries repeat the whole action, so use them for actions that are safe to repeat (an HTTP call to an idempotent endpoint, a notification) rather than ones that are not.
 
 Typical failure messages:
 
@@ -106,7 +117,8 @@ Typical failure messages:
 
 ## Safety guards
 
-- **Cycle guard** — the runner remembers the path from the trigger to the current node; reaching a node that is already on that path fails the run instead of looping. A node reachable through two separate branches (a diamond) is allowed and runs once per branch.
+- **Cycle guard** — the runner remembers the path from the trigger to the current node; reaching a node that is already on that path fails the run instead of looping. A node reachable through two separate branches (a diamond) runs once, for the first branch that reaches it.
+- **Definition checks** — an active workflow cannot be saved without a trigger, with nodes that nothing leads to, or with a required setting left empty (see [Building workflows](building-workflows.md#saving)).
 - **Maximum steps** — a run stops after visiting more than `max_steps` nodes (1000 by default). Set it in the config.
 - **Registered nodes only** — a definition can only instantiate classes registered with the plugin; anything else fails the run with "is not registered".
 - **Call depth** — nested **Call workflow** actions stop at 10 levels.

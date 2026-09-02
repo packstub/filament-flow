@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Models\WorkflowRun;
@@ -49,4 +50,12 @@ it('publishes config and migrations through the install command', function (): v
     foreach (glob(database_path('migrations/*create_flow_tables.php')) as $file) {
         @unlink($file);
     }
+});
+
+it('schedules the prune command daily when retention is configured', function (): void {
+    $events = collect(app(Schedule::class)->events())
+        ->map(fn ($event): string => $event->command ?? '')
+        ->filter(fn (string $command): bool => str_contains($command, 'packstub-flow:prune'));
+
+    expect($events)->toHaveCount(1);
 });

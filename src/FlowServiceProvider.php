@@ -85,6 +85,10 @@ class FlowServiceProvider extends PackageServiceProvider
         if (config('packstub-flow.register_schedule', true)) {
             $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
                 $schedule->command('packstub-flow:cron')->everyMinute()->withoutOverlapping();
+
+                if (config('packstub-flow.prune_runs_after_days')) {
+                    $schedule->command('packstub-flow:prune')->daily();
+                }
             });
         }
     }

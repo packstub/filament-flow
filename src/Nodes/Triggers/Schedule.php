@@ -3,6 +3,7 @@
 namespace Packstub\Flow\Nodes\Triggers;
 
 use Cron\CronExpression;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Support\Facades\Date;
 use Packstub\Flow\Nodes\Trigger;
@@ -40,6 +41,12 @@ class Schedule extends Trigger
                         $fail(__('packstub-flow::flow.nodes.schedule.invalid'));
                     }
                 }),
+            Select::make('timezone')
+                ->label(__('packstub-flow::flow.nodes.schedule.timezone'))
+                ->helperText(__('packstub-flow::flow.nodes.schedule.timezone_help', ['default' => config('app.timezone')]))
+                ->options(fn (): array => array_combine($zones = timezone_identifiers_list(), $zones))
+                ->searchable()
+                ->placeholder(config('app.timezone')),
         ];
     }
 
@@ -51,6 +58,8 @@ class Schedule extends Trigger
             return false;
         }
 
-        return (new CronExpression($expression))->isDue($payload['now'] ?? Date::now(), config('app.timezone'));
+        $timezone = (string) ($config['timezone'] ?? '') ?: config('app.timezone');
+
+        return (new CronExpression($expression))->isDue($payload['now'] ?? Date::now(), $timezone);
     }
 }

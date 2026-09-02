@@ -37,12 +37,18 @@ class WebhookController
             abort(404);
         }
 
+        $config = (array) ($node['data']['config'] ?? []);
+
+        if (! Webhook::verifySignature($config, (string) $request->getContent(), $request->header(Webhook::signatureHeader($config)))) {
+            abort(401, 'Invalid webhook signature.');
+        }
+
         $body = $request->isJson() ? (array) $request->json()->all() : $request->all();
 
         $run = Flow::run($model, [
             'webhook' => $body,
             'webhook_token' => $token,
-            'headers' => collect($request->headers->all())->map(fn (array $values) => $values[0] ?? null)->all(),
+            'headers' => $this->headers($request),
         ], (string) $node['id']);
 
         return response()->json([
@@ -50,5 +56,21 @@ class WebhookController
             'run' => $run?->getKey(),
             'status' => $run?->status->value ?? 'queued',
         ], 202);
+    }
+
+    /**
+     * Request headers minus the ones that carry credentials, so they never
+     * land in a run's stored payload.
+     *
+     * @return array<string, string|null>
+     */
+    protected function headers(Request $request): array
+    {
+        $redacted = array_map('strtolower', (array) config('packstub-flow.webhooks.redacted_headers', []));
+
+        return collect($request->headers->all())
+            ->reject(fn (array $values, string $name): bool => in_array(strtolower($name), $redacted, true))
+            ->map(fn (array $values) => $values[0] ?? null)
+            ->all();
     }
 }

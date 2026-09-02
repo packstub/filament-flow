@@ -41,6 +41,10 @@ return [
         'close' => 'Close',
         'context' => 'Payload',
         'no_steps' => 'No steps were recorded.',
+        'output' => 'Output',
+        'subject' => 'Record',
+        'rerun' => 'Run again',
+        'rerun_description' => 'Starts the workflow again with the same records and payload. Actions such as emails and HTTP requests will run again.',
         'status' => [
             'running' => 'Running',
             'delayed' => 'Waiting',
@@ -57,6 +61,14 @@ return [
         'delayed' => 'Waiting :seconds seconds before continuing',
         'delay_skipped' => 'Nothing to run after the wait; finished',
         'resumed' => 'Resumed after waiting',
+        'retrying' => 'Attempt :attempt of :max failed (:error), retrying',
+        'continued' => 'Failed (:error), continuing as configured',
+    ],
+    'validation' => [
+        'unknown_node' => 'Node ":node" uses a trigger, action or condition that is not registered.',
+        'no_trigger' => 'Add at least one trigger before activating the workflow.',
+        'unconnected' => 'Node ":node" is not connected to anything before it.',
+        'missing_setting' => 'Node ":node": the setting ":setting" is required.',
     ],
 
     'node_settings' => [
@@ -69,6 +81,13 @@ return [
         'placeholders' => 'Placeholders',
         'placeholders_hint' => 'Text fields accept {{ placeholders }} that are filled in when the workflow runs.',
         'placeholders_intro' => 'Any value from the run payload can be referenced by its path:',
+        'error_handling' => 'Error handling',
+        'error_handling_help' => 'What happens when this action throws.',
+        'retries' => 'Retries',
+        'retry_after' => 'Seconds between retries',
+        'on_error' => 'After the last failure',
+        'on_error_fail' => 'Fail the run',
+        'on_error_continue' => 'Log it and continue',
     ],
 
     'placeholders' => [
@@ -79,6 +98,11 @@ return [
         'webhook' => 'A value from the webhook request body',
         'event' => 'A public property of the event that fired',
         'user' => 'The user who registered',
+        'last' => 'The output of the previous action (an HTTP response, for example)',
+        'outputs' => 'The output of a specific earlier action, by node id',
+        'filters' => 'Filters: date:<format>, upper, lower, title, trim, truncate:<n>, number:<decimals>, default:<value>, json, count, join:<glue>',
+        'http_status' => 'The HTTP status code of the response',
+        'http_body' => 'A value from the JSON response body',
     ],
 
     'builder' => [
@@ -116,16 +140,23 @@ return [
             'expression' => 'Cron expression',
             'expression_help' => 'Minute, hour, day of month, month, day of week — e.g. "0 9 * * 1-5" for weekdays at 09:00.',
             'invalid' => 'This is not a valid cron expression.',
+            'timezone' => 'Timezone',
+            'timezone_help' => 'The expression is evaluated in this timezone. Defaults to :default.',
         ],
         'webhook' => [
             'name' => 'Webhook',
             'description' => 'Starts when a POST request hits the webhook URL.',
             'token' => 'Secret token',
             'token_help' => 'Send a POST to :prefix/{workflow id}/{token}. The JSON body is available as {{ webhook.* }}.',
+            'signing_secret' => 'Signing secret',
+            'signing_secret_help' => 'Optional. When set, requests must carry an HMAC-SHA256 hex signature of the raw body in the signature header.',
+            'signature_header' => 'Signature header',
         ],
         'record' => [
             'model' => 'Record type',
             'model_help' => 'Models that use the HasWorkflows trait, plus the ones listed in the config.',
+            'once' => 'Run once per record',
+            'once_help' => 'Skip records this workflow has already run for (welcome series, surveys, reminders).',
         ],
         'record_created' => [
             'name' => 'Record created',
@@ -134,6 +165,8 @@ return [
         'record_updated' => [
             'name' => 'Record updated',
             'description' => 'Fires when a record of the chosen type is updated.',
+            'watch' => 'Only when these attributes change',
+            'watch_help' => 'Leave empty to fire on every update. Type an attribute name and press Enter, e.g. "status".',
         ],
         'record_deleted' => [
             'name' => 'Record deleted',
@@ -194,6 +227,10 @@ return [
             'invalid_json' => 'The body must be valid JSON.',
             'throw_on_error' => 'Fail the run on a 4xx / 5xx response',
             'throw_on_error_help' => 'Turn off to continue regardless of the response.',
+            'timeout' => 'Timeout (seconds)',
+            'timeout_help' => 'Leave empty for the default of :default seconds.',
+            'retries' => 'Retries on connection errors',
+            'retries_help' => 'Extra attempts when the request cannot be sent or times out.',
         ],
         'update_record' => [
             'name' => 'Update record',
@@ -203,6 +240,8 @@ return [
             'value' => 'Value',
             'silently' => 'Save without firing events',
             'silently_help' => 'Keeps a "record updated" trigger from starting this workflow again.',
+            'force' => 'Bypass mass-assignment protection',
+            'force_help' => 'Write attributes that are not in the model\'s $fillable list. Leave off unless you trust everyone who can edit workflows.',
         ],
         'wait' => [
             'name' => 'Wait',
@@ -210,6 +249,12 @@ return [
             'duration' => 'Duration',
             'unit' => 'Unit',
             'units' => ['seconds' => 'Seconds', 'minutes' => 'Minutes', 'hours' => 'Hours', 'days' => 'Days'],
+            'mode' => 'Wait',
+            'modes' => ['duration' => 'For a duration', 'until' => 'Until a date from the payload'],
+            'until' => 'Date',
+            'until_help' => 'A placeholder or a date, e.g. {{ model.starts_at }}. The duration above is the offset before or after it. Dates already in the past continue immediately.',
+            'direction' => 'Offset',
+            'directions' => ['before' => 'Before the date', 'after' => 'After the date'],
         ],
         'call_workflow' => [
             'name' => 'Call workflow',

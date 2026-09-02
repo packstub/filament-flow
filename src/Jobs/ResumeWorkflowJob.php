@@ -3,7 +3,7 @@
 namespace Packstub\Flow\Jobs;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Packstub\Flow\Engine\Graph;
@@ -15,9 +15,13 @@ use Packstub\Flow\Support\PayloadSerializer;
  * Continues a run after a Wait step. Carries a snapshot of the graph so a
  * workflow edited during the delay does not change a run already in flight.
  */
-class ResumeWorkflowJob implements ShouldQueue
+class ResumeWorkflowJob implements ShouldQueueAfterCommit
 {
     use Dispatchable, InteractsWithQueue, Queueable;
+
+    public int $tries = 1;
+
+    public int $timeout;
 
     /**
      * @param  array<string, mixed>  $payload  already serialized with PayloadSerializer
@@ -29,7 +33,9 @@ class ResumeWorkflowJob implements ShouldQueue
         public array $payload,
         public array $nodeIds,
         public array $graph,
-    ) {}
+    ) {
+        $this->timeout = (int) config('packstub-flow.queue.timeout', 300);
+    }
 
     public function handle(): void
     {

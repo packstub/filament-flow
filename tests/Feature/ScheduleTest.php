@@ -32,3 +32,12 @@ it('validates the expression', function (): void {
         ->and((new Schedule)->matches(['expression' => 'nope'], []))->toBeFalse()
         ->and((new Schedule)->matches([], []))->toBeFalse();
 });
+
+it('evaluates the expression in the trigger timezone', function (): void {
+    $schedule = new Schedule;
+    $now = Carbon::parse('2026-09-02 09:00:00', 'UTC');
+
+    expect($schedule->matches(['expression' => '0 9 * * *'], ['now' => $now]))->toBeTrue()
+        ->and($schedule->matches(['expression' => '0 9 * * *', 'timezone' => 'Europe/Bucharest'], ['now' => $now]))->toBeFalse()
+        ->and($schedule->matches(['expression' => '0 12 * * *', 'timezone' => 'Europe/Bucharest'], ['now' => $now]))->toBeTrue();
+});

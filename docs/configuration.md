@@ -86,18 +86,40 @@ The user model used by **Send notification** is `auth.providers.users.model`.
     'enabled' => (bool) env('PACKSTUB_FLOW_QUEUE', false),
     'connection' => env('PACKSTUB_FLOW_QUEUE_CONNECTION'),
     'queue' => env('PACKSTUB_FLOW_QUEUE_NAME'),
+    'timeout' => (int) env('PACKSTUB_FLOW_QUEUE_TIMEOUT', 300),
 ],
 ```
 
-`enabled` pushes every triggered run onto the queue; `connection` and `queue` apply to run jobs and to the resume jobs of **Wait** steps (which use the queue regardless). See [Queue & scheduling](queue-and-scheduling.md).
+`enabled` pushes every triggered run onto the queue; `connection` and `queue` apply to run jobs and to the resume jobs of **Wait** steps (which use the queue regardless); `timeout` is the job timeout in seconds. See [Queue & scheduling](queue-and-scheduling.md).
 
 ### Execution limits
 
 ```php
 'max_steps' => 1000,
+'max_output_bytes' => 16384,
 ```
 
-A run fails once it has visited more than this many nodes. Cycles fail on their own, whatever the limit — see [Runs](runs.md#safety-guards).
+A run fails once it has visited more than `max_steps` nodes. Cycles fail on their own, whatever the limit — see [Runs](runs.md#safety-guards). An action's output (an HTTP response, say) is kept on the step log up to `max_output_bytes`; larger outputs are stored as a truncated preview, though the nodes after it still receive the whole value.
+
+### Outgoing HTTP
+
+```php
+'http' => [
+    'timeout' => (int) env('PACKSTUB_FLOW_HTTP_TIMEOUT', 15),
+    'retry_after_ms' => 500,
+    'block_private_networks' => (bool) env('PACKSTUB_FLOW_HTTP_BLOCK_PRIVATE', true),
+    'allowed_hosts' => [],
+],
+```
+
+Applies to the **HTTP request** and **Send Slack message** actions.
+
+| Key | |
+| --- | --- |
+| `timeout` | Default request timeout in seconds; a node can set its own |
+| `retry_after_ms` | Pause between the retries a node asks for |
+| `block_private_networks` | Refuses URLs whose host is, or resolves to, a loopback, private, link-local or otherwise reserved address (`localhost`, `127.0.0.1`, `10.0.0.0/8`, `192.168.0.0/16`, `169.254.169.254`, `::1`, …). Only `http` and `https` are ever allowed. Turn off when workflows must reach services on your private network — and make sure only trusted users can edit workflows |
+| `allowed_hosts` | When not empty, requests may only go to these hosts: exact names or `*.example.com` wildcards. Everything else is refused, whatever `block_private_networks` says |
 
 ### Schedule
 
@@ -121,7 +143,8 @@ Adds `packstub-flow:cron` to Laravel's scheduler every minute (`withoutOverlappi
 | --- | --- |
 | `enabled` | `false` removes the route entirely; webhook nodes then never fire |
 | `prefix` | The route is `POST {prefix}/{workflow}/{token}`, named `packstub-flow.webhook`. The **Webhook** trigger's settings show the resulting URL |
-| `middleware` | Applied to the route. Keep a throttle; add your own middleware (an IP allow-list, a signature check) here |
+| `middleware` | Applied to the route. Keep a throttle; add your own middleware (an IP allow-list) here |
+| `redacted_headers` | Request headers removed before the payload is stored on the run: `authorization`, `cookie`, `x-api-key`, the signature headers, … |
 
 The route is registered by the package service provider, outside any panel, so it is not affected by the panel's middleware or authentication.
 
@@ -186,7 +209,21 @@ Defaults for the Workflows resource, overridden per panel by `navigationGroup()`
 'prune_runs_after_days' => 30,
 ```
 
-How old a finished run must be before `packstub-flow:prune` deletes it. See [Runs](runs.md#packstub-flowprune).
+How old a finished run must be before `packstub-flow:prune` deletes it. With `register_schedule` on, the command is scheduled daily; set the value to `null` to keep runs forever (and not schedule the command). See [Runs](runs.md#packstub-flowprune).
+
+### Authorization
+
+```php
+'gate' => env('PACKSTUB_FLOW_GATE'),
+```
+
+Workflows can call URLs, send mail and update records, so decide who may manage them. Three layers, all optional and combined:
+
+- a **policy** on the `Workflow` model (`WorkflowPolicy`, or `Gate::policy(Workflow::class, ...)`) — Filament applies it to the resource pages and actions as usual;
+- the plugin's `authorize()` callback — `FlowPlugin::make()->authorize(fn () => auth()->user()->isAdmin())` hides the resource when it returns `false`;
+- a **Gate ability** named here — every panel user must pass it to see the resource.
+
+Without any of them, every user who can access the panel can manage every workflow.
 
 ## The canvas field
 
@@ -201,7 +238,7 @@ FlowBuilder::make('definition')
     ->columnSpanFull()
 ```
 
-The field's state is the `{nodes, edges}` structure described in [Building workflows](building-workflows.md#how-a-definition-is-stored); the model attribute should be cast to `array`.
+The field's state is the `{nodes, edges}` structure described in [Building workflows](building-workflows.md#how-a-definition-is-stored); the model attribute should be cast to `array`. The field validates the definition before it is saved — a trigger must exist, every other node must be connected, required settings must be filled — when the form has an `is_active` field that is on. `->withoutValidation()` skips those checks.
 
 ## Translations and views
 

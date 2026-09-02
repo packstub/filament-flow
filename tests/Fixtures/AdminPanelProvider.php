@@ -43,7 +43,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugin(
                 FlowPlugin::make()
-                    ->actions([SetStatusAction::class])
+                    ->actions([SetStatusAction::class, FlakyAction::class])
                     ->navigationGroup('Automation'),
             );
     }
