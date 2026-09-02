@@ -1,6 +1,6 @@
 {
     "name": "packstub/filament-flow",
-    "description": "Visual workflow automation for Filament panels: triggers, conditions and actions drawn on a canvas, run by your queue.",
+    "description": "Visual workflow automations for Filament panels: triggers, conditions and actions drawn on a canvas, run by your queue.",
     "keywords": [
         "packstub",
         "laravel",
@@ -11,6 +11,8 @@
         "workflow",
         "workflows",
         "automation",
+        "automations",
+        "filament-automations",
         "flowchart",
         "no-code",
         "triggers"
