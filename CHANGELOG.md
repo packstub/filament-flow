@@ -26,7 +26,7 @@ All notable changes to `packstub/filament-flow` are documented here.
 - **Node settings never reached the canvas**: the slide-over's *Apply* dispatched `packstub-flow.node-updated`, but the canvas listened with Alpine's `x-on:packstub-flow.node-updated.window`, which reads `node-updated` as a modifier. Label, description and settings edits were silently dropped and *Save changes* stored the old definition. The event is now `packstub-flow-node-updated`.
 - A retry step now reads "Attempt 1 of 2" (attempts, not extra retries), and an action that failed and was set to *Log it and continue* no longer gets a "Done" step after its failure entry.
 - Definition validation no longer reports a required setting that has a default (a node dropped from the palette and never opened, such as `HTTP request` with its `POST` method) as missing.
-- The *Error handling* fields open with their defaults (0 retries, *Fail the run*) on nodes saved before they existed, instead of empty.
+- The node slide-over opens with the schema defaults filled in (`HTTP request` → `POST`, *Fail the run on a 4xx / 5xx response* on, `Wait` → 1 minute, error handling → 0 retries / *Fail the run*) instead of empty selects that fail validation on Apply.
 
 ### Changed
 

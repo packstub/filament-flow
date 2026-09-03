@@ -5,6 +5,7 @@ namespace Packstub\Flow\Filament\Livewire;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -20,6 +21,7 @@ use Packstub\Flow\Engine\Runner;
 use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\NodeRegistry;
 use Packstub\Flow\Nodes\Node;
+use Throwable;
 
 /**
  * The slide-over that edits one node's label and settings. Opened by the
@@ -62,7 +64,7 @@ class ManageNode extends Component implements HasActions, HasForms
             ->modalWidth(Width::TwoExtraLarge)
             ->modalSubmitActionLabel(__('packstub-flow::flow.node_settings.apply'))
             ->schema(fn (Schema $schema): Schema => $this->nodeSchema($schema))
-            ->fillForm(fn (array $arguments): array => $this->defaults() + ($arguments['data'] ?? []))
+            ->fillForm(fn (array $arguments): array => ($arguments['data'] ?? []) + $this->defaults())
             ->action(function (array $data): void {
                 $this->dispatch('packstub-flow-node-updated', id: $this->nodeId, config: $data);
             });
@@ -75,18 +77,37 @@ class ManageNode extends Component implements HasActions, HasForms
 
     /**
      * Values a node config starts from when it has never been saved with them.
-     * fill() does not apply component defaults, so the error handling fields
-     * would otherwise show up empty on nodes created before they existed.
+     * fill() does not apply component defaults, so a node dropped from the
+     * palette would open with Method, Unit or the error handling fields empty.
      *
      * @return array<string, mixed>
      */
     protected function defaults(): array
     {
-        if ($this->node()?->getType() !== NodeType::Action) {
-            return [];
+        $node = $this->node();
+        $defaults = [];
+
+        foreach ($node?->getFormSchema() ?? [] as $component) {
+            if (! $component instanceof Field) {
+                continue;
+            }
+
+            try {
+                $default = $component->getDefaultState();
+            } catch (Throwable) {
+                continue;
+            }
+
+            if ($default !== null) {
+                $defaults[$component->getName()] = $default;
+            }
         }
 
-        return [Runner::RETRIES => 0, Runner::RETRY_AFTER => 0, Runner::ON_ERROR => 'fail'];
+        if ($node?->getType() === NodeType::Action) {
+            $defaults += [Runner::RETRIES => 0, Runner::RETRY_AFTER => 0, Runner::ON_ERROR => 'fail'];
+        }
+
+        return $defaults;
     }
 
     protected function node(): ?Node
