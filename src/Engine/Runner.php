@@ -273,7 +273,9 @@ class Runner
             }
         }
 
-        $this->handleWithRetries($node, $action, $config, $payload);
+        if (! $this->handleWithRetries($node, $action, $config, $payload)) {
+            return [$this->graph->next($node['id']), $payload];
+        }
 
         $output = $action->pullOutput();
 
@@ -290,13 +292,14 @@ class Runner
     /**
      * Run an action, retrying it the number of times set on the node. When the
      * node is set to continue on error the failure is logged as a step and the
-     * branch goes on; otherwise the exception fails the run.
+     * branch goes on (false is returned so no "Done" step follows); otherwise
+     * the exception fails the run.
      *
      * @param  array<string, mixed>  $node
      * @param  array<string, mixed>  $config
      * @param  array<string, mixed>  $payload
      */
-    protected function handleWithRetries(array $node, Action $action, array $config, array $payload): void
+    protected function handleWithRetries(array $node, Action $action, array $config, array $payload): bool
     {
         $retries = max(0, min((int) ($config[self::RETRIES] ?? 0), 10));
         $retryAfter = max(0, (int) ($config[self::RETRY_AFTER] ?? 0));
@@ -308,10 +311,10 @@ class Runner
             try {
                 $action->handle($config, $payload);
 
-                return;
+                return true;
             } catch (Throwable $exception) {
                 if ($attempt <= $retries) {
-                    $this->record($node, __('packstub-flow::flow.steps.retrying', ['attempt' => $attempt, 'max' => $retries, 'error' => $exception->getMessage()]), 'retry');
+                    $this->record($node, __('packstub-flow::flow.steps.retrying', ['attempt' => $attempt, 'max' => $retries + 1, 'error' => $exception->getMessage()]), 'retry');
 
                     if ($retryAfter > 0) {
                         sleep($retryAfter);
@@ -324,7 +327,7 @@ class Runner
                     report($exception);
                     $this->record($node, __('packstub-flow::flow.steps.continued', ['error' => $exception->getMessage()]), 'failed');
 
-                    return;
+                    return false;
                 }
 
                 throw $exception;

@@ -126,6 +126,7 @@ it('continues after a failure when the node says so', function (): void {
 
     expect($run->status)->toBe(RunStatus::Success)
         ->and($step['status'])->toBe('failed')
+        ->and(collect($run->steps)->where('node_id', 'f')->pluck('status')->all())->toBe(['failed'])
         ->and(SetStatusAction::$calls)->toHaveCount(1)
         ->and(SetStatusAction::$calls[0]['config'])->toBe(['status' => 'still-ran']);
 });
