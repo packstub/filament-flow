@@ -2,7 +2,7 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
-## Unreleased
+## 1.1.0 — 2026-09-03
 
 ### Added
 

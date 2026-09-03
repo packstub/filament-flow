@@ -22,7 +22,7 @@ php artisan vendor:publish --tag="packstub-flow-migrations"
 php artisan migrate
 ```
 
-The migration creates three tables: `flow_workflows`, `flow_workflow_triggers` and `flow_workflow_runs`.
+The migration creates seven tables: `flow_workflows`, `flow_workflow_triggers`, `flow_workflow_runs`, `flow_workflow_steps`, `flow_workflow_waits`, `flow_workflow_versions` and `flow_secrets`.
 
 > [!NOTE]
 > The table names come from `tables` in the config file. If you want different names, change them **before** migrating — see [Configuration](configuration.md#tables-and-models).
