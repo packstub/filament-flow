@@ -9,6 +9,7 @@ use Packstub\Flow\Nodes\Actions\SendNotification;
 use Packstub\Flow\Nodes\Triggers\Manual;
 use Packstub\Flow\Support\Placeholders;
 use Packstub\Flow\Support\ResourceUrl;
+use Packstub\Flow\Tests\Fixtures\GuardedOrder;
 use Packstub\Flow\Tests\Fixtures\Ticket;
 
 it('resolves {{ model.url }} to the record page of its Filament resource', function (): void {
@@ -17,8 +18,9 @@ it('resolves {{ model.url }} to the record page of its Filament resource', funct
     expect(ResourceUrl::for($order))->toBe(url("/admin/orders/{$order->id}/edit"))
         ->and(Placeholders::render('{{ model.url }}', ['model' => $order]))->toBe(url("/admin/orders/{$order->id}/edit"))
         ->and(Placeholders::render('{{ record.url }}', ['model' => $order]))->toBe(url("/admin/orders/{$order->id}/edit"))
-        ->and(ResourceUrl::for(Ticket::query()->create(['title' => 'x'])))->toBeNull()
-        ->and(Placeholders::render('[{{ model.url }}]', ['model' => Ticket::query()->create(['title' => 'y'])]))->toBe('[]');
+        ->and(ResourceUrl::for(Ticket::query()->create(['title' => 'x'])))->toBe(url('/admin/tickets'))
+        ->and(ResourceUrl::for(GuardedOrder::query()->create(['reference' => 'g'])))->toBeNull()
+        ->and(Placeholders::render('[{{ model.url }}]', ['model' => GuardedOrder::query()->create(['reference' => 'h'])]))->toBe('[]');
 });
 
 it('adds a button to notifications and mails when a label and URL are set', function (): void {
