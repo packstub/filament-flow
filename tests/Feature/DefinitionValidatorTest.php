@@ -2,6 +2,7 @@
 
 use Livewire\Livewire;
 use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\CreateWorkflow;
+use Packstub\Flow\Nodes\Actions\HttpRequest;
 use Packstub\Flow\Nodes\Actions\SendEmail;
 use Packstub\Flow\Nodes\Actions\WriteLog;
 use Packstub\Flow\Nodes\Triggers\Manual;
@@ -23,6 +24,22 @@ it('reports a missing trigger, unconnected nodes and empty required settings for
         ->toContain('Node "a" is not connected to anything before it.')
         ->toContain('Node "b" is not connected to anything before it.')
         ->toContain('Node "a": the setting "Status" is required.');
+});
+
+it('treats a required setting with a default as filled', function (): void {
+    $problems = DefinitionValidator::problems(['nodes' => [
+        triggerNode('t', Manual::class),
+        actionNode('h', HttpRequest::class, ['url' => 'https://api.example.com/x']),
+    ], 'edges' => [edge('t', 'h')]], active: true);
+
+    expect($problems)->toBe([]);
+
+    $problems = DefinitionValidator::problems(['nodes' => [
+        triggerNode('t', Manual::class),
+        actionNode('h', HttpRequest::class, []),
+    ], 'edges' => [edge('t', 'h')]], active: true);
+
+    expect($problems)->toBe(['Node "h": the setting "URL" is required.']);
 });
 
 it('only checks node classes for an inactive workflow', function (): void {

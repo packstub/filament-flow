@@ -19,7 +19,7 @@ A placeholder is a path of letters, digits, `_`, `-` and dots between double bra
 | `{{ webhook.order.total }}` | A nested key of the webhook body |
 | `{{ event.order.reference }}` | A public property of the event, then an attribute of the model inside it |
 | `{{ headers.x-signature }}` | A request header of a webhook call |
-| `{{ model.url }}` | The record's page in the panel (the view page of the Filament resource registered for its model, or the edit page), when the model has no `url` attribute of its own and a resource exists |
+| `{{ model.url }}` | The record's page in the panel (the view page of the Filament resource registered for its model, the edit page, or the resource's list for a simple resource without record pages), when the model has no `url` attribute of its own and a resource exists |
 | `{{ secrets.slack_webhook }}` | A value from the [Secrets](secrets.md) store — in actions only; empty everywhere else |
 | `{{ item.reference }}`, `{{ loop.number }}` | Inside a **For each** body: the current item and the loop counters |
 | `{{ error.message }}`, `{{ error.node }}` | On an **Error** branch, or in an on-failure workflow (with `{{ failed_run.workflow }}`) |

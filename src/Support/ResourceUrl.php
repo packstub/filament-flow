@@ -9,7 +9,8 @@ use Throwable;
 
 /**
  * The panel URL of a record: the view page of the Filament resource
- * registered for its model, or the edit page when there is no view page.
+ * registered for its model, the edit page when there is no view page, or
+ * the resource's list for a simple resource without record pages.
  * Used by {{ model.url }} and the "View" buttons on notifications and mails.
  */
 class ResourceUrl
@@ -37,7 +38,11 @@ class ResourceUrl
                 }
             }
 
-            return null;
+            // A simple resource (one Manage page with modals) has no record
+            // page; its list is still the closest place to send someone.
+            return $resource::hasPage('index')
+                ? $resource::getUrl('index', panel: $panel->getId(), tenant: $tenant)
+                : null;
         } catch (Throwable) {
             return null;
         }
