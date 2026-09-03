@@ -28,7 +28,7 @@
         availableNodes?: Record<string, any>;
     } = $props();
 
-    const { screenToFlowPosition, getNodes } = useSvelteFlow();
+    const { screenToFlowPosition, getNodes, fitView } = useSvelteFlow();
 
     let container = $state<HTMLDivElement>();
     let menu = $state<{
@@ -214,6 +214,20 @@
             }),
         );
     }
+
+    // "?node=<id>" in the URL (from a run's step log) selects that node and
+    // centres the canvas on it.
+    $effect(() => {
+        const wanted = new URLSearchParams(window.location.search).get("node");
+        if (!wanted || !nodes.some((n) => n.id === wanted)) return;
+
+        const timer = setTimeout(() => {
+            nodes = nodes.map((n) => ({ ...n, selected: n.id === wanted }));
+            fitView({ nodes: [{ id: wanted }], maxZoom: 1.2, padding: 0.6, duration: 400 });
+        }, 150);
+
+        return () => clearTimeout(timer);
+    });
 
     $effect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {

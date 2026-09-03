@@ -14,7 +14,7 @@ All nodes extend `Packstub\Flow\Nodes\Node` through one of three base classes an
 | `getFormSchema(): array` | no | Filament form components for the node's settings. The values are stored on the node as `config` and passed to `matches()` / `handle()` / `evaluate()` |
 | `getPlaceholders(): array` | no | `['{{ model.name }}' => 'The record name', ...]`, listed in the slide-over's Placeholders section |
 | `isAvailable(): bool` (static) | no | Return `false` when a package the node needs is missing; the node is then never registered nor offered (the spatie state triggers work this way) |
-| `getOutputs(): array` | no | The output handles drawn on the canvas, `['output' => 'Next']` by default |
+| `getOutputs(): array` | no | The output handles drawn on the canvas, `['output' => 'Next']` by default; the runner follows the edges leaving the handle a node picks (`['body' => 'Each item', 'done' => 'Done']`) |
 
 Nodes are resolved from the container (`Node::make()` is `app(static::class)`), so constructor injection works. Names and descriptions are usually translation strings, but plain text is fine.
 
@@ -76,6 +76,8 @@ class AssignToTeam extends Action
 }
 ```
 
+Inside `handle()`, `$this->output([...])` exposes values to the rest of the branch as `{{ last.* }}`; pass a second array to store a shorter summary on the step log (`$this->output(['records' => $records], ['count' => $records->count()])`). `$this->setPayloadValue('model', $record)` replaces a top-level payload key for the nodes after this one. Override `preview(array $config, array $payload): array` to control what a [test run](runs.md#test-runs) shows instead of running the action, and implement `Packstub\Flow\Contracts\ReadOnlyAction` (a marker interface) when the action changes nothing, so a test run executes it for real.
+
 ### Delayable actions
 
 An action that implements `Packstub\Flow\Contracts\Delayable` pauses the run instead of running: the runner calls `getDelaySeconds($config, $payload)` and, for a positive number, schedules the nodes after it through the queue exactly like the built-in **Wait** (see [Queue & scheduling](queue-and-scheduling.md#wait-steps)). `handle()` is never called in that case; `null` or `0` means "continue now", and then `handle()` runs as for any other action. Use it for a "wait until the record's due date" kind of step:
@@ -98,6 +100,18 @@ class WaitUntilDue extends Action implements Delayable
     }
 }
 ```
+
+### Loops, waits and polled triggers
+
+Three more contracts let an action or a trigger take part in the runner's control flow:
+
+| Contract | Implement | The runner |
+| --- | --- | --- |
+| `Contracts\Iterates` | `getItems($config, $payload): iterable`, `getItemKey($config)`, `getMaxIterations($config)` | Visits the `body` output once per item with the item (and `loop`) in the payload, then follows `done`. Give the node `getOutputs()` returning `['body' => ..., 'done' => ...]` |
+| `Contracts\Waitable` | `createWait($config, $payload): ?WaitRequest`, `afterWaitCreated(WorkflowWait $wait, $config, $payload)` | Stores a `WorkflowWait` with the branch payload and a graph snapshot, stops the branch, and continues along the outcome's handle when `Flow::resolveWait()` / `Flow::signal()` is called or the timeout passes. `WaitRequest` names the type (`approval` / `event`), the outcomes, a timeout, an optional key and metadata for the Approvals page |
+| `Contracts\Pollable` (triggers) | `poll($config, DateTimeInterface $now): iterable` of payloads | Asks every active trigger of that type each minute from `packstub-flow:cron` and starts a run per payload, honouring `once` |
+
+The built-in **For each**, **Ask for approval**, **Wait for signal** and **Date on a record** are the reference implementations.
 
 ## Conditions
 
@@ -257,6 +271,17 @@ Flow::registry()->has(AssignToTeam::class);
 
 // Run code without any trigger starting a workflow (imports, seeders)
 Flow::suppress(fn () => Order::query()->update([...]));
+
+// Dry run: side effects simulated, conditions evaluated
+$run = Flow::test($workflow, ['model' => $order]);
+
+// Continue runs parked on a "Wait for signal" / an approval
+Flow::signal("payment.{$order->id}", ['amount' => 99]);
+Flow::resolveWait($wait, 'approved', ['comment' => 'ok'], 'boss@example.com');
+Flow::expireWaits();
+
+// What packstub-flow:cron does for "Date on a record" triggers
+Flow::poll(now());
 ```
 
 `Flow::run()` returns `null` when the workflow is inactive, has no trigger node, or the run was queued; otherwise the finished `WorkflowRun`.

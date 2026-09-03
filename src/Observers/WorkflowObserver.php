@@ -50,6 +50,8 @@ class WorkflowObserver
         // Not every database enforces the cascade (SQLite without foreign
         // keys on), so clean up explicitly.
         $workflow->triggers()->delete();
+        $workflow->waits()->delete();
+        $workflow->steps()->delete();
         $workflow->runs()->delete();
     }
 

@@ -7,6 +7,8 @@ use Filament\Contracts\Plugin;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
+use Packstub\Flow\Filament\Pages\Approvals;
+use Packstub\Flow\Filament\Pages\WorkflowRuns;
 use Packstub\Flow\Filament\Resources\SecretResource;
 use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\Support\ModelFinder;
@@ -45,6 +47,10 @@ class FlowPlugin implements Plugin
     protected string $secretResource = SecretResource::class;
 
     protected bool $hasSecrets = true;
+
+    protected bool $hasRunsPage = true;
+
+    protected bool $hasApprovalsPage = true;
 
     /** @var (Closure(): bool)|null */
     protected ?Closure $authorize = null;
@@ -157,6 +163,26 @@ class FlowPlugin implements Plugin
     }
 
     /**
+     * Skip registering the cross-workflow Runs page.
+     */
+    public function withoutRunsPage(): static
+    {
+        $this->hasRunsPage = false;
+
+        return $this;
+    }
+
+    /**
+     * Skip registering the Approvals page (approval links keep working).
+     */
+    public function withoutApprovalsPage(): static
+    {
+        $this->hasApprovalsPage = false;
+
+        return $this;
+    }
+
+    /**
      * Who may see and manage workflows. Runs in addition to any policy on
      * the Workflow model and the packstub-flow.gate ability.
      *
@@ -254,6 +280,20 @@ class FlowPlugin implements Plugin
 
         if ($this->hasSecrets) {
             $panel->resources([$this->secretResource]);
+        }
+
+        $pages = [];
+
+        if ($this->hasRunsPage) {
+            $pages[] = WorkflowRuns::class;
+        }
+
+        if ($this->hasApprovalsPage) {
+            $pages[] = Approvals::class;
+        }
+
+        if ($pages !== []) {
+            $panel->pages($pages);
         }
     }
 

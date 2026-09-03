@@ -9,6 +9,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ReplicateAction;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
@@ -32,6 +33,7 @@ use Packstub\Flow\Filament\Resources\WorkflowResource\RelationManagers\RunsRelat
 use Packstub\Flow\FlowPlugin;
 use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\NodeRegistry;
+use Packstub\Flow\Nodes\Triggers\WorkflowCalled;
 use UnitEnum;
 
 class WorkflowResource extends Resource
@@ -144,7 +146,7 @@ class WorkflowResource extends Resource
                     ->boolean(),
                 TextColumn::make('runs_count')
                     ->label(__('packstub-flow::flow.fields.runs'))
-                    ->counts('runs')
+                    ->counts(['runs' => fn (Builder $query) => $query->where('is_test', false)])
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('latestRun.status')
@@ -202,6 +204,18 @@ class WorkflowResource extends Resource
                 ->numeric()
                 ->minValue(1)
                 ->maxValue(1000),
+            Select::make('on_failure_workflow_id')
+                ->label(__('packstub-flow::flow.fields.on_failure_workflow'))
+                ->helperText(__('packstub-flow::flow.fields.on_failure_workflow_help'))
+                ->options(fn (?Model $record): array => Flow::workflowModel()::query()
+                    ->when($record, fn (Builder $query) => $query->whereKeyNot($record->getKey()))
+                    ->orderBy('name')
+                    ->get()
+                    ->filter(fn (Workflow $workflow): bool => $workflow->triggerNode(WorkflowCalled::class) !== null)
+                    ->mapWithKeys(fn (Workflow $workflow): array => [(string) $workflow->getKey() => $workflow->name])
+                    ->all())
+                ->searchable()
+                ->placeholder('—'),
         ];
     }
 

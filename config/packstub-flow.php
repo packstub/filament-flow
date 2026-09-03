@@ -3,7 +3,9 @@
 use Packstub\Flow\Models\Secret;
 use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\Models\WorkflowRun;
+use Packstub\Flow\Models\WorkflowStep;
 use Packstub\Flow\Models\WorkflowTrigger;
+use Packstub\Flow\Models\WorkflowWait;
 use Packstub\Flow\Nodes;
 
 return [
@@ -24,6 +26,8 @@ return [
         'triggers' => 'flow_workflow_triggers',
         'runs' => 'flow_workflow_runs',
         'secrets' => 'flow_secrets',
+        'steps' => 'flow_workflow_steps',
+        'waits' => 'flow_workflow_waits',
     ],
 
     /*
@@ -41,6 +45,8 @@ return [
         'trigger' => WorkflowTrigger::class,
         'run' => WorkflowRun::class,
         'secret' => Secret::class,
+        'step' => WorkflowStep::class,
+        'wait' => WorkflowWait::class,
     ],
 
     /*
@@ -72,7 +78,11 @@ return [
     |
     */
 
-    'max_steps' => 1000,
+    'max_steps' => 10000,
+
+    // The most records a "Find records" action or a "Date on a record" trigger
+    // reads in one go, and the most iterations a "For each" loop runs.
+    'max_records' => 1000,
 
     // A run may start other runs (a non-quiet record update fires a "Record
     // updated" trigger, "Call workflow" starts another workflow). Nested runs
@@ -146,6 +156,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Approvals
+    |--------------------------------------------------------------------------
+    |
+    | "Ask for approval" pauses a run until an approver decides — from the
+    | Approvals page, or from the Approve / Reject links in the notification
+    | and email, which hit {prefix}/{wait}/{outcome} as signed URLs.
+    |
+    */
+
+    'approvals' => [
+        'prefix' => 'flow/approvals',
+        'middleware' => ['web', 'auth'],
+        // Signed approval links stay valid this long (hours); the wait itself
+        // has its own timeout, set on the node.
+        'link_lifetime_hours' => 72,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Model discovery
     |--------------------------------------------------------------------------
     |
@@ -177,6 +206,7 @@ return [
         Nodes\Triggers\UserRegistered::class,
         Nodes\Triggers\EventFired::class,
         Nodes\Triggers\WorkflowCalled::class,
+        Nodes\Triggers\DateReached::class,
         // Offered only when the spatie package is installed.
         Nodes\Triggers\StateTransitioned::class,
         Nodes\Triggers\StatusChanged::class,
@@ -192,8 +222,15 @@ return [
         Nodes\Actions\SendSms::class,
         Nodes\Actions\HttpRequest::class,
         Nodes\Actions\UpdateRecord::class,
+        Nodes\Actions\CreateRecord::class,
+        Nodes\Actions\AssignOwner::class,
         Nodes\Actions\TransitionState::class,
+        Nodes\Actions\AddTag::class,
+        Nodes\Actions\FindRecords::class,
+        Nodes\Actions\ForEachLoop::class,
         Nodes\Actions\Wait::class,
+        Nodes\Actions\RequestApproval::class,
+        Nodes\Actions\WaitForEvent::class,
         Nodes\Actions\CallWorkflow::class,
         Nodes\Actions\WriteLog::class,
     ],

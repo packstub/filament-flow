@@ -33,6 +33,10 @@ FlowPlugin::make()
     // Same for the Secrets page
     ->secretResource(App\Filament\Resources\SecretResource::class)
     ->withoutSecrets()
+
+    // The cross-workflow Runs page and the Approvals page
+    ->withoutRunsPage()
+    ->withoutApprovalsPage()
 ```
 
 | Method | Default | Notes |
@@ -47,6 +51,8 @@ FlowPlugin::make()
 | `withoutResource()` | resource registered | Use `FlowBuilder::make('definition')` in a resource of your own |
 | `secretResource()` | `Packstub\Flow\Filament\Resources\SecretResource` | The [Secrets](secrets.md) page |
 | `withoutSecrets()` | page registered | Hide the Secrets page (placeholders keep working for secrets created in code) |
+| `withoutRunsPage()` | page registered | Hide the [Runs page](runs.md#the-runs-page) |
+| `withoutApprovalsPage()` | page registered | Hide the [Approvals page](approvals.md) (notification and email links keep working) |
 
 `FlowPlugin::get()` returns the plugin instance of the current panel. Nodes and models are registered in application-wide singletons, so a class added on one panel is known to all panels.
 
@@ -101,12 +107,25 @@ The user model used by **Send notification** is `auth.providers.users.model`.
 ### Execution limits
 
 ```php
-'max_steps' => 1000,
+'max_steps' => 10000,
 'max_nesting' => 5,
+'max_records' => 1000,
 'max_output_bytes' => 16384,
 ```
 
-`max_nesting` caps how deep runs may start other runs (see [Runs](runs.md#safety-guards)).
+`max_nesting` caps how deep runs may start other runs; `max_records` caps what **Find records** reads, **For each** iterates and **Date on a record** starts per minute (see [Runs](runs.md#safety-guards)).
+
+### Approvals
+
+```php
+'approvals' => [
+    'prefix' => 'flow/approvals',
+    'middleware' => ['web', 'auth'],
+    'link_lifetime_hours' => 72,
+],
+```
+
+The signed Approve / Reject links in notifications and emails hit `{prefix}/{wait}/{outcome}`; the middleware must authenticate the user so the approver can be checked. See [Approvals & signals](approvals.md).
 
 ```php
 'max_steps' => 1000,

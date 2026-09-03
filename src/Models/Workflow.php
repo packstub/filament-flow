@@ -5,6 +5,7 @@ namespace Packstub\Flow\Models;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Log;
@@ -21,6 +22,7 @@ use Throwable;
  * @property int|null $prune_after_days
  * @property int|null $max_consecutive_failures
  * @property int $consecutive_failures
+ * @property string|null $on_failure_workflow_id
  */
 class Workflow extends Model
 {
@@ -54,6 +56,21 @@ class Workflow extends Model
     public function latestRun(): HasOne
     {
         return $this->hasOne(Flow::runModel(), 'workflow_id')->latestOfMany('started_at');
+    }
+
+    public function steps(): HasMany
+    {
+        return $this->hasMany(Flow::stepModel(), 'workflow_id');
+    }
+
+    public function waits(): HasMany
+    {
+        return $this->hasMany(Flow::waitModel(), 'workflow_id');
+    }
+
+    public function onFailureWorkflow(): BelongsTo
+    {
+        return $this->belongsTo(Flow::workflowModel(), 'on_failure_workflow_id');
     }
 
     /** @return array<int, array<string, mixed>> */
