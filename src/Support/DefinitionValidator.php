@@ -87,14 +87,17 @@ class DefinitionValidator
 
             try {
                 // Conditionally required fields need a form context; treat
-                // any failure to evaluate as "not required".
+                // any failure to evaluate as "not required". A field with a
+                // default (Method → POST) is filled in when the node is
+                // opened, so a node saved straight from the palette passes.
                 $required = $component->isRequired();
                 $label = $component->getLabel();
+                $default = $component->getDefaultState();
             } catch (Throwable) {
                 continue;
             }
 
-            if ($required && blank($config[$component->getName()] ?? null)) {
+            if ($required && blank($config[$component->getName()] ?? null) && blank($default)) {
                 $missing[] = is_string($label) ? $label : $component->getName();
             }
         }
