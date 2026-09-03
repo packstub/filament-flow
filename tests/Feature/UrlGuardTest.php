@@ -24,6 +24,11 @@ it('refuses private, loopback and link-local addresses', function (string $url):
     'http://0.0.0.0/',
 ]);
 
+it('refuses a host that does not resolve instead of failing open', function (): void {
+    expect(fn () => UrlGuard::assertAllowed('https://this-host-does-not-exist.invalid/'))
+        ->toThrow(WorkflowException::class, 'could not be resolved');
+});
+
 it('refuses schemes other than http and https', function (): void {
     expect(fn () => UrlGuard::assertAllowed('file:///etc/passwd'))->toThrow(WorkflowException::class)
         ->and(fn () => UrlGuard::assertAllowed('ftp://example.com'))->toThrow(WorkflowException::class)

@@ -132,7 +132,7 @@ Applies to the **HTTP request** and **Send Slack message** actions.
 | --- | --- |
 | `timeout` | Default request timeout in seconds; a node can set its own |
 | `retry_after_ms` | Pause between the retries a node asks for |
-| `block_private_networks` | Refuses URLs whose host is, or resolves to, a loopback, private, link-local or otherwise reserved address (`localhost`, `127.0.0.1`, `10.0.0.0/8`, `192.168.0.0/16`, `169.254.169.254`, `::1`, …). Only `http` and `https` are ever allowed. Turn off when workflows must reach services on your private network — and make sure only trusted users can edit workflows |
+| `block_private_networks` | Refuses URLs whose host is, or resolves to, a loopback, private, link-local or otherwise reserved address (`localhost`, `127.0.0.1`, `10.0.0.0/8`, `192.168.0.0/16`, `169.254.169.254`, `::1`, …). The host is checked against the system resolver as well as DNS, and a host that cannot be resolved at all is refused. Only `http` and `https` are ever allowed. Turn off when workflows must reach services on your private network — and make sure only trusted users can edit workflows |
 | `allowed_hosts` | When not empty, requests may only go to these hosts: exact names or `*.example.com` wildcards. Everything else is refused, whatever `block_private_networks` says |
 
 ### Schedule

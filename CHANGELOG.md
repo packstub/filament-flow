@@ -33,11 +33,18 @@ All notable changes to `packstub/filament-flow` are documented here.
 - `packstub-flow:prune` is scheduled daily when `register_schedule` is on and `prune_runs_after_days` is set.
 - Step log entries carry `status` (`ok` / `retry` / `failed`), `duration_ms` and `output`; the step that fails a run carries its error message; the run details modal shows all three.
 
+### Fixed
+
+- **Node settings never reached the canvas**: the slide-over's *Apply* dispatched `packstub-flow.node-updated`, but the canvas listened with Alpine's `x-on:packstub-flow.node-updated.window`, which reads `node-updated` as a modifier. Label, description and settings edits were silently dropped and *Save changes* stored the old definition. The event is now `packstub-flow-node-updated`.
+- A retry step now reads "Attempt 1 of 2" (attempts, not extra retries), and an action that failed and was set to *Log it and continue* no longer gets a "Done" step after its failure entry.
+- Definition validation no longer reports a required setting that has a default (a node dropped from the palette and never opened, such as `HTTP request` with its `POST` method) as missing.
+- The node slide-over opens with the schema defaults filled in (`HTTP request` → `POST`, *Fail the run on a 4xx / 5xx response* on, `Wait` → 1 minute, error handling → 0 retries / *Fail the run*) instead of empty selects that fail validation on Apply.
+
 ### Changed
 
 - **Nested runs are capped instead of blocked**: an event fired inside a run (a record saved with events on, a mail) can start another workflow up to `max_nesting` levels deep (5); the wildcard event listener no longer ignores every event dispatched during a run.
 - Migration: `flow_secrets` table; `prune_after_days`, `max_consecutive_failures` and `consecutive_failures` on the workflows table.
-- **Outgoing requests are guarded**: `HttpRequest` and `SendSlackMessage` refuse URLs that are not `http(s)` or whose host resolves to a private / reserved address (`UrlGuard`), unless `http.block_private_networks` is off or the host is in `http.allowed_hosts`. Requests have a timeout (15 s default) and per-node retries; placeholder values in the URL are URL-encoded.
+- **Outgoing requests are guarded**: `HttpRequest` and `SendSlackMessage` refuse URLs that are not `http(s)` or whose host resolves to a private / reserved address (`UrlGuard`), unless `http.block_private_networks` is off or the host is in `http.allowed_hosts`. The host is resolved through the system resolver as well as DNS (so `/etc/hosts` and macOS `/etc/resolver` rules count), and a host that cannot be resolved is refused rather than let through. Requests have a timeout (15 s default) and per-node retries; placeholder values in the URL are URL-encoded.
 - **HTTP JSON bodies are built safely**: placeholders inside JSON strings are escaped, bare placeholders become the raw value; a value can no longer add keys to the body.
 - **`UpdateRecord` respects `$fillable` / `$guarded`** and fails the run naming a guarded attribute; the new *Bypass mass-assignment protection* toggle restores `forceFill()`. A value that is exactly one placeholder keeps its type.
 - **Webhook payloads drop credential headers** (`authorization`, `cookie`, `x-api-key`, signature headers, …) before they are stored on the run.

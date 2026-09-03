@@ -5,6 +5,7 @@ namespace Packstub\Flow\Filament\Livewire;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -21,10 +22,13 @@ use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\NodeRegistry;
 use Packstub\Flow\Nodes\Node;
 use Packstub\Flow\Support\Placeholders;
+use Throwable;
 
 /**
  * The slide-over that edits one node's label and settings. Opened by the
- * canvas, it hands the values back through a browser event.
+ * canvas, it hands the values back through a browser event. Event names
+ * stay free of dots: Alpine's x-on reads everything after a dot as a
+ * modifier, so a dotted name is never matched by the canvas listener.
  */
 class ManageNode extends Component implements HasActions, HasForms
 {
@@ -61,15 +65,50 @@ class ManageNode extends Component implements HasActions, HasForms
             ->modalWidth(Width::TwoExtraLarge)
             ->modalSubmitActionLabel(__('packstub-flow::flow.node_settings.apply'))
             ->schema(fn (Schema $schema): Schema => $this->nodeSchema($schema))
-            ->fillForm(fn (array $arguments): array => $arguments['data'] ?? [])
+            ->fillForm(fn (array $arguments): array => ($arguments['data'] ?? []) + $this->defaults())
             ->action(function (array $data): void {
-                $this->dispatch('packstub-flow.node-updated', id: $this->nodeId, config: $data);
+                $this->dispatch('packstub-flow-node-updated', id: $this->nodeId, config: $data);
             });
     }
 
     public function render(): View
     {
         return view('packstub-flow::livewire.manage-node');
+    }
+
+    /**
+     * Values a node config starts from when it has never been saved with them.
+     * fill() does not apply component defaults, so a node dropped from the
+     * palette would open with Method, Unit or the error handling fields empty.
+     *
+     * @return array<string, mixed>
+     */
+    protected function defaults(): array
+    {
+        $node = $this->node();
+        $defaults = [];
+
+        foreach ($node?->getFormSchema() ?? [] as $component) {
+            if (! $component instanceof Field) {
+                continue;
+            }
+
+            try {
+                $default = $component->getDefaultState();
+            } catch (Throwable) {
+                continue;
+            }
+
+            if ($default !== null) {
+                $defaults[$component->getName()] = $default;
+            }
+        }
+
+        if ($node?->getType() === NodeType::Action) {
+            $defaults += [Runner::RETRIES => 0, Runner::RETRY_AFTER => 0, Runner::ON_ERROR => 'fail'];
+        }
+
+        return $defaults;
     }
 
     protected function node(): ?Node
