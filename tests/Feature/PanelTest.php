@@ -69,6 +69,7 @@ it('edits a workflow and can run it from the header', function (): void {
         ->fillForm(['name' => 'Renamed'])
         ->call('save')
         ->assertHasNoFormErrors()
+        ->assertDispatched('packstub-flow-workflow-saved')
         ->callAction('run')
         ->assertNotified();
 

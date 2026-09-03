@@ -9,6 +9,7 @@ use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Livewire\Attributes\On;
 use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\Models\WorkflowVersion;
 use Packstub\Flow\Support\DefinitionDiff;
@@ -24,6 +25,12 @@ class VersionsRelationManager extends RelationManager
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
         return __('packstub-flow::flow.versions.title');
+    }
+
+    #[On('packstub-flow-workflow-saved')]
+    public function refreshAfterSave(): void
+    {
+        // Receiving the event re-renders the table with the fresh rows.
     }
 
     public function table(Table $table): Table

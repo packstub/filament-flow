@@ -34,6 +34,16 @@ class EditWorkflow extends EditRecord
     }
 
     /**
+     * The Runs and Versions tabs are separate Livewire components; tell them
+     * a save happened so the new version (and any run it started) shows up
+     * without a reload.
+     */
+    protected function afterSave(): void
+    {
+        $this->dispatch('packstub-flow-workflow-saved');
+    }
+
+    /**
      * Dry run from a trigger, with a record and / or a JSON payload: side
      * effects are simulated, conditions evaluated, and the step log shown.
      */

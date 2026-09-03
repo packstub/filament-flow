@@ -14,6 +14,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Livewire\Attributes\On;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Filament\Resources\WorkflowResource;
@@ -26,6 +27,12 @@ class RunsRelationManager extends RelationManager
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
         return __('packstub-flow::flow.runs.title');
+    }
+
+    #[On('packstub-flow-workflow-saved')]
+    public function refreshAfterSave(): void
+    {
+        // Receiving the event re-renders the table with the fresh rows.
     }
 
     public function table(Table $table): Table

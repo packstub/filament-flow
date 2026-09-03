@@ -51,6 +51,7 @@ All notable changes to `packstub/filament-flow` are documented here.
 - **Node settings never reached the canvas**: the slide-over's *Apply* dispatched `packstub-flow.node-updated`, but the canvas listened with Alpine's `x-on:packstub-flow.node-updated.window`, which reads `node-updated` as a modifier. Label, description and settings edits were silently dropped and *Save changes* stored the old definition. The event is now `packstub-flow-node-updated`.
 - A retry step now reads "Attempt 1 of 2" (attempts, not extra retries), and an action that failed and was set to *Log it and continue* no longer gets a "Done" step after its failure entry.
 - Definition validation no longer reports a required setting that has a default (a node dropped from the palette and never opened, such as `HTTP request` with its `POST` method) as missing.
+- The Runs and Versions tabs refresh after *Save changes*, so the version just created shows up without reloading the page.
 - Opening an Approve / Reject link while signed out sent the approver to a `login` route most panels do not have (a 500); the link now uses Filament's authentication middleware, which shows the panel's login page and returns to the link afterwards.
 - *Assign owner* in round-robin mode failed with "no matching user was found" on the database cache store, whose `increment()` returns false for a key that does not exist yet.
 - *Multiple conditions* opens with its first rule's operator set to *equals* instead of an empty select.
