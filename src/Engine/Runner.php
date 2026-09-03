@@ -439,10 +439,16 @@ class Runner
             return [$this->graph->next($node['id']), $payload];
         }
 
-        $exception = $this->handleWithRetries($node, $action, $config, $payload);
+        $result = $this->handleWithRetries($node, $action, $config, $payload);
 
-        if ($exception !== null) {
-            return $this->errorBranch($node, $exception, $payload);
+        if ($result instanceof Throwable) {
+            return $this->errorBranch($node, $result, $payload);
+        }
+
+        if ($result === false) {
+            // Failed and set to "Log it and continue": the failure is already
+            // on the step log, so no "Done" step follows.
+            return [$this->graph->next($node['id']), $payload];
         }
 
         [$output, $summary, $changes] = $action->pullResult();
@@ -463,14 +469,15 @@ class Runner
 
     /**
      * Run an action, retrying it the number of times set on the node. Returns
-     * null on success; the final exception when the node continues or
-     * branches on error; throws when the node fails the run.
+     * true on success; false when the node is set to continue on error (the
+     * failure is logged as a step and the branch goes on); the final exception
+     * when the node follows its error branch; throws when the node fails the run.
      *
      * @param  array<string, mixed>  $node
      * @param  array<string, mixed>  $config
      * @param  array<string, mixed>  $payload
      */
-    protected function handleWithRetries(array $node, Action $action, array $config, array $payload): ?Throwable
+    protected function handleWithRetries(array $node, Action $action, array $config, array $payload): Throwable|bool
     {
         $retries = max(0, min((int) ($config[self::RETRIES] ?? 0), 10));
         $retryAfter = max(0, (int) ($config[self::RETRY_AFTER] ?? 0));
@@ -482,10 +489,10 @@ class Runner
             try {
                 Placeholders::allowSecrets(fn () => $action->handle($config, $payload));
 
-                return null;
+                return true;
             } catch (Throwable $exception) {
                 if ($attempt <= $retries) {
-                    $this->record($node, __('packstub-flow::flow.steps.retrying', ['attempt' => $attempt, 'max' => $retries, 'error' => $exception->getMessage()]), 'retry');
+                    $this->record($node, __('packstub-flow::flow.steps.retrying', ['attempt' => $attempt, 'max' => $retries + 1, 'error' => $exception->getMessage()]), 'retry');
 
                     if ($retryAfter > 0) {
                         sleep($retryAfter);
@@ -498,7 +505,7 @@ class Runner
                     report($exception);
                     $this->record($node, __('packstub-flow::flow.steps.continued', ['error' => $exception->getMessage()]), 'failed');
 
-                    return null;
+                    return false;
                 }
 
                 if ($onError === 'branch' && $this->graph->nextIds($node['id'], 'error') !== []) {

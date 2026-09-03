@@ -2,6 +2,7 @@
 
 use Filament\Actions\Testing\TestAction;
 use Livewire\Livewire;
+use Packstub\Flow\Engine\Runner;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Filament\Livewire\ManageNode;
@@ -12,6 +13,7 @@ use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\ListWorkflows;
 use Packstub\Flow\Filament\Resources\WorkflowResource\RelationManagers\RunsRelationManager;
 use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\Models\WorkflowRun;
+use Packstub\Flow\Nodes\Actions\HttpRequest;
 use Packstub\Flow\Nodes\Actions\SendEmail;
 use Packstub\Flow\Nodes\Triggers\Manual;
 use Packstub\Flow\Tests\Fixtures\SetStatusAction;
@@ -111,6 +113,17 @@ it('shows runs with their steps in the relation manager', function (): void {
         ->and($detail)->toContain('Triggered')->toContain('Boom from the action')->toContain('Payload');
 });
 
+it('opens a new node with its schema defaults filled in', function (): void {
+    Livewire::test(ManageNode::class)
+        ->call('open', 'n1', HttpRequest::class, ['label' => 'HTTP request'])
+        ->assertActionMounted('manageNode')
+        ->assertActionDataSet(['method' => 'POST', 'throw_on_error' => true, Runner::RETRIES => 0, Runner::ON_ERROR => 'fail'])
+        ->setActionData(['url' => 'https://api.example.com/x'])
+        ->callMountedAction()
+        ->assertHasNoActionErrors()
+        ->assertDispatched('packstub-flow-node-updated', id: 'n1');
+});
+
 it('opens node settings only for registered nodes', function (): void {
     Livewire::test(ManageNode::class)
         ->call('open', 'n1', SendEmail::class, ['label' => 'Send email', 'recipient' => 'a@b.c', 'subject' => 's', 'body' => 'b'])
@@ -119,7 +132,7 @@ it('opens node settings only for registered nodes', function (): void {
         ->setActionData(['label' => 'Welcome mail', 'subject' => 'Hello {{ model.name }}'])
         ->callMountedAction()
         ->assertHasNoActionErrors()
-        ->assertDispatched('packstub-flow.node-updated', id: 'n1');
+        ->assertDispatched('packstub-flow-node-updated', id: 'n1');
 
     Livewire::test(ManageNode::class)
         ->call('open', 'n1', stdClass::class, [])

@@ -125,8 +125,11 @@ class AssignOwner extends Action
             return null;
         }
 
+        // The database cache store returns false when incrementing a key that
+        // does not exist yet, so seed the counter first.
         $key = 'packstub-flow.round-robin.'.md5(implode(',', $emails));
-        $turn = (int) Cache::increment($key);
+        Cache::add($key, 0, now()->addYear());
+        $turn = max(1, (int) Cache::increment($key));
 
         return $users[($turn - 1) % $users->count()];
     }

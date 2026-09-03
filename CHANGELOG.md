@@ -23,7 +23,7 @@ All notable changes to `packstub/filament-flow` are documented here.
 - **Dedup windows**: "Not more than once per record every N days" on the record triggers (`dedup_days`), next to "Run once per record"; `Flow::suppress(fn () => ...)` disables every trigger inside a callback (imports, seeders).
 - **Record updated → Changed from / Changed to**: with attributes to watch, the trigger can require the old and / or new value ("status from pending to paid").
 - **State transitioned** trigger and **Transition state** action for `spatie/laravel-model-states`, **Status changed** trigger for `spatie/laravel-model-status`; offered only when the package is installed (`Node::isAvailable()`).
-- **Deep links**: `{{ model.url }}` resolves to the record's page in the panel (view or edit page of the Filament resource registered for its model, `ResourceUrl`); **Send notification** and **Send email** gained an optional button (label + URL, defaulting to `{{ model.url }}`).
+- **Deep links**: `{{ model.url }}` resolves to the record's page in the panel (view or edit page of the Filament resource registered for its model, or its list for a simple resource, `ResourceUrl`); **Send notification** and **Send email** gained an optional button (label + URL, defaulting to `{{ model.url }}`).
 - **Run workflow from any resource**: `RunWorkflowAction` (record action) and `RunWorkflowBulkAction` list the active workflows whose Manual trigger accepts the record type and start them with the record as `{{ model }}`; the Manual trigger has an optional "Record type" setting.
 - **Per-workflow run settings**: "Keep runs for (days)" (`prune_after_days`, honoured by `packstub-flow:prune`) and "Deactivate after consecutive failures" (`max_consecutive_failures`, `consecutive_failures`), which switches the workflow off, fires `WorkflowDeactivated` and notifies the panel users in `notifications.recipients`.
 - **Conditions**: `is null`, `is not null`, `matches regular expression`, `is a date before / after` operators; `changed`, `changed from`, `changed to` on Record attribute; a **Multiple conditions** node (AND / OR over several rules).
@@ -46,13 +46,23 @@ All notable changes to `packstub/filament-flow` are documented here.
 - `packstub-flow:prune` is scheduled daily when `register_schedule` is on and `prune_runs_after_days` is set.
 - Step log entries carry `status` (`ok` / `retry` / `failed`), `duration_ms` and `output`; the step that fails a run carries its error message; the run details modal shows all three.
 
+### Fixed
+
+- **Node settings never reached the canvas**: the slide-over's *Apply* dispatched `packstub-flow.node-updated`, but the canvas listened with Alpine's `x-on:packstub-flow.node-updated.window`, which reads `node-updated` as a modifier. Label, description and settings edits were silently dropped and *Save changes* stored the old definition. The event is now `packstub-flow-node-updated`.
+- A retry step now reads "Attempt 1 of 2" (attempts, not extra retries), and an action that failed and was set to *Log it and continue* no longer gets a "Done" step after its failure entry.
+- Definition validation no longer reports a required setting that has a default (a node dropped from the palette and never opened, such as `HTTP request` with its `POST` method) as missing.
+- Opening an Approve / Reject link while signed out sent the approver to a `login` route most panels do not have (a 500); the link now uses Filament's authentication middleware, which shows the panel's login page and returns to the link afterwards.
+- *Assign owner* in round-robin mode failed with "no matching user was found" on the database cache store, whose `increment()` returns false for a key that does not exist yet.
+- *Multiple conditions* opens with its first rule's operator set to *equals* instead of an empty select.
+- The node slide-over opens with the schema defaults filled in (`HTTP request` → `POST`, *Fail the run on a 4xx / 5xx response* on, `Wait` → 1 minute, error handling → 0 retries / *Fail the run*) instead of empty selects that fail validation on Apply.
+
 ### Changed
 
 - **Nested runs are capped instead of blocked**: an event fired inside a run (a record saved with events on, a mail) can start another workflow up to `max_nesting` levels deep (5); the wildcard event listener no longer ignores every event dispatched during a run.
 - Migration: `flow_workflow_versions` table; `tenant_type` / `tenant_id` on workflows, runs, secrets and waits; `version_id` on runs; the secrets `key` index is per tenant.
 - Migration: `flow_secrets`, `flow_workflow_steps` and `flow_workflow_waits` tables; `prune_after_days`, `max_consecutive_failures`, `consecutive_failures` and `on_failure_workflow_id` on the workflows table; `is_test` on the runs table, whose `steps` JSON column is gone.
 - A run's final status now depends on its pending resumes only (a resume that already ran on a sync queue no longer leaves the run "Waiting"); `max_steps` default raised to 10 000 to leave room for loops.
-- **Outgoing requests are guarded**: `HttpRequest` and `SendSlackMessage` refuse URLs that are not `http(s)` or whose host resolves to a private / reserved address (`UrlGuard`), unless `http.block_private_networks` is off or the host is in `http.allowed_hosts`. Requests have a timeout (15 s default) and per-node retries; placeholder values in the URL are URL-encoded.
+- **Outgoing requests are guarded**: `HttpRequest` and `SendSlackMessage` refuse URLs that are not `http(s)` or whose host resolves to a private / reserved address (`UrlGuard`), unless `http.block_private_networks` is off or the host is in `http.allowed_hosts`. The host is resolved through the system resolver as well as DNS (so `/etc/hosts` and macOS `/etc/resolver` rules count), and a host that cannot be resolved is refused rather than let through. Requests have a timeout (15 s default) and per-node retries; placeholder values in the URL are URL-encoded.
 - **HTTP JSON bodies are built safely**: placeholders inside JSON strings are escaped, bare placeholders become the raw value; a value can no longer add keys to the body.
 - **`UpdateRecord` respects `$fillable` / `$guarded`** and fails the run naming a guarded attribute; the new *Bypass mass-assignment protection* toggle restores `forceFill()`. A value that is exactly one placeholder keeps its type.
 - **Webhook payloads drop credential headers** (`authorization`, `cookie`, `x-api-key`, signature headers, …) before they are stored on the run.

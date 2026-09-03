@@ -61,7 +61,10 @@ class MultipleConditions extends Condition
                 ])
                 ->columns(3)
                 ->minItems(1)
-                ->defaultItems(1)
+                // A literal default rather than defaultItems(): the slide-over
+                // fills the form from the node config, which skips nested
+                // defaults, so the first rule would open without an operator.
+                ->default([['left' => '', 'operator' => '=', 'value' => '']])
                 ->addActionLabel(__('packstub-flow::flow.nodes.multiple_conditions.add_rule'))
                 ->required(),
         ];

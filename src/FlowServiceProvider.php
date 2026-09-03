@@ -2,6 +2,7 @@
 
 namespace Packstub\Flow;
 
+use Filament\Http\Middleware\Authenticate;
 use Filament\Support\Assets\Css;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
@@ -96,7 +97,7 @@ class FlowServiceProvider extends PackageServiceProvider
         }
 
         Route::get(trim((string) config('packstub-flow.approvals.prefix', 'flow/approvals'), '/').'/{wait}/{outcome}', ApprovalController::class)
-            ->middleware([...(array) config('packstub-flow.approvals.middleware', ['web', 'auth']), 'signed'])
+            ->middleware([...(array) config('packstub-flow.approvals.middleware', ['web', Authenticate::class]), 'signed'])
             ->name('packstub-flow.approval');
 
         if (config('packstub-flow.register_schedule', true)) {

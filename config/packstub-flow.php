@@ -1,5 +1,6 @@
 <?php
 
+use Filament\Http\Middleware\Authenticate;
 use Packstub\Flow\Models\Secret;
 use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\Models\WorkflowRun;
@@ -204,7 +205,10 @@ return [
 
     'approvals' => [
         'prefix' => 'flow/approvals',
-        'middleware' => ['web', 'auth'],
+        // Filament's middleware sends a signed-out approver to the panel's
+        // login page and back to the link afterwards; a plain 'auth' would
+        // look for a route named "login" that most panels do not have.
+        'middleware' => ['web', Authenticate::class],
         // Signed approval links stay valid this long (hours); the wait itself
         // has its own timeout, set on the node.
         'link_lifetime_hours' => 72,
