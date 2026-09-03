@@ -120,7 +120,7 @@ The user model used by **Send notification** is `auth.providers.users.model`.
 ```php
 'approvals' => [
     'prefix' => 'flow/approvals',
-    'middleware' => ['web', 'auth'],
+    'middleware' => ['web', \Filament\Http\Middleware\Authenticate::class],
     'link_lifetime_hours' => 72,
 ],
 ```

@@ -1,6 +1,7 @@
 <?php
 
 use Filament\Actions\Testing\TestAction;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
@@ -108,6 +109,7 @@ it('decides from the signed link and the Approvals page', function (): void {
     Flow::run(approvalWorkflow());
     $wait = WorkflowWait::query()->sole();
 
+    $this->get($wait->decisionUrl('approved'))->assertRedirect(Filament::getLoginUrl());
     $this->actingAs($other)->get($wait->decisionUrl('approved'))->assertForbidden();
     // A changed token breaks the signature.
     $this->actingAs($boss)->get(str_replace('token='.$wait->token, 'token=wrong', $wait->decisionUrl('approved')))->assertForbidden();
