@@ -65,6 +65,11 @@ class RunsRelationManager extends RelationManager
                     ->label(__('packstub-flow::flow.runs.steps'))
                     ->counts('steps')
                     ->numeric(),
+                TextColumn::make('version.number')
+                    ->label(__('packstub-flow::flow.versions.version'))
+                    ->formatStateUsing(fn (int $state): string => "v{$state}")
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('error')
                     ->label(__('packstub-flow::flow.runs.error'))
                     ->limit(60)

@@ -105,9 +105,15 @@ Test runs are stored like any run, flagged with a beaker icon, hidden from the R
 
 ## The Runs page
 
+![The Runs page with its stats and filters](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/runs-page.png)
+
 Besides the Runs tab under each workflow, the **Runs** page (next to Workflows in the navigation) lists every run across workflows, with filters by status, workflow, date and test runs, the details modal, **Run again**, and **Open on the canvas** — which opens the workflow with the failing node selected and centred. Step labels in the details modal link to their node the same way. Four stats sit above the table: runs today, failed today, runs waiting, and the 7-day success rate.
 
 Steps are stored one row per step in the `flow_workflow_steps` table (`WorkflowStep` model; `$run->steps` returns them as arrays, `$run->steps()` as the relationship) rather than in a JSON column, so a run with hundreds of steps costs one insert per step and the Runs page can count and filter them.
+
+## Versions
+
+Every save that changes the definition stores a snapshot in the **Versions** tab of the workflow — the version number, who saved it, when, the node count and a summary of what changed compared to the previous one (nodes added, removed, changed; connections added or removed). Moving nodes around is not a change. **Changes** opens the summary in a modal; **Restore** puts an older definition back on the canvas as a new version, so nothing is ever lost. Each run pins the version it started from (`version_id`, the *Version* column of the Runs tab). Older versions are pruned beyond `versions.keep` (50) per workflow.
 
 ## Failures
 

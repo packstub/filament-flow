@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\FlowPlugin;
 use Packstub\Flow\Models\WorkflowWait;
+use Packstub\Flow\Support\Tenancy;
 use UnitEnum;
 
 /**
@@ -89,7 +90,11 @@ class Approvals extends Page implements HasTable
      */
     public static function pendingForCurrentUser(): Builder
     {
-        return Flow::waitModel()::query()->approvals()->pending()->forApprover(auth()->user()?->getAttribute('email'));
+        return Flow::waitModel()::query()
+            ->when(Tenancy::panelTenant(), fn (Builder $query, $tenant) => $query->ofTenant($tenant))
+            ->approvals()
+            ->pending()
+            ->forApprover(auth()->user()?->getAttribute('email'));
     }
 
     public function table(Table $table): Table
@@ -98,7 +103,7 @@ class Approvals extends Page implements HasTable
 
         return $table
             ->query(fn (): Builder => $manages
-                ? Flow::waitModel()::query()->approvals()->with(['workflow', 'run'])
+                ? Flow::waitModel()::query()->when(Tenancy::panelTenant(), fn (Builder $query, $tenant) => $query->ofTenant($tenant))->approvals()->with(['workflow', 'run'])
                 : static::pendingForCurrentUser()->with(['workflow', 'run']))
             ->defaultSort('created_at', 'desc')
             ->columns([

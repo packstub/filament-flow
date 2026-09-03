@@ -15,6 +15,7 @@ use Packstub\Flow\Models\WorkflowTrigger;
 use Packstub\Flow\NodeRegistry;
 use Packstub\Flow\Nodes\Trigger;
 use Packstub\Flow\Support\PayloadSerializer;
+use Packstub\Flow\Support\Tenancy;
 use Throwable;
 
 class Dispatcher
@@ -51,12 +52,17 @@ class Dispatcher
         }
 
         $triggerModel = Flow::triggerModel();
+        $tenant = Tenancy::resolve($payload);
+
+        if ($tenant && ! isset($payload['tenant'])) {
+            $payload['tenant'] = $tenant;
+        }
 
         /** @var Collection<int, WorkflowTrigger> $rows */
         $rows = $triggerModel::query()
             ->where('type', $triggerClass)
-            ->whereHas('workflow', fn ($query) => $query->where('is_active', true))
-            ->with('workflow')
+            ->whereHas('workflow', fn ($query) => $query->withoutGlobalScopes()->where('is_active', true)->forTenant($tenant))
+            ->with(['workflow' => fn ($query) => $query->withoutGlobalScopes()])
             ->get();
 
         $runs = [];
@@ -103,8 +109,8 @@ class Dispatcher
         try {
             $rows = Flow::triggerModel()::query()
                 ->whereIn('type', $types)
-                ->whereHas('workflow', fn ($query) => $query->where('is_active', true))
-                ->with('workflow')
+                ->whereHas('workflow', fn ($query) => $query->withoutGlobalScopes()->where('is_active', true))
+                ->with(['workflow' => fn ($query) => $query->withoutGlobalScopes()])
                 ->get();
         } catch (Throwable) {
             return [];
@@ -120,6 +126,17 @@ class Dispatcher
             $config = $row->config ?? [];
 
             foreach ($trigger->poll($config, $now) as $payload) {
+                $tenant = Tenancy::resolve($payload);
+
+                // A tenant's workflow only runs for that tenant's records.
+                if (! $row->workflow->isGlobal() && ($tenant === null || $tenant->getMorphClass() !== $row->workflow->tenant_type || (string) $tenant->getKey() !== (string) $row->workflow->tenant_id)) {
+                    continue;
+                }
+
+                if ($tenant && ! isset($payload['tenant'])) {
+                    $payload['tenant'] = $tenant;
+                }
+
                 if (($config['once'] ?? true) && $this->alreadyRanFor($row->workflow, $payload)) {
                     continue;
                 }
@@ -192,7 +209,7 @@ class Dispatcher
             try {
                 $types = Cache::remember(self::CACHE_KEY, now()->addHour(), function (): array {
                     return Flow::triggerModel()::query()
-                        ->whereHas('workflow', fn ($query) => $query->where('is_active', true))
+                        ->whereHas('workflow', fn ($query) => $query->withoutGlobalScopes()->where('is_active', true))
                         ->distinct()
                         ->pluck('type')
                         ->all();

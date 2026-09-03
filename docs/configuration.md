@@ -37,6 +37,10 @@ FlowPlugin::make()
     // The cross-workflow Runs page and the Approvals page
     ->withoutRunsPage()
     ->withoutApprovalsPage()
+
+    // Multi-tenancy: which tenant a payload belongs to, and a plan limit
+    ->resolveTenantUsing(fn (array $payload) => $payload['model']?->team)
+    ->maxWorkflows(fn (?Team $team) => $team?->plan->workflows)
 ```
 
 | Method | Default | Notes |
@@ -53,6 +57,8 @@ FlowPlugin::make()
 | `withoutSecrets()` | page registered | Hide the Secrets page (placeholders keep working for secrets created in code) |
 | `withoutRunsPage()` | page registered | Hide the [Runs page](runs.md#the-runs-page) |
 | `withoutApprovalsPage()` | page registered | Hide the [Approvals page](approvals.md) (notification and email links keep working) |
+| `resolveTenantUsing()` | `null` | See [Multi-tenancy](tenancy.md) |
+| `maxWorkflows()` | `null` | Workflows a tenant (or the app) may have; the Create button is disabled beyond it |
 
 `FlowPlugin::get()` returns the plugin instance of the current panel. Nodes and models are registered in application-wide singletons, so a class added on one panel is known to all panels.
 
@@ -114,6 +120,19 @@ The user model used by **Send notification** is `auth.providers.users.model`.
 ```
 
 `max_nesting` caps how deep runs may start other runs; `max_records` caps what **Find records** reads, **For each** iterates and **Date on a record** starts per minute (see [Runs](runs.md#safety-guards)).
+
+### Tenancy and versions
+
+```php
+'tenancy' => [
+    'relationship' => env('PACKSTUB_FLOW_TENANT_RELATIONSHIP'),
+],
+'versions' => [
+    'keep' => 50,
+],
+```
+
+The relationship of a triggering record that leads to its tenant (`team`), used when no resolver is set — see [Multi-tenancy](tenancy.md). `versions.keep` is how many definition [versions](runs.md#versions) are kept per workflow.
 
 ### Approvals
 

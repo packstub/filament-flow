@@ -13,7 +13,9 @@ use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\Models\WorkflowRun;
 use Packstub\Flow\Models\WorkflowStep;
 use Packstub\Flow\Models\WorkflowTrigger;
+use Packstub\Flow\Models\WorkflowVersion;
 use Packstub\Flow\Models\WorkflowWait;
+use Packstub\Flow\Support\Tenancy;
 
 /**
  * Entry point: dispatch a trigger, run a workflow, reach the registry.
@@ -169,6 +171,19 @@ class Flow
     }
 
     /**
+     * Decide which tenant a dispatched payload belongs to (see
+     * packstub-flow.tenancy). The tenant's workflows and the global ones run.
+     *
+     * @param  (\Closure(array<string, mixed>): ?Model)|null  $resolver
+     */
+    public function resolveTenantUsing(?\Closure $resolver): static
+    {
+        Tenancy::resolveUsing($resolver);
+
+        return $this;
+    }
+
+    /**
      * Run a callback without any trigger starting a workflow — imports,
      * seeders, bulk fixes. Flow::run() still works inside it.
      *
@@ -240,6 +255,12 @@ class Flow
     public static function waitModel(): string
     {
         return config('packstub-flow.models.wait', WorkflowWait::class);
+    }
+
+    /** @return class-string<WorkflowVersion> */
+    public static function versionModel(): string
+    {
+        return config('packstub-flow.models.version', WorkflowVersion::class);
     }
 
     /** @return class-string<Model> */

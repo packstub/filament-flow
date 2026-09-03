@@ -187,6 +187,8 @@ The action changes nothing, so a [test run](runs.md#test-runs) executes it for r
 
 Runs the nodes on its **Each item** output once per item of a list, then continues along **Done**.
 
+![A Find records node feeding a For each loop with its Each item and Done outputs](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/canvas-loop.png)
+
 | Setting | |
 | --- | --- |
 | Items | A placeholder for a list — `{{ last.records }}` after **Find records**, `{{ webhook.items }}`, or comma-separated text |

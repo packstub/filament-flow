@@ -24,6 +24,7 @@ A placeholder is a path of letters, digits, `_`, `-` and dots between double bra
 | `{{ item.reference }}`, `{{ loop.number }}` | Inside a **For each** body: the current item and the loop counters |
 | `{{ error.message }}`, `{{ error.node }}` | On an **Error** branch, or in an on-failure workflow (with `{{ failed_run.workflow }}`) |
 | `{{ approval.by }}`, `{{ wait.amount }}` | After an approval / a signal (see [Approvals & signals](approvals.md)) |
+| `{{ tenant.name }}` | The tenant the run belongs to (see [Multi-tenancy](tenancy.md)) |
 
 A path that resolves to nothing renders as an empty string — the run does not fail. Text without `{{` is returned untouched. Attributes in a model's `$hidden` list (passwords, tokens) always resolve to nothing, even through a relationship.
 

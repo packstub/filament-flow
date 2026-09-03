@@ -23,6 +23,7 @@ use Packstub\Flow\Listeners\DispatchEventTriggers;
 use Packstub\Flow\Support\ModelFinder;
 use Packstub\Flow\Support\Placeholders;
 use Packstub\Flow\Support\Secrets;
+use Packstub\Flow\Support\Tenancy;
 use Packstub\Flow\Tests\Fixtures\AdminPanelProvider;
 use Packstub\Flow\Tests\Fixtures\User;
 use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
@@ -42,6 +43,7 @@ abstract class TestCase extends Orchestra
         ModelFinder::flush();
         Secrets::flush();
         Placeholders::forgetUsedSecrets();
+        Tenancy::resolveUsing(null);
     }
 
     protected function getPackageProviders($app): array
@@ -64,6 +66,7 @@ abstract class TestCase extends Orchestra
             TagsServiceProvider::class,
             FlowServiceProvider::class,
             AdminPanelProvider::class,
+            Fixtures\TenantPanelProvider::class,
         ];
     }
 
@@ -82,14 +85,24 @@ abstract class TestCase extends Orchestra
         $app['config']->set('queue.default', 'sync');
         $app['config']->set('packstub-flow.models_for_triggers', [Fixtures\Order::class, Fixtures\Ticket::class]);
         $app['config']->set('packstub-flow.http.block_private_networks', false);
+        $app['config']->set('packstub-flow.tenancy.relationship', 'team');
         $app['config']->set('model-status.status_model', Status::class);
 
     }
 
     protected function migrate(): void
     {
+        Schema::create('teams', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->string('slug')->unique();
+            $table->unsignedInteger('max_workflows')->nullable();
+            $table->timestamps();
+        });
+
         Schema::create('users', function (Blueprint $table): void {
             $table->id();
+            $table->foreignId('team_id')->nullable();
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
@@ -100,6 +113,7 @@ abstract class TestCase extends Orchestra
         Schema::create('orders', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('user_id')->nullable();
+            $table->foreignId('team_id')->nullable();
             $table->string('reference');
             $table->string('status')->default('pending');
             $table->decimal('total', 10, 2)->default(0);

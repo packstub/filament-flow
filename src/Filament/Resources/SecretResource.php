@@ -12,10 +12,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rules\Unique;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Filament\Resources\SecretResource\Pages;
 use Packstub\Flow\FlowPlugin;
+use Packstub\Flow\Support\Tenancy;
 use UnitEnum;
 
 /**
@@ -25,6 +28,8 @@ use UnitEnum;
 class SecretResource extends Resource
 {
     protected static ?string $slug = 'workflow-secrets';
+
+    protected static ?string $tenantOwnershipRelationshipName = 'tenant';
 
     public static function getModel(): string
     {
@@ -87,7 +92,13 @@ class SecretResource extends Resource
                 ->required()
                 ->maxLength(80)
                 ->regex('/^[A-Za-z][A-Za-z0-9_]*$/')
-                ->unique(ignoreRecord: true),
+                ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule): Unique {
+                    $tenant = Tenancy::panelTenant();
+
+                    return $tenant
+                        ? $rule->where('tenant_type', $tenant->getMorphClass())->where('tenant_id', (string) $tenant->getKey())
+                        : $rule->whereNull('tenant_id');
+                }),
             TextInput::make('value')
                 ->label(__('packstub-flow::flow.secrets.value'))
                 ->helperText(fn (?string $operation): string => $operation === 'edit'
@@ -125,6 +136,7 @@ class SecretResource extends Resource
                     ->since()
                     ->sortable(),
             ])
+            ->modifyQueryUsing(fn (Builder $query) => $query->when(Tenancy::panelTenant(), fn ($query, $tenant) => $query->ofTenant($tenant)))
             ->defaultSort('key')
             ->recordActions([
                 EditAction::make(),

@@ -29,11 +29,13 @@ use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
 use Packstub\Flow\Filament\Resources\WorkflowResource\Pages;
+use Packstub\Flow\Filament\Resources\WorkflowResource\RelationManagers;
 use Packstub\Flow\Filament\Resources\WorkflowResource\RelationManagers\RunsRelationManager;
 use Packstub\Flow\FlowPlugin;
 use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\NodeRegistry;
 use Packstub\Flow\Nodes\Triggers\WorkflowCalled;
+use Packstub\Flow\Support\Tenancy;
 use UnitEnum;
 
 class WorkflowResource extends Resource
@@ -41,6 +43,10 @@ class WorkflowResource extends Resource
     protected static ?string $slug = 'workflows';
 
     protected static ?int $navigationSort = null;
+
+    // In a panel with tenancy, workflows are scoped to the current tenant
+    // through the polymorphic "tenant" relationship.
+    protected static ?string $tenantOwnershipRelationshipName = 'tenant';
 
     public static function getModel(): string
     {
@@ -180,7 +186,9 @@ class WorkflowResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['triggers', 'latestRun']));
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query
+                ->when(Tenancy::panelTenant(), fn (Builder $query, $tenant) => $query->ofTenant($tenant))
+                ->with(['triggers', 'latestRun']));
     }
 
     /**
@@ -208,6 +216,7 @@ class WorkflowResource extends Resource
                 ->label(__('packstub-flow::flow.fields.on_failure_workflow'))
                 ->helperText(__('packstub-flow::flow.fields.on_failure_workflow_help'))
                 ->options(fn (?Model $record): array => Flow::workflowModel()::query()
+                    ->forTenant(Tenancy::panelTenant())
                     ->when($record, fn (Builder $query) => $query->whereKeyNot($record->getKey()))
                     ->orderBy('name')
                     ->get()
@@ -253,6 +262,7 @@ class WorkflowResource extends Resource
     {
         return [
             RunsRelationManager::class,
+            RelationManagers\VersionsRelationManager::class,
         ];
     }
 

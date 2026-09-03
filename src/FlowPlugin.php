@@ -12,6 +12,7 @@ use Packstub\Flow\Filament\Pages\WorkflowRuns;
 use Packstub\Flow\Filament\Resources\SecretResource;
 use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\Support\ModelFinder;
+use Packstub\Flow\Support\Tenancy;
 
 class FlowPlugin implements Plugin
 {
@@ -54,6 +55,9 @@ class FlowPlugin implements Plugin
 
     /** @var (Closure(): bool)|null */
     protected ?Closure $authorize = null;
+
+    /** @var int|(Closure(?Model): ?int)|null */
+    protected int|Closure|null $maxWorkflows = null;
 
     public static function make(): static
     {
@@ -178,6 +182,39 @@ class FlowPlugin implements Plugin
     public function withoutApprovalsPage(): static
     {
         $this->hasApprovalsPage = false;
+
+        return $this;
+    }
+
+    /**
+     * How many workflows a tenant (or the whole app, without tenancy) may
+     * have; the Create button is disabled beyond it. A closure receives the
+     * current tenant, so a plan limit fits: fn ($team) => $team->plan->workflows.
+     *
+     * @param  int|(Closure(?Model): ?int)|null  $limit
+     */
+    public function maxWorkflows(int|Closure|null $limit): static
+    {
+        $this->maxWorkflows = $limit;
+
+        return $this;
+    }
+
+    public function getMaxWorkflows(?Model $tenant = null): ?int
+    {
+        $limit = $this->maxWorkflows instanceof Closure ? ($this->maxWorkflows)($tenant) : $this->maxWorkflows;
+
+        return $limit === null ? null : (int) $limit;
+    }
+
+    /**
+     * Which tenant a dispatched payload belongs to (see Flow::resolveTenantUsing()).
+     *
+     * @param  Closure(array<string, mixed>): ?Model  $resolver
+     */
+    public function resolveTenantUsing(Closure $resolver): static
+    {
+        Tenancy::resolveUsing($resolver);
 
         return $this;
     }

@@ -14,9 +14,13 @@ return new class extends Migration
         $secrets = config('packstub-flow.tables.secrets', 'flow_secrets');
         $steps = config('packstub-flow.tables.steps', 'flow_workflow_steps');
         $waits = config('packstub-flow.tables.waits', 'flow_workflow_waits');
+        $versions = config('packstub-flow.tables.versions', 'flow_workflow_versions');
 
         Schema::create($workflows, function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            // The tenant (team, company...) the workflow belongs to; null = global, runs for every tenant.
+            $table->string('tenant_type')->nullable();
+            $table->string('tenant_id', 64)->nullable();
             $table->string('name');
             $table->text('description')->nullable();
             $table->json('definition')->nullable();
@@ -29,6 +33,21 @@ return new class extends Migration
             // A workflow (with a "Called by another workflow" trigger) to run when a run of this one fails.
             $table->uuid('on_failure_workflow_id')->nullable();
             $table->timestamps();
+
+            $table->index(['tenant_type', 'tenant_id'], 'flow_workflows_tenant_index');
+        });
+
+        // A snapshot of the definition every time it changes; runs pin the
+        // version they started from.
+        Schema::create($versions, function (Blueprint $table) use ($workflows): void {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('workflow_id')->constrained($workflows)->cascadeOnDelete();
+            $table->unsignedInteger('number');
+            $table->json('definition')->nullable();
+            $table->string('created_by')->nullable();
+            $table->timestamp('created_at')->nullable();
+
+            $table->unique(['workflow_id', 'number']);
         });
 
         Schema::create($triggers, function (Blueprint $table) use ($workflows): void {
@@ -43,6 +62,9 @@ return new class extends Migration
         Schema::create($runs, function (Blueprint $table) use ($workflows): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('workflow_id')->constrained($workflows)->cascadeOnDelete();
+            $table->uuid('version_id')->nullable();
+            $table->string('tenant_type')->nullable();
+            $table->string('tenant_id', 64)->nullable();
             $table->string('trigger_type')->nullable();
             $table->string('subject_type')->nullable();
             $table->string('subject_id', 64)->nullable();
@@ -58,6 +80,7 @@ return new class extends Migration
 
             $table->index(['workflow_id', 'started_at']);
             $table->index(['workflow_id', 'subject_type', 'subject_id'], 'flow_runs_subject_index');
+            $table->index(['tenant_type', 'tenant_id'], 'flow_runs_tenant_index');
             $table->index('started_at');
         });
 
@@ -87,6 +110,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('workflow_id')->constrained($workflows)->cascadeOnDelete();
             $table->foreignUuid('run_id')->constrained($runs)->cascadeOnDelete();
+            $table->string('tenant_type')->nullable();
+            $table->string('tenant_id', 64)->nullable();
             $table->string('node_id', 64);
             // approval | event
             $table->string('type', 16);
@@ -105,14 +130,21 @@ return new class extends Migration
             $table->timestamp('expires_at')->nullable()->index();
             $table->timestamp('resolved_at')->nullable();
             $table->timestamps();
+
+            $table->index(['tenant_type', 'tenant_id'], 'flow_waits_tenant_index');
         });
 
         Schema::create($secrets, function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->string('key', 80)->unique();
+            // A tenant's secret shadows a global one with the same key.
+            $table->string('tenant_type')->nullable();
+            $table->string('tenant_id', 64)->nullable();
+            $table->string('key', 80);
             $table->text('value');
             $table->string('description')->nullable();
             $table->timestamps();
+
+            $table->index(['tenant_type', 'tenant_id', 'key'], 'flow_secrets_tenant_key_index');
         });
     }
 
@@ -122,6 +154,7 @@ return new class extends Migration
         Schema::dropIfExists(config('packstub-flow.tables.steps', 'flow_workflow_steps'));
         Schema::dropIfExists(config('packstub-flow.tables.secrets', 'flow_secrets'));
         Schema::dropIfExists(config('packstub-flow.tables.runs', 'flow_workflow_runs'));
+        Schema::dropIfExists(config('packstub-flow.tables.versions', 'flow_workflow_versions'));
         Schema::dropIfExists(config('packstub-flow.tables.triggers', 'flow_workflow_triggers'));
         Schema::dropIfExists(config('packstub-flow.tables.workflows', 'flow_workflows'));
     }

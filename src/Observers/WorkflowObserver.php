@@ -16,6 +16,10 @@ class WorkflowObserver
     {
         $workflow->getConnection()->transaction(function () use ($workflow): void {
             $this->syncTriggers($workflow);
+
+            if ($workflow->wasChanged('definition') || ! $workflow->versions()->exists()) {
+                $workflow->snapshotVersion(auth()->user()?->getAttribute('email') ?? (auth()->id() !== null ? (string) auth()->id() : null));
+            }
         });
 
         DispatchEventTriggers::flush();
@@ -50,6 +54,7 @@ class WorkflowObserver
         // Not every database enforces the cascade (SQLite without foreign
         // keys on), so clean up explicitly.
         $workflow->triggers()->delete();
+        $workflow->versions()->delete();
         $workflow->waits()->delete();
         $workflow->steps()->delete();
         $workflow->runs()->delete();
