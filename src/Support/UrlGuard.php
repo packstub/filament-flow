@@ -40,7 +40,13 @@ class UrlGuard
             return;
         }
 
-        foreach (self::addressesOf($host) as $ip) {
+        $addresses = self::addressesOf($host);
+
+        if ($addresses === []) {
+            throw new WorkflowException("Host [{$host}] could not be resolved, so the request was not sent.");
+        }
+
+        foreach ($addresses as $ip) {
             if (self::isPrivate($ip)) {
                 throw new WorkflowException("Host [{$host}] resolves to a private or reserved address and cannot be called.");
             }
@@ -59,6 +65,11 @@ class UrlGuard
     }
 
     /**
+     * Every address the host resolves to. `dns_get_record()` talks to the
+     * nameservers directly and misses local resolver rules (macOS
+     * `/etc/resolver`, `/etc/hosts`, mDNS), so the system resolver is asked
+     * too; a host that cannot be resolved at all is refused by the caller.
+     *
      * @return array<int, string>
      */
     protected static function addressesOf(string $host): array
@@ -73,10 +84,14 @@ class UrlGuard
 
         $records = @dns_get_record($host, DNS_A | DNS_AAAA) ?: [];
 
-        return array_values(array_filter(array_map(
+        $addresses = array_filter(array_map(
             fn (array $record): ?string => $record['ip'] ?? $record['ipv6'] ?? null,
             $records,
-        )));
+        ));
+
+        $system = @gethostbynamel($host) ?: [];
+
+        return array_values(array_unique([...$addresses, ...$system]));
     }
 
     public static function isPrivate(string $ip): bool
