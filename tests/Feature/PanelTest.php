@@ -119,7 +119,7 @@ it('opens node settings only for registered nodes', function (): void {
         ->setActionData(['label' => 'Welcome mail', 'subject' => 'Hello {{ model.name }}'])
         ->callMountedAction()
         ->assertHasNoActionErrors()
-        ->assertDispatched('packstub-flow.node-updated', id: 'n1');
+        ->assertDispatched('packstub-flow-node-updated', id: 'n1');
 
     Livewire::test(ManageNode::class)
         ->call('open', 'n1', stdClass::class, [])

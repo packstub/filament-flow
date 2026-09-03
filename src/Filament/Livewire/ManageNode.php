@@ -23,7 +23,9 @@ use Packstub\Flow\Nodes\Node;
 
 /**
  * The slide-over that edits one node's label and settings. Opened by the
- * canvas, it hands the values back through a browser event.
+ * canvas, it hands the values back through a browser event. Event names
+ * stay free of dots: Alpine's x-on reads everything after a dot as a
+ * modifier, so a dotted name is never matched by the canvas listener.
  */
 class ManageNode extends Component implements HasActions, HasForms
 {
@@ -60,15 +62,31 @@ class ManageNode extends Component implements HasActions, HasForms
             ->modalWidth(Width::TwoExtraLarge)
             ->modalSubmitActionLabel(__('packstub-flow::flow.node_settings.apply'))
             ->schema(fn (Schema $schema): Schema => $this->nodeSchema($schema))
-            ->fillForm(fn (array $arguments): array => $arguments['data'] ?? [])
+            ->fillForm(fn (array $arguments): array => $this->defaults() + ($arguments['data'] ?? []))
             ->action(function (array $data): void {
-                $this->dispatch('packstub-flow.node-updated', id: $this->nodeId, config: $data);
+                $this->dispatch('packstub-flow-node-updated', id: $this->nodeId, config: $data);
             });
     }
 
     public function render(): View
     {
         return view('packstub-flow::livewire.manage-node');
+    }
+
+    /**
+     * Values a node config starts from when it has never been saved with them.
+     * fill() does not apply component defaults, so the error handling fields
+     * would otherwise show up empty on nodes created before they existed.
+     *
+     * @return array<string, mixed>
+     */
+    protected function defaults(): array
+    {
+        if ($this->node()?->getType() !== NodeType::Action) {
+            return [];
+        }
+
+        return [Runner::RETRIES => 0, Runner::RETRY_AFTER => 0, Runner::ON_ERROR => 'fail'];
     }
 
     protected function node(): ?Node

@@ -227,7 +227,7 @@ Livewire::test(ManageNode::class)
     ->setActionData(['subject' => 'Hello {{ model.name }}'])
     ->callMountedAction()
     ->assertHasNoActionErrors()
-    ->assertDispatched('packstub-flow.node-updated', id: 'n1');
+    ->assertDispatched('packstub-flow-node-updated', id: 'n1');
 ```
 
 The plugin's own suite under `tests/Feature` in the [repository](https://github.com/packstub/filament-flow/tree/main/tests) covers every node and is a good source of further examples.
