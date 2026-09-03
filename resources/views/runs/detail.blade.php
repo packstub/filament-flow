@@ -44,6 +44,12 @@
                 <dd class="mt-1 text-gray-950 dark:text-white">{{ class_basename($run->subject_type) }} #{{ $run->subject_id }}</dd>
             </div>
         @endif
+        @if ($run->version)
+            <div>
+                <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('packstub-flow::flow.runs.version') }}</dt>
+                <dd class="mt-1 text-gray-950 dark:text-white">v{{ $run->version->number }}</dd>
+            </div>
+        @endif
     </dl>
 
     @if ($run->error)

@@ -144,6 +144,7 @@ return [
         'trigger' => 'Trigger',
         'started' => 'Started',
         'duration' => 'Duration',
+        'version' => 'Version',
         'steps' => 'Steps',
         'error' => 'Error',
         'view' => 'Details',
