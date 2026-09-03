@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Hash;
 use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\Nodes\Triggers\Manual;
+use Packstub\Flow\Tests\Fixtures\EchoAction;
 use Packstub\Flow\Tests\Fixtures\FlakyAction;
 use Packstub\Flow\Tests\Fixtures\Order;
 use Packstub\Flow\Tests\Fixtures\SetStatusAction;
@@ -14,6 +15,7 @@ pest()->extend(TestCase::class)->in('Feature');
 pest()->beforeEach(function (): void {
     SetStatusAction::$calls = [];
     FlakyAction::$attempts = 0;
+    EchoAction::$last = null;
 });
 
 /**

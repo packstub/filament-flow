@@ -39,7 +39,13 @@ class Dispatcher
     {
         $trigger = $this->registry->trigger($triggerClass);
 
-        if (! $trigger || ! static::hasActiveTriggers($triggerClass)) {
+        if (! $trigger || app(Flow::class)->isSuppressed() || ! static::hasActiveTriggers($triggerClass)) {
+            return [];
+        }
+
+        // A workflow that fires events (a non-quiet record update, a mail)
+        // may start another one; stop when they nest too deep.
+        if (Runner::depth() >= (int) config('packstub-flow.max_nesting', 5)) {
             return [];
         }
 
@@ -60,6 +66,10 @@ class Dispatcher
             }
 
             if (($row->config['once'] ?? false) && $this->alreadyRanFor($row->workflow, $payload)) {
+                continue;
+            }
+
+            if (($days = (int) ($row->config['dedup_days'] ?? 0)) > 0 && $this->alreadyRanFor($row->workflow, $payload, $days)) {
                 continue;
             }
 
@@ -148,12 +158,12 @@ class Dispatcher
     }
 
     /**
-     * "Run once per record": a run already exists for this workflow and the
-     * record in the payload.
+     * "Run once per record" / "not more than once every N days": a run
+     * already exists for this workflow and the record in the payload.
      *
      * @param  array<string, mixed>  $payload
      */
-    protected function alreadyRanFor(Workflow $workflow, array $payload): bool
+    public function alreadyRanFor(Workflow $workflow, array $payload, ?int $withinDays = null): bool
     {
         $model = $payload['model'] ?? null;
 
@@ -165,6 +175,7 @@ class Dispatcher
             ->where('workflow_id', $workflow->getKey())
             ->where('subject_type', $model::class)
             ->where('subject_id', (string) $model->getKey())
+            ->when($withinDays !== null, fn ($query) => $query->where('started_at', '>=', now()->subDays($withinDays)))
             ->exists();
     }
 

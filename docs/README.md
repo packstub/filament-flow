@@ -13,10 +13,11 @@ Visual workflow automations for Filament panels: triggers, conditions and action
 | Feature | What it means for you |
 | --- | --- |
 | **Visual builder** | A Workflows resource with a drag-and-drop canvas. Add triggers, conditions and actions from a sidebar, connect them, branch on true / false, and edit each node's settings in a slide-over built from Filament form components. |
-| **Triggers** | Record created / updated / deleted (via the `HasWorkflows` trait), user registered, any Laravel event, cron schedules, webhooks, a manual **Run now**, and calls from other workflows. |
-| **Conditions** | Record attribute, compare values (placeholders on both sides) and time of day, with fifteen operators. |
-| **Actions** | Send email, send Filament database notification, send Slack message, HTTP request, update record, wait, call workflow, write to log. |
-| **Placeholders** | `{{ model.name }}`, `{{ webhook.order.id }}`, `{{ event.carrier }}`, `{{ original.status }}`, `{{ changes.status }}` — resolved from the payload in every text field. |
+| **Triggers** | Record created / updated / deleted (via the `HasWorkflows` trait, with "changed from / to" and dedup windows), spatie model-state transitions, user registered, any Laravel event, cron schedules (with catch-up), webhooks, a manual **Run now** or a **Run workflow** action on any resource, and calls from other workflows. |
+| **Conditions** | Record attribute (including "changed from / to"), compare values (placeholders on both sides), multiple conditions (AND / OR) and time of day, with twenty operators. |
+| **Actions** | Send email, Filament database notification, Slack, Discord, Teams, Telegram, SMS / WhatsApp (Twilio), HTTP request, update record, transition state, wait, call workflow, write to log. |
+| **Placeholders** | `{{ model.name }}`, `{{ webhook.order.id }}`, `{{ event.carrier }}`, `{{ original.status }}`, `{{ changes.status }}`, `{{ model.url }}`, `{{ secrets.api_key }}` — resolved from the payload in every text field. |
+| **Secrets** | An encrypted store for tokens and webhook URLs, resolved only inside actions and masked in run logs. |
 | **Runs** | Every run is stored with status, trigger, payload summary, a step log and the error, shown in a Runs tab; `packstub-flow:run` and `packstub-flow:prune` commands; `WorkflowStarted` / `WorkflowCompleted` / `WorkflowFailed` events. |
 | **Queue & scheduling** | Inline or queued runs, Wait steps served by delayed jobs, and a `packstub-flow:cron` command registered with the scheduler for you. |
 | **Extensible** | Subclass `Trigger`, `Action` or `Condition`, give it a form schema, and register it on the plugin, in the config or with `Flow::register()`. |
@@ -31,7 +32,8 @@ Visual workflow automations for Filament panels: triggers, conditions and action
 | [Actions](actions.md) | Every built-in action and its settings |
 | [Conditions](conditions.md) | Every built-in condition and all operators |
 | [Placeholders](placeholders.md) | Syntax, resolution, aliases, how values become text, what each trigger exposes |
-| [Runs](runs.md) | Statuses, the step log, Run now, console commands, retention, events and the safety guards |
+| [Secrets](secrets.md) | The encrypted secrets store, `{{ secrets.* }}` in actions, masking in run logs |
+| [Runs](runs.md) | Statuses, the step log, Run now, console commands, retention, failure limits, events and the safety guards |
 | [Queue & scheduling](queue-and-scheduling.md) | Sync versus queued runs, Wait steps, the cron command and scheduler registration |
 | [Extending](extending.md) | Writing and registering your own triggers, actions and conditions; dispatching from code |
 | [Configuration](configuration.md) | Every config key, the fluent `FlowPlugin` API, custom models, tables, navigation and webhooks |

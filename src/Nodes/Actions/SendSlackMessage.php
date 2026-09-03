@@ -7,6 +7,7 @@ use Filament\Forms\Components\TextInput;
 use Illuminate\Support\Facades\Http;
 use Packstub\Flow\Nodes\Action;
 use Packstub\Flow\Nodes\Concerns\InterpolatesPlaceholders;
+use Packstub\Flow\Support\Placeholders;
 use Packstub\Flow\Support\UrlGuard;
 
 /**
@@ -36,8 +37,13 @@ class SendSlackMessage extends Action
         return [
             TextInput::make('webhook_url')
                 ->label(__('packstub-flow::flow.nodes.slack.webhook_url'))
-                ->placeholder('https://hooks.slack.com/services/...')
-                ->url()
+                ->placeholder('https://hooks.slack.com/services/... or {{ secrets.slack_webhook }}')
+                ->helperText(__('packstub-flow::flow.nodes.slack.webhook_url_help'))
+                ->rule(fn () => function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (is_string($value) && ! Placeholders::hasPlaceholders($value) && ! filter_var($value, FILTER_VALIDATE_URL)) {
+                        $fail(__('packstub-flow::flow.nodes.slack.invalid_url'));
+                    }
+                })
                 ->required(),
             Textarea::make('message')
                 ->label(__('packstub-flow::flow.nodes.slack.message'))

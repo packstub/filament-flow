@@ -6,6 +6,18 @@ All notable changes to `packstub/filament-flow` are documented here.
 
 ### Added
 
+- **Secrets store**: a `Secrets` page (`SecretResource`, `flow_secrets` table, `Secret` model with an `encrypted` cast) for tokens and webhook URLs. Actions read them as `{{ secrets.<key> }}`; the placeholder resolves only while an action runs (`Placeholders::allowSecrets()`), and every resolved value is masked (`••••••`) in step messages, outputs and the run error. `FlowPlugin::withoutSecrets()` / `secretResource()`.
+- **Dedup windows**: "Not more than once per record every N days" on the record triggers (`dedup_days`), next to "Run once per record"; `Flow::suppress(fn () => ...)` disables every trigger inside a callback (imports, seeders).
+- **Record updated → Changed from / Changed to**: with attributes to watch, the trigger can require the old and / or new value ("status from pending to paid").
+- **State transitioned** trigger and **Transition state** action for `spatie/laravel-model-states`, **Status changed** trigger for `spatie/laravel-model-status`; offered only when the package is installed (`Node::isAvailable()`).
+- **Deep links**: `{{ model.url }}` resolves to the record's page in the panel (view or edit page of the Filament resource registered for its model, `ResourceUrl`); **Send notification** and **Send email** gained an optional button (label + URL, defaulting to `{{ model.url }}`).
+- **Run workflow from any resource**: `RunWorkflowAction` (record action) and `RunWorkflowBulkAction` list the active workflows whose Manual trigger accepts the record type and start them with the record as `{{ model }}`; the Manual trigger has an optional "Record type" setting.
+- **Per-workflow run settings**: "Keep runs for (days)" (`prune_after_days`, honoured by `packstub-flow:prune`) and "Deactivate after consecutive failures" (`max_consecutive_failures`, `consecutive_failures`), which switches the workflow off, fires `WorkflowDeactivated` and notifies the panel users in `notifications.recipients`.
+- **Conditions**: `is null`, `is not null`, `matches regular expression`, `is a date before / after` operators; `changed`, `changed from`, `changed to` on Record attribute; a **Multiple conditions** node (AND / OR over several rules).
+- **Schedule catch-up**: `packstub-flow:cron` remembers its last run and, with `schedule_catch_up_minutes` (or `--catch-up=N`), evaluates the missed minutes; `schedule_on_one_server` adds `onOneServer()` to the scheduled command.
+- **More channels**: Send Discord message, Send Teams message (Workflows Adaptive Card or classic connector), Send Telegram message, Send SMS (Twilio, with a WhatsApp switch). Slack's webhook URL accepts placeholders (`{{ secrets.slack_webhook }}`).
+- `Node::getOutputs()` describes a node's output handles (`toArray()` exposes them to the canvas); `Placeholders::actionDocumentation()`; `max_nesting` config.
+
 - **Action outputs**: an action can call `$this->output([...])`; the nodes after it on the same branch read it as `{{ last.* }}` and `{{ outputs.<node id>.* }}`. `HttpRequest` exposes `status`, `ok`, `body` (decoded JSON) and `headers`; `UpdateRecord` exposes `changes`. Outputs are stored on the step log (up to `max_output_bytes`) and shown in the run details.
 - **Per-node error handling**: every action node has an *Error handling* section — retries (with a pause between them) and *Fail the run* / *Log it and continue* after the last failure. Stored as `_retries`, `_retry_after` and `_on_error` in the node config; the runner strips them before calling the action.
 - **Placeholder filters**: `{{ value | date:Y-m-d }}`, `upper`, `lower`, `title`, `trim`, `truncate:<n>`, `number:<decimals>`, `default:<value>`, `json`, `count`, `join:<glue>`, `first`, `last`; `Placeholders::raw()` / `isSingle()` for nodes that need a typed value.
@@ -30,6 +42,8 @@ All notable changes to `packstub/filament-flow` are documented here.
 
 ### Changed
 
+- **Nested runs are capped instead of blocked**: an event fired inside a run (a record saved with events on, a mail) can start another workflow up to `max_nesting` levels deep (5); the wildcard event listener no longer ignores every event dispatched during a run.
+- Migration: `flow_secrets` table; `prune_after_days`, `max_consecutive_failures` and `consecutive_failures` on the workflows table.
 - **Outgoing requests are guarded**: `HttpRequest` and `SendSlackMessage` refuse URLs that are not `http(s)` or whose host resolves to a private / reserved address (`UrlGuard`), unless `http.block_private_networks` is off or the host is in `http.allowed_hosts`. The host is resolved through the system resolver as well as DNS (so `/etc/hosts` and macOS `/etc/resolver` rules count), and a host that cannot be resolved is refused rather than let through. Requests have a timeout (15 s default) and per-node retries; placeholder values in the URL are URL-encoded.
 - **HTTP JSON bodies are built safely**: placeholders inside JSON strings are escaped, bare placeholders become the raw value; a value can no longer add keys to the body.
 - **`UpdateRecord` respects `$fillable` / `$guarded`** and fails the run naming a guarded attribute; the new *Bypass mass-assignment protection* toggle restores `forceFill()`. A value that is exactly one placeholder keeps its type.

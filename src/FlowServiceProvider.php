@@ -17,11 +17,15 @@ use Packstub\Flow\Engine\Dispatcher;
 use Packstub\Flow\Filament\Livewire\ManageNode;
 use Packstub\Flow\Http\Controllers\WebhookController;
 use Packstub\Flow\Listeners\DispatchEventTriggers;
+use Packstub\Flow\Listeners\DispatchStateChanged;
+use Packstub\Flow\Listeners\DispatchStatusUpdated;
 use Packstub\Flow\Listeners\DispatchUserRegistered;
 use Packstub\Flow\Observers\WorkflowObserver;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Spatie\ModelStates\Events\StateChanged;
+use Spatie\ModelStatus\Events\StatusUpdated;
 
 class FlowServiceProvider extends PackageServiceProvider
 {
@@ -69,6 +73,14 @@ class FlowServiceProvider extends PackageServiceProvider
         Event::listen(Registered::class, DispatchUserRegistered::class);
         Event::listen('*', DispatchEventTriggers::class);
 
+        if (class_exists(StateChanged::class)) {
+            Event::listen(StateChanged::class, DispatchStateChanged::class);
+        }
+
+        if (class_exists(StatusUpdated::class)) {
+            Event::listen(StatusUpdated::class, DispatchStatusUpdated::class);
+        }
+
         Livewire::component('packstub-flow-manage-node', ManageNode::class);
 
         FilamentAsset::register([
@@ -84,7 +96,11 @@ class FlowServiceProvider extends PackageServiceProvider
 
         if (config('packstub-flow.register_schedule', true)) {
             $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
-                $schedule->command('packstub-flow:cron')->everyMinute()->withoutOverlapping();
+                $cron = $schedule->command('packstub-flow:cron')->everyMinute()->withoutOverlapping();
+
+                if (config('packstub-flow.schedule_on_one_server', false)) {
+                    $cron->onOneServer();
+                }
 
                 if (config('packstub-flow.prune_runs_after_days')) {
                     $schedule->command('packstub-flow:prune')->daily();

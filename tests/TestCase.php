@@ -21,9 +21,12 @@ use Packstub\Flow\Engine\Dispatcher;
 use Packstub\Flow\FlowServiceProvider;
 use Packstub\Flow\Listeners\DispatchEventTriggers;
 use Packstub\Flow\Support\ModelFinder;
+use Packstub\Flow\Support\Placeholders;
+use Packstub\Flow\Support\Secrets;
 use Packstub\Flow\Tests\Fixtures\AdminPanelProvider;
 use Packstub\Flow\Tests\Fixtures\User;
 use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
+use Spatie\ModelStatus\Status;
 
 abstract class TestCase extends Orchestra
 {
@@ -36,6 +39,8 @@ abstract class TestCase extends Orchestra
         DispatchEventTriggers::flush();
         Dispatcher::flushCache();
         ModelFinder::flush();
+        Secrets::flush();
+        Placeholders::forgetUsedSecrets();
     }
 
     protected function getPackageProviders($app): array
@@ -73,8 +78,9 @@ abstract class TestCase extends Orchestra
         $app['config']->set('app.key', 'base64:2fl+Ktv6fZ7c7ZQfF1Zt6Q0Wd9jz5bJ6rKq8nX0m3Yk=');
         $app['config']->set('mail.default', 'array');
         $app['config']->set('queue.default', 'sync');
-        $app['config']->set('packstub-flow.models_for_triggers', [Fixtures\Order::class]);
+        $app['config']->set('packstub-flow.models_for_triggers', [Fixtures\Order::class, Fixtures\Ticket::class]);
         $app['config']->set('packstub-flow.http.block_private_networks', false);
+        $app['config']->set('model-status.status_model', Status::class);
     }
 
     protected function migrate(): void
@@ -94,6 +100,21 @@ abstract class TestCase extends Orchestra
             $table->string('reference');
             $table->string('status')->default('pending');
             $table->decimal('total', 10, 2)->default(0);
+            $table->string('state')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('tickets', function (Blueprint $table): void {
+            $table->id();
+            $table->string('title');
+            $table->timestamps();
+        });
+
+        Schema::create('statuses', function (Blueprint $table): void {
+            $table->increments('id');
+            $table->string('name');
+            $table->text('reason')->nullable();
+            $table->morphs('model');
             $table->timestamps();
         });
 

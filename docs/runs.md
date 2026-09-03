@@ -59,7 +59,7 @@ php artisan packstub-flow:prune
 php artisan packstub-flow:prune --days=7
 ```
 
-Deletes **finished** runs (Succeeded or Failed) that started more than the given number of days ago — `prune_runs_after_days` from the config (30) when `--days` is omitted. Waiting runs are kept. Schedule it as you would any cleanup:
+Deletes **finished** runs (Succeeded or Failed) that started more than the given number of days ago — `prune_runs_after_days` from the config (30) when `--days` is omitted. A workflow with its own **Keep runs for (days)** setting (in the *Run settings* section of its form) uses that value instead. Waiting runs are kept. Schedule it as you would any cleanup:
 
 ```php
 Schedule::command('packstub-flow:prune')->daily();
@@ -67,7 +67,16 @@ Schedule::command('packstub-flow:prune')->daily();
 
 ### `packstub-flow:cron`
 
-Starts every active workflow whose **Schedule** trigger is due at the current minute. The plugin registers it with Laravel's scheduler for you; see [Queue & scheduling](queue-and-scheduling.md#schedules).
+Starts every active workflow whose **Schedule** trigger is due at the current minute — and, with `schedule_catch_up_minutes` (or `--catch-up=N`), for the minutes missed since the last run. The plugin registers it with Laravel's scheduler for you; see [Queue & scheduling](queue-and-scheduling.md#schedules).
+
+## Retention and failure limits
+
+The *Run settings* section of a workflow's form holds two per-workflow limits:
+
+| Setting | |
+| --- | --- |
+| Keep runs for (days) | Overrides `prune_runs_after_days` for this workflow |
+| Deactivate after consecutive failures | Once this many runs in a row have failed, the workflow is switched off (`is_active = false`), a `WorkflowDeactivated` event is fired, a warning is logged, and the panel users listed in `notifications.recipients` (config) get a database notification naming the workflow and the last error. A successful run resets the counter |
 
 ## Events
 
@@ -122,5 +131,8 @@ Typical failure messages:
 - **Maximum steps** — a run stops after visiting more than `max_steps` nodes (1000 by default). Set it in the config.
 - **Registered nodes only** — a definition can only instantiate classes registered with the plugin; anything else fails the run with "is not registered".
 - **Call depth** — nested **Call workflow** actions stop at 10 levels.
+- **Nesting depth** — a run can start other runs (a record update saved with events on fires **Record updated**, a mail fires an event…). Runs nested more than `max_nesting` levels deep (5 by default) are not started, so a workflow that updates its own record without *Save without firing events* stops instead of looping forever.
+- **Failure limit** — an optional per-workflow "deactivate after N consecutive failures" (see above).
+- **Suppression** — `Flow::suppress(fn () => ...)` runs a block of code with every trigger disabled.
 
 Next: [Queue & scheduling](queue-and-scheduling.md).

@@ -3,7 +3,9 @@
 namespace Packstub\Flow\Nodes\Triggers;
 
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Database\Eloquent\Model;
 use Packstub\Flow\Nodes\Trigger;
 use Packstub\Flow\Support\ModelFinder;
@@ -22,7 +24,15 @@ abstract class RecordTrigger extends Trigger
             Toggle::make('once')
                 ->label(__('packstub-flow::flow.nodes.record.once'))
                 ->helperText(__('packstub-flow::flow.nodes.record.once_help'))
-                ->default(false),
+                ->default(false)
+                ->live(),
+            TextInput::make('dedup_days')
+                ->label(__('packstub-flow::flow.nodes.record.dedup_days'))
+                ->helperText(__('packstub-flow::flow.nodes.record.dedup_days_help'))
+                ->numeric()
+                ->minValue(1)
+                ->maxValue(3650)
+                ->visible(fn (Get $get): bool => ! $get('once')),
         ];
     }
 

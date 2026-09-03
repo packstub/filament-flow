@@ -1,5 +1,6 @@
 <?php
 
+use Packstub\Flow\Models\Secret;
 use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\Models\WorkflowRun;
 use Packstub\Flow\Models\WorkflowTrigger;
@@ -22,6 +23,7 @@ return [
         'workflows' => 'flow_workflows',
         'triggers' => 'flow_workflow_triggers',
         'runs' => 'flow_workflow_runs',
+        'secrets' => 'flow_secrets',
     ],
 
     /*
@@ -38,6 +40,7 @@ return [
         'workflow' => Workflow::class,
         'trigger' => WorkflowTrigger::class,
         'run' => WorkflowRun::class,
+        'secret' => Secret::class,
     ],
 
     /*
@@ -70,6 +73,11 @@ return [
     */
 
     'max_steps' => 1000,
+
+    // A run may start other runs (a non-quiet record update fires a "Record
+    // updated" trigger, "Call workflow" starts another workflow). Nested runs
+    // deeper than this are not started.
+    'max_nesting' => 5,
 
     // An action's output (an HTTP response, for example) is kept on the run's
     // step log up to this many bytes; larger outputs are stored as a preview.
@@ -108,6 +116,15 @@ return [
     */
 
     'register_schedule' => true,
+
+    // When the scheduler was not running for a while (a deploy, a crash),
+    // evaluate the minutes that were missed, up to this many, on the next
+    // packstub-flow:cron run. 0 evaluates the current minute only.
+    'schedule_catch_up_minutes' => (int) env('PACKSTUB_FLOW_SCHEDULE_CATCH_UP', 0),
+
+    // Run packstub-flow:cron on one server only (needs a cache driver that
+    // supports locks) when the scheduler runs on several.
+    'schedule_on_one_server' => (bool) env('PACKSTUB_FLOW_SCHEDULE_ONE_SERVER', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -160,14 +177,22 @@ return [
         Nodes\Triggers\UserRegistered::class,
         Nodes\Triggers\EventFired::class,
         Nodes\Triggers\WorkflowCalled::class,
+        // Offered only when the spatie package is installed.
+        Nodes\Triggers\StateTransitioned::class,
+        Nodes\Triggers\StatusChanged::class,
     ],
 
     'actions' => [
         Nodes\Actions\SendEmail::class,
         Nodes\Actions\SendNotification::class,
         Nodes\Actions\SendSlackMessage::class,
+        Nodes\Actions\SendDiscordMessage::class,
+        Nodes\Actions\SendTeamsMessage::class,
+        Nodes\Actions\SendTelegramMessage::class,
+        Nodes\Actions\SendSms::class,
         Nodes\Actions\HttpRequest::class,
         Nodes\Actions\UpdateRecord::class,
+        Nodes\Actions\TransitionState::class,
         Nodes\Actions\Wait::class,
         Nodes\Actions\CallWorkflow::class,
         Nodes\Actions\WriteLog::class,
@@ -176,6 +201,7 @@ return [
     'conditions' => [
         Nodes\Conditions\RecordAttribute::class,
         Nodes\Conditions\CompareValues::class,
+        Nodes\Conditions\MultipleConditions::class,
         Nodes\Conditions\TimeOfDay::class,
     ],
 
@@ -201,6 +227,20 @@ return [
     */
 
     'prune_runs_after_days' => 30,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    |
+    | Panel users (by email) who receive a database notification when a
+    | workflow is deactivated after failing too many times in a row.
+    |
+    */
+
+    'notifications' => [
+        'recipients' => array_values(array_filter(array_map('trim', explode(',', (string) env('PACKSTUB_FLOW_NOTIFY', ''))))),
+    ],
 
     /*
     |--------------------------------------------------------------------------

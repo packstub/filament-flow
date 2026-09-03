@@ -78,6 +78,12 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('packstub-flow:cron')->everyMinute()->onOneServer();
 ```
 
+With several servers running the scheduler, `schedule_on_one_server => true` adds `onOneServer()` for you (a cache driver with locks — Redis, database, Memcached — is required).
+
+### Missed minutes
+
+The command remembers when it last ran. With `schedule_catch_up_minutes` set (or `--catch-up=N` on the command), the minutes between that moment and now are evaluated too, so a `0 9 * * *` workflow still runs after a deploy that paused the scheduler over 09:00. The window is capped at the configured number of minutes; a workflow due in several of them runs once per minute it was due.
+
 Scheduled runs follow the same sync / queued rule as every other run: with the queue enabled, the cron command only dispatches jobs and returns quickly. Without it, due workflows run inside the scheduler tick one after another, under `withoutOverlapping()` — fine for a few quick workflows, and a reason to enable the queue once schedules do real work.
 
 With `register_schedule` on and a `prune_runs_after_days` value, `packstub-flow:prune` is scheduled daily too.

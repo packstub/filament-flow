@@ -3,6 +3,9 @@
 namespace Packstub\Flow\Nodes\Triggers;
 
 use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
+use Packstub\Flow\Support\Placeholders;
 
 /**
  * Fires when a record is saved with changes; optionally only when one of a
@@ -32,7 +35,17 @@ class RecordUpdated extends RecordTrigger
             TagsInput::make('watch')
                 ->label(__('packstub-flow::flow.nodes.record_updated.watch'))
                 ->placeholder('status')
-                ->helperText(__('packstub-flow::flow.nodes.record_updated.watch_help')),
+                ->helperText(__('packstub-flow::flow.nodes.record_updated.watch_help'))
+                ->live(),
+            TextInput::make('from')
+                ->label(__('packstub-flow::flow.nodes.record_updated.from'))
+                ->placeholder('pending')
+                ->helperText(__('packstub-flow::flow.nodes.record_updated.from_help'))
+                ->visible(fn (Get $get): bool => filled($get('watch'))),
+            TextInput::make('to')
+                ->label(__('packstub-flow::flow.nodes.record_updated.to'))
+                ->placeholder('paid')
+                ->visible(fn (Get $get): bool => filled($get('watch'))),
         ];
     }
 
@@ -48,9 +61,33 @@ class RecordUpdated extends RecordTrigger
             return true;
         }
 
-        $changed = array_keys((array) ($payload['changes'] ?? []));
+        $changes = (array) ($payload['changes'] ?? []);
+        $original = (array) ($payload['original'] ?? []);
+        $from = trim((string) ($config['from'] ?? ''));
+        $to = trim((string) ($config['to'] ?? ''));
 
-        return array_intersect($watch, $changed) !== [];
+        foreach ($watch as $attribute) {
+            if (! array_key_exists($attribute, $changes)) {
+                continue;
+            }
+
+            if ($from !== '' && ! $this->same($original[$attribute] ?? null, $from)) {
+                continue;
+            }
+
+            if ($to !== '' && ! $this->same($changes[$attribute], $to)) {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    protected function same(mixed $actual, string $expected): bool
+    {
+        return strcasecmp(Placeholders::stringify($actual), $expected) === 0;
     }
 
     public function getPlaceholders(): array

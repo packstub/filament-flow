@@ -21,6 +21,7 @@ use Packstub\Flow\Engine\Runner;
 use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\NodeRegistry;
 use Packstub\Flow\Nodes\Node;
+use Packstub\Flow\Support\Placeholders;
 use Throwable;
 
 /**
@@ -120,6 +121,10 @@ class ManageNode extends Component implements HasActions, HasForms
         $node = $this->node();
         $settings = $node?->getFormSchema() ?? [];
         $placeholders = $node?->getPlaceholders() ?? [];
+
+        if ($node?->getType() === NodeType::Action && $placeholders !== []) {
+            $placeholders = [...$placeholders, ...Placeholders::actionDocumentation()];
+        }
 
         $components = [
             Section::make(__('packstub-flow::flow.node_settings.general'))

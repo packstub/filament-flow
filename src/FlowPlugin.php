@@ -7,6 +7,7 @@ use Filament\Contracts\Plugin;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
+use Packstub\Flow\Filament\Resources\SecretResource;
 use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\Support\ModelFinder;
 
@@ -39,6 +40,11 @@ class FlowPlugin implements Plugin
     protected ?int $navigationSort = null;
 
     protected bool $hasResource = true;
+
+    /** @var class-string<SecretResource> */
+    protected string $secretResource = SecretResource::class;
+
+    protected bool $hasSecrets = true;
 
     /** @var (Closure(): bool)|null */
     protected ?Closure $authorize = null;
@@ -132,6 +138,24 @@ class FlowPlugin implements Plugin
         return $this;
     }
 
+    /** @param class-string<SecretResource> $resource */
+    public function secretResource(string $resource): static
+    {
+        $this->secretResource = $resource;
+
+        return $this;
+    }
+
+    /**
+     * Skip registering the Secrets resource.
+     */
+    public function withoutSecrets(): static
+    {
+        $this->hasSecrets = false;
+
+        return $this;
+    }
+
     /**
      * Who may see and manage workflows. Runs in addition to any policy on
      * the Workflow model and the packstub-flow.gate ability.
@@ -202,6 +226,12 @@ class FlowPlugin implements Plugin
         return $this->resource;
     }
 
+    /** @return class-string<SecretResource> */
+    public function getSecretResource(): string
+    {
+        return $this->secretResource;
+    }
+
     // ------------------------------------------------------------------
     // Panel integration
     // ------------------------------------------------------------------
@@ -220,6 +250,10 @@ class FlowPlugin implements Plugin
 
         if ($this->hasResource) {
             $panel->resources([$this->resource]);
+        }
+
+        if ($this->hasSecrets) {
+            $panel->resources([$this->secretResource]);
         }
     }
 
