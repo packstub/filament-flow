@@ -24,6 +24,12 @@
         "docs": "https://packstub.dev/docs/filament-flow"
     },
     "license": "MIT",
+    "funding": [
+        {
+            "type": "github",
+            "url": "https://github.com/sponsors/icaliman"
+        }
+    ],
     "authors": [
         {
             "name": "Ion Caliman",
