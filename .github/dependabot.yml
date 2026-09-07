@@ -12,3 +12,20 @@ updates:
       default-days: 7
     labels:
       - "dependencies"
+
+  # Svelte canvas build tooling (bun.lock); the built output lives in resources/dist.
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+    groups:
+      javascript:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
