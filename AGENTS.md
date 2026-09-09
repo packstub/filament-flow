@@ -17,9 +17,8 @@ bun run build               # rebuilds resources/dist (flow.js, flow.css) — co
 - `resources/js/` the Svelte 5 canvas (`@xyflow/svelte`, Tailwind v4), built with Vite into `resources/dist/` and registered with `FilamentAsset`.
 - `resources/lang/en/flow.php` every UI string, node name and description.
 - `config/packstub-flow.php`, `database/migrations/create_flow_tables.php.stub`.
-- `docs/` customer docs; `docs/images/` screenshots produced from `../../demos/filament-flow-demo/scripts/screenshots.mjs`.
+- `docs/` customer docs and `docs/images/` screenshots.
 - `art/` brand/listing art sources.
-- Demo app: `../../demos/filament-flow-demo`.
 
 ## Conventions
 
