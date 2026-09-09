@@ -9,7 +9,7 @@
     "devDependencies": {
         "@sveltejs/vite-plugin-svelte": "^7",
         "@tailwindcss/vite": "^4.3.3",
-        "@xyflow/svelte": "^1.6.5",
+        "@xyflow/svelte": "^1.6.6",
         "lucide-svelte": "^1",
         "svelte": "^5.57.0",
         "tailwindcss": "^4.3.3",
