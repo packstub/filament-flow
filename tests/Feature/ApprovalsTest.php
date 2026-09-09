@@ -28,6 +28,7 @@ function approvalWorkflow(array $config = []): Workflow
 }
 
 it('pauses on an approval, notifies the approvers and continues on approve', function (): void {
+    $this->freezeSecond();
     Mail::fake();
     $boss = createUser(['email' => 'boss@example.com']);
     $order = createOrder();
@@ -53,7 +54,7 @@ it('pauses on an approval, notifies the approvers and continues on approve', fun
 
     expect($notification['title'])->toBe('Refund ORD-0001')
         ->and(collect($notification['actions'])->pluck('name')->all())->toBe(['approve', 'reject', 'review'])
-        ->and($notification['actions'][0]['url'])->toContain('/flow/approvals/'.$wait->id.'/approved');
+        ->and($notification['actions'][0]['url'])->toBe($wait->decisionUrl('approved'));
 
     Mail::assertSent(WorkflowMail::class, fn (WorkflowMail $mail): bool => $mail->actionLabel === 'Approve' && str_contains((string) $mail->actionUrl, '/approved') && str_contains($mail->body, '/rejected'));
 

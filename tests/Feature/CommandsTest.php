@@ -24,11 +24,13 @@ it('runs a workflow by id or name from the console', function (): void {
 });
 
 it('prunes old finished runs', function (): void {
+    config()->set('packstub-flow.prune_runs_after_days', 7);
+
     $workflow = manualWorkflow();
 
-    $old = WorkflowRun::query()->create(['workflow_id' => $workflow->id, 'status' => RunStatus::Success, 'started_at' => Carbon::now()->subDays(40)]);
-    $waiting = WorkflowRun::query()->create(['workflow_id' => $workflow->id, 'status' => RunStatus::Delayed, 'started_at' => Carbon::now()->subDays(40)]);
-    $recent = WorkflowRun::query()->create(['workflow_id' => $workflow->id, 'status' => RunStatus::Failed, 'started_at' => Carbon::now()->subDays(3)]);
+    $old = WorkflowRun::query()->create(['workflow_id' => $workflow->id, 'status' => RunStatus::Success, 'started_at' => Carbon::now()->subDays(8)]);
+    $waiting = WorkflowRun::query()->create(['workflow_id' => $workflow->id, 'status' => RunStatus::Delayed, 'started_at' => Carbon::now()->subDays(8)]);
+    $recent = WorkflowRun::query()->create(['workflow_id' => $workflow->id, 'status' => RunStatus::Failed, 'started_at' => Carbon::now()->subDays(6)]);
 
     $this->artisan('packstub-flow:prune')->expectsOutputToContain('Deleted 1 run(s)')->assertSuccessful();
 

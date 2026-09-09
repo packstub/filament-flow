@@ -13,6 +13,7 @@ it('catches up missed minutes when enabled', function (): void {
     createWorkflow([triggerNode('t', Schedule::class, ['expression' => '* * * * *']), actionNode('a', EchoAction::class, ['template' => '{{ now | date:H:i }}'])], [edge('t', 'a')]);
 
     Cache::forever(RunScheduledWorkflowsCommand::LAST_RUN_KEY, now()->subMinutes(3)->getTimestamp());
+    config()->set('packstub-flow.schedule_catch_up_minutes', 0);
 
     $this->artisan('packstub-flow:cron')->assertSuccessful();
     expect(WorkflowRun::query()->count())->toBe(1);

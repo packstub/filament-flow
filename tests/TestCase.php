@@ -32,6 +32,14 @@ use Spatie\Tags\TagsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    /**
+     * Config pinned before the application boots, for values the provider
+     * reads while registering (webhook routes). Set through rebootWith().
+     *
+     * @var array<string, mixed>
+     */
+    public static array $bootConfig = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -44,6 +52,26 @@ abstract class TestCase extends Orchestra
         Secrets::flush();
         Placeholders::forgetUsedSecrets();
         Tenancy::resolveUsing(null);
+    }
+
+    protected function tearDown(): void
+    {
+        static::$bootConfig = [];
+
+        parent::tearDown();
+    }
+
+    /**
+     * Re-create the application with extra config pinned before it boots.
+     *
+     * @param  array<string, mixed>  $config
+     */
+    public function rebootWith(array $config): void
+    {
+        static::$bootConfig = $config;
+
+        $this->reloadApplication();
+        $this->migrate();
     }
 
     protected function getPackageProviders($app): array
@@ -86,8 +114,15 @@ abstract class TestCase extends Orchestra
         $app['config']->set('packstub-flow.models_for_triggers', [Fixtures\Order::class, Fixtures\Ticket::class]);
         $app['config']->set('packstub-flow.http.block_private_networks', false);
         $app['config']->set('packstub-flow.tenancy.relationship', 'team');
+        $app['config']->set('packstub-flow.gate', null);
+        $app['config']->set('packstub-flow.queue.enabled', false);
+        $app['config']->set('packstub-flow.queue.connection', null);
+        $app['config']->set('packstub-flow.schedule_catch_up_minutes', 0);
         $app['config']->set('model-status.status_model', Status::class);
 
+        foreach (static::$bootConfig as $key => $value) {
+            $app['config']->set($key, $value);
+        }
     }
 
     protected function migrate(): void

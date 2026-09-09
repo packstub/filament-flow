@@ -6,6 +6,7 @@ use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Jobs\RunWorkflowJob;
 use Packstub\Flow\Models\WorkflowRun;
+use Packstub\Flow\Models\WorkflowTrigger;
 use Packstub\Flow\Nodes\Triggers\Manual;
 use Packstub\Flow\Nodes\Triggers\RecordCreated;
 use Packstub\Flow\Nodes\Triggers\RecordDeleted;
@@ -146,7 +147,7 @@ it('does not query the triggers table when no active workflow uses the trigger',
     $order->update(['total' => 5]);
     $order->delete();
 
-    $queries = collect(DB::getQueryLog())->pluck('query')->filter(fn (string $sql): bool => str_contains($sql, 'flow_workflow_triggers'));
+    $queries = collect(DB::getQueryLog())->pluck('query')->filter(fn (string $sql): bool => str_contains($sql, (new WorkflowTrigger)->getTable()));
 
     expect($queries)->toHaveCount(1);
 

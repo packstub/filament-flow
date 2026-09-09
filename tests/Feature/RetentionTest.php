@@ -8,6 +8,8 @@ use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Models\WorkflowRun;
 
 it('prunes runs per workflow retention and the global default otherwise', function (): void {
+    config()->set('packstub-flow.prune_runs_after_days', 7);
+
     $custom = manualWorkflow(attributes: ['name' => 'Short retention', 'prune_after_days' => 2]);
     $default = manualWorkflow(attributes: ['name' => 'Default retention']);
 
@@ -17,8 +19,8 @@ it('prunes runs per workflow retention and the global default otherwise', functi
 
     $make($custom, 3);
     $keepCustom = $make($custom, 1);
-    $keepDefault = $make($default, 10);
-    $make($default, 40);
+    $keepDefault = $make($default, 6);
+    $make($default, 8);
 
     $this->artisan('packstub-flow:prune')->assertSuccessful();
 
