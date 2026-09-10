@@ -304,6 +304,8 @@ FlowBuilder::make('definition')
     ->columnSpanFull()
 ```
 
+`minHeight()` is the height the canvas opens with (600 px by default); the user can drag its bottom-right corner to make it taller for the current page.
+
 The field's state is the `{nodes, edges}` structure described in [Building workflows](building-workflows.md#how-a-definition-is-stored); the model attribute should be cast to `array`. The field validates the definition before it is saved — a trigger must exist, every other node must be connected, required settings must be filled — when the form has an `is_active` field that is on. `->withoutValidation()` skips those checks.
 
 ## Translations and views
