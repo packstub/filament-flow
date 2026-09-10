@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\Flow;
 use Packstub\Flow\Models\Concerns\BelongsToTenant;
+use Packstub\Flow\Support\WorkflowTransfer;
 use Throwable;
 
 /**
@@ -120,6 +121,31 @@ class Workflow extends Model
         $this->setRelation('latestVersion', $version);
 
         return $version;
+    }
+
+    /**
+     * The workflow as a portable document (see WorkflowTransfer).
+     *
+     * @return array<string, mixed>
+     */
+    public function export(): array
+    {
+        return WorkflowTransfer::export($this);
+    }
+
+    /**
+     * Create a workflow from an exported document, a template or a bare
+     * {nodes, edges} definition — for seeders and imports.
+     *
+     * @param  array<string, mixed>|string  $data
+     * @param  array<string, mixed>  $attributes
+     */
+    public static function import(array|string $data, array $attributes = []): static
+    {
+        /** @var static $workflow */
+        $workflow = WorkflowTransfer::import($data, $attributes);
+
+        return $workflow;
     }
 
     /** @return array<int, array<string, mixed>> */

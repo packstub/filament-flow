@@ -12,6 +12,7 @@ use Packstub\Flow\Filament\Pages\WorkflowRuns;
 use Packstub\Flow\Filament\Resources\SecretResource;
 use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\Support\ModelFinder;
+use Packstub\Flow\Support\Templates;
 use Packstub\Flow\Support\Tenancy;
 
 class FlowPlugin implements Plugin
@@ -59,6 +60,11 @@ class FlowPlugin implements Plugin
     /** @var int|(Closure(?Model): ?int)|null */
     protected int|Closure|null $maxWorkflows = null;
 
+    /** @var array<int, string|array<string, mixed>> */
+    protected array $templates = [];
+
+    protected bool $hasBuiltInTemplates = true;
+
     public static function make(): static
     {
         return app(static::class);
@@ -101,6 +107,29 @@ class FlowPlugin implements Plugin
     public function conditions(array $conditions): static
     {
         $this->conditions = [...$this->conditions, ...$conditions];
+
+        return $this;
+    }
+
+    /**
+     * Offer more templates on the Workflows page: paths to *.json export
+     * files, directories of them, or the documents as arrays.
+     *
+     * @param  array<int, string|array<string, mixed>>  $templates
+     */
+    public function templates(array $templates): static
+    {
+        $this->templates = [...$this->templates, ...$templates];
+
+        return $this;
+    }
+
+    /**
+     * Drop the templates shipped with the package (your own still show).
+     */
+    public function withoutBuiltInTemplates(bool $condition = true): static
+    {
+        $this->hasBuiltInTemplates = ! $condition;
 
         return $this;
     }
@@ -310,6 +339,8 @@ class FlowPlugin implements Plugin
             ->forget($this->without);
 
         ModelFinder::register($this->models);
+        Templates::register($this->templates);
+        Templates::withoutBuiltIn(! $this->hasBuiltInTemplates);
 
         if ($this->hasResource) {
             $panel->resources([$this->resource]);

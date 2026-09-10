@@ -92,3 +92,16 @@ test("marks the nodes an active workflow cannot be saved with", async ({ page })
     await expect(page.getByText(/Add at least one trigger/)).toBeVisible();
     await expect(page).toHaveURL(/\/admin\/workflows\/create$/);
 });
+
+test("starts a workflow from a template", async ({ page }) => {
+    await signIn(page);
+    await page.goto("/admin/workflows");
+    await page.getByRole("button", { name: "New from template" }).click();
+
+    await page.getByRole("radio", { name: /Welcome series/ }).check();
+    await page.getByRole("button", { name: "Create workflow" }).click();
+
+    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit$/);
+    await expect(page.locator(".fi-flow-canvas .svelte-flow__node")).toHaveCount(4);
+    await expect(page.locator(".fi-flow-canvas .svelte-flow__edge")).toHaveCount(3);
+});

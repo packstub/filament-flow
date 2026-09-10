@@ -25,6 +25,7 @@ Visual workflow automations for your Filament panel: draw triggers, conditions a
 - **[Secrets](#secrets)** — an encrypted store for API tokens and webhook URLs, used as `{{ secrets.slack_webhook }}` in actions only and masked in run logs; per tenant when you need it.
 - **[Approvals & signals](#approvals--signals)** — an **Ask for approval** step pauses the run until a person decides from a notification, an email link or the Approvals page, with Approved / Rejected / Timed out outputs; **Wait for signal** pauses it until your code calls `Flow::signal()`. Waits are database rows, so they survive deploys and queue restarts.
 - **[Multi-tenant](#multi-tenancy)** — in a panel with tenancy each team manages its own workflows, secrets, runs and approvals, global workflows run for every tenant, and a `maxWorkflows()` hook plugs plan limits in.
+- **[Templates, import & export](https://packstub.dev/docs/filament-flow/templates)** — start from a ready-made workflow (welcome series, high-value order alert, dunning, SLA escalation, approval) or your own, export any workflow as a JSON file, and import it in another panel or from a seeder with `Workflow::import()`.
 - **[Versioned](https://packstub.dev/docs/filament-flow/runs#versions)** — every change to a workflow is kept with who saved it and a summary of what changed; compare and restore from the Versions tab; runs pin the version they ran.
 - **[Run history](#runs)** — every run is stored with its status, trigger, record, payload summary, a step-by-step log with timings and outputs, and any error, browsable from a Runs tab and a cross-workflow Runs page with stats; **Test** (dry run), **Run now** and **Run again** buttons; jump from a failed step to its node on the canvas; per-workflow retention and a "deactivate after N consecutive failures" guard.
 - **[Queue & scheduling](#queue--scheduling)** — run workflows inline or on your queue (dispatched after your transaction commits), pause them for minutes or days with a Wait step, and start them from cron expressions with one scheduler entry.
@@ -334,6 +335,7 @@ Read more: [Configuration](https://packstub.dev/docs/filament-flow/configuration
 - [Placeholders](https://packstub.dev/docs/filament-flow/placeholders)
 - [Secrets](https://packstub.dev/docs/filament-flow/secrets)
 - [Approvals & signals](https://packstub.dev/docs/filament-flow/approvals)
+- [Templates, import and export](https://packstub.dev/docs/filament-flow/templates)
 - [Runs](https://packstub.dev/docs/filament-flow/runs)
 - [Multi-tenancy](https://packstub.dev/docs/filament-flow/tenancy)
 - [Queue & scheduling](https://packstub.dev/docs/filament-flow/queue-and-scheduling)

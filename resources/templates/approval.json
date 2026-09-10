@@ -1,0 +1,142 @@
+{
+  "format": "packstub-flow/1",
+  "key": "approval",
+  "name": "Approval before a record goes live",
+  "category": "Operations",
+  "description": "Ask a manager to approve a new record; publish it when approved, tell the author when rejected or after a day without an answer. Pick the model in the trigger.",
+  "settings": {},
+  "definition": {
+    "nodes": [
+      {
+        "id": "trigger-created",
+        "type": "trigger",
+        "position": {
+          "x": 0,
+          "y": 160
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Triggers\\RecordCreated",
+          "label": "Record created",
+          "description": "Choose the model that needs approval.",
+          "config": {
+            "model_class": null,
+            "once": true
+          }
+        }
+      },
+      {
+        "id": "action-approval",
+        "type": "action",
+        "position": {
+          "x": 320,
+          "y": 160
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\RequestApproval",
+          "label": "Ask a manager",
+          "description": "Leave approvers empty to let any panel user decide.",
+          "config": {
+            "approvers": "",
+            "title": "Approve {{ model.title }}?",
+            "body": "{{ model.author.name }} submitted it on {{ model.created_at | date:Y-m-d }}. {{ model.url }}",
+            "timeout": 1,
+            "timeout_unit": "days",
+            "notify": true,
+            "email": true
+          }
+        }
+      },
+      {
+        "id": "action-publish",
+        "type": "action",
+        "position": {
+          "x": 720,
+          "y": 20
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\UpdateRecord",
+          "label": "Publish",
+          "description": null,
+          "config": {
+            "attributes": {
+              "status": "published"
+            },
+            "silently": false,
+            "force": false
+          }
+        }
+      },
+      {
+        "id": "action-rejected",
+        "type": "action",
+        "position": {
+          "x": 720,
+          "y": 180
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\SendNotification",
+          "label": "Tell the author",
+          "description": null,
+          "config": {
+            "title": "{{ model.title }} was not approved",
+            "body": "{{ approval.comment | default:No comment was left. }}",
+            "status": "warning",
+            "recipients": "{{ model.author.email }}",
+            "action_label": "Open",
+            "action_url": "{{ model.url }}"
+          }
+        }
+      },
+      {
+        "id": "action-timeout",
+        "type": "action",
+        "position": {
+          "x": 720,
+          "y": 340
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\SendNotification",
+          "label": "Nudge the manager",
+          "description": null,
+          "config": {
+            "title": "{{ model.title }} is waiting for approval",
+            "body": "No decision after a day.",
+            "status": "info",
+            "action_label": "Review",
+            "action_url": "{{ model.url }}"
+          }
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "trigger-created",
+        "sourceHandle": "output",
+        "target": "action-approval",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e2",
+        "source": "action-approval",
+        "sourceHandle": "approved",
+        "target": "action-publish",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e3",
+        "source": "action-approval",
+        "sourceHandle": "rejected",
+        "target": "action-rejected",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e4",
+        "source": "action-approval",
+        "sourceHandle": "timed_out",
+        "target": "action-timeout",
+        "targetHandle": "input"
+      }
+    ]
+  }
+}

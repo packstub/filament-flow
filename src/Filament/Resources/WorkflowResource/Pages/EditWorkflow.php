@@ -12,6 +12,7 @@ use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
@@ -19,6 +20,8 @@ use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\NodeRegistry;
 use Packstub\Flow\Support\ModelFinder;
+use Packstub\Flow\Support\WorkflowTransfer;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EditWorkflow extends EditRecord
 {
@@ -29,8 +32,28 @@ class EditWorkflow extends EditRecord
         return [
             static::testAction(),
             WorkflowResource::runNowAction(),
+            static::exportAction(),
             DeleteAction::make(),
         ];
+    }
+
+    /**
+     * Download the workflow as a JSON document (see WorkflowTransfer), to
+     * import into another install or keep in version control.
+     */
+    public static function exportAction(): Action
+    {
+        return Action::make('export')
+            ->label(__('packstub-flow::flow.transfer.export'))
+            ->icon('heroicon-o-arrow-down-tray')
+            ->color('gray')
+            ->action(fn (Workflow $record): StreamedResponse => response()->streamDownload(
+                function () use ($record): void {
+                    echo WorkflowTransfer::toJson($record);
+                },
+                Str::slug($record->name).'.flow.json',
+                ['Content-Type' => 'application/json'],
+            ));
     }
 
     /**

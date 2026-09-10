@@ -16,6 +16,7 @@ use Packstub\Flow\Models\WorkflowTrigger;
 use Packstub\Flow\Models\WorkflowVersion;
 use Packstub\Flow\Models\WorkflowWait;
 use Packstub\Flow\Support\Tenancy;
+use Packstub\Flow\Support\WorkflowTransfer;
 
 /**
  * Entry point: dispatch a trigger, run a workflow, reach the registry.
@@ -206,6 +207,23 @@ class Flow
     public function isSuppressed(): bool
     {
         return static::$suppressed > 0;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function export(Workflow $workflow): array
+    {
+        return WorkflowTransfer::export($workflow);
+    }
+
+    /**
+     * @param  array<string, mixed>|string  $data
+     * @param  array<string, mixed>  $attributes
+     */
+    public function import(array|string $data, array $attributes = []): Workflow
+    {
+        return WorkflowTransfer::import($data, $attributes);
     }
 
     public function registry(): NodeRegistry

@@ -1,0 +1,103 @@
+{
+  "format": "packstub-flow/1",
+  "key": "welcome-series",
+  "name": "Welcome series",
+  "category": "Onboarding",
+  "description": "Greet a new user right away, then follow up two days later with a tip.",
+  "settings": {},
+  "definition": {
+    "nodes": [
+      {
+        "id": "trigger-registered",
+        "type": "trigger",
+        "position": {
+          "x": 0,
+          "y": 80
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Triggers\\UserRegistered",
+          "label": "User registered",
+          "description": null,
+          "config": {}
+        }
+      },
+      {
+        "id": "action-welcome",
+        "type": "action",
+        "position": {
+          "x": 320,
+          "y": 80
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\SendEmail",
+          "label": "Welcome email",
+          "description": null,
+          "config": {
+            "recipient": "{{ model.email }}",
+            "subject": "Welcome aboard, {{ model.name }}!",
+            "body": "Hi {{ model.name }},\n\nThanks for joining. Here is where to start: {{ model.url }}\n\nReply to this email if you have any question."
+          }
+        }
+      },
+      {
+        "id": "action-wait",
+        "type": "action",
+        "position": {
+          "x": 640,
+          "y": 80
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\Wait",
+          "label": "Wait 2 days",
+          "description": null,
+          "config": {
+            "mode": "duration",
+            "duration": 2,
+            "unit": "days"
+          }
+        }
+      },
+      {
+        "id": "action-tip",
+        "type": "action",
+        "position": {
+          "x": 960,
+          "y": 80
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\SendEmail",
+          "label": "Follow-up tip",
+          "description": null,
+          "config": {
+            "recipient": "{{ model.email }}",
+            "subject": "One thing people miss on day two",
+            "body": "Hi {{ model.name }},\n\nA quick tip now that you have had a look around: …"
+          }
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "trigger-registered",
+        "sourceHandle": "output",
+        "target": "action-welcome",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e2",
+        "source": "action-welcome",
+        "sourceHandle": "output",
+        "target": "action-wait",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e3",
+        "source": "action-wait",
+        "sourceHandle": "output",
+        "target": "action-tip",
+        "targetHandle": "input"
+      }
+    ]
+  }
+}
