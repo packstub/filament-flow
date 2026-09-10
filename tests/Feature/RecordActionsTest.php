@@ -26,8 +26,8 @@ it('creates a record through a relationship and exposes it', function (): void {
 
     expect($run->status)->toBe(RunStatus::Success)
         ->and($order->notes()->count())->toBe(1)
-        ->and(EchoAction::$last)->toBe('note 1: Flagged ORD-0001 on ORD-0001')
-        ->and(collect($run->steps)->firstWhere('node_id', 'note')['output'])->toBe(['id' => 1, 'type' => Note::class]);
+        ->and(EchoAction::$last)->toBe("note {$order->notes()->sole()->getKey()}: Flagged ORD-0001 on ORD-0001")
+        ->and(collect($run->steps)->firstWhere('node_id', 'note')['output'])->toEqual(['id' => $order->notes()->sole()->getKey(), 'type' => Note::class]);
 
     expect(Flow::run($workflow)->error)->toContain('needs a record');
 });

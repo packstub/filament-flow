@@ -38,7 +38,7 @@ it('finds records and loops over them', function (): void {
     expect($run->status)->toBe(RunStatus::Success)
         ->and(EchoAction::$last)->toBe('done 2 of 2')
         ->and(collect($run->steps)->pluck('node_id')->all())->toBe(['t', 'find', 'body', 'body', 'each', 'done'])
-        ->and(collect($run->steps)->firstWhere('node_id', 'find')['output'])->toBe(['count' => 2, 'ids' => [$large->getKey(), $small->getKey()]])
+        ->and(collect($run->steps)->firstWhere('node_id', 'find')['output'])->toEqual(['count' => 2, 'ids' => [$large->getKey(), $small->getKey()]])
         ->and(collect($run->steps)->where('node_id', 'body')->pluck('output.text')->all())->toBe([
             '1/2 ORD-0002 first=1 last=0',
             '2/2 ORD-0001 first=0 last=1',

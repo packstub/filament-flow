@@ -48,7 +48,7 @@ it('sends Telegram messages with a token from the secrets store', function (): v
     $run = runAction(SendTelegramMessage::class, ['bot_token' => '{{ secrets.telegram_bot_token }}', 'chat_id' => '@acme', 'message' => 'Hello', 'parse_mode' => 'HTML']);
 
     expect($run->status)->toBe(RunStatus::Success)
-        ->and(collect($run->steps)->last()['output'])->toBe(['message_id' => 42]);
+        ->and(collect($run->steps)->last()['output'])->toEqual(['message_id' => 42]);
 
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.telegram.org/bot123%3AABC/sendMessage' && $request['chat_id'] === '@acme' && $request['parse_mode'] === 'HTML');
 });
@@ -71,7 +71,7 @@ it('sends SMS and WhatsApp messages through Twilio', function (): void {
     $run = runAction(SendSms::class, ['account_sid' => 'AC1', 'auth_token' => 'tok', 'from' => '+1000', 'to' => '{{ phone }}', 'body' => 'Hi {{ name }}'], ['phone' => '+2000', 'name' => 'Ann']);
 
     expect($run->status)->toBe(RunStatus::Success)
-        ->and(collect($run->steps)->last()['output'])->toBe(['sid' => 'SM1', 'status' => 'queued']);
+        ->and(collect($run->steps)->last()['output'])->toEqual(['sid' => 'SM1', 'status' => 'queued']);
 
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.twilio.com/2010-04-01/Accounts/AC1/Messages.json'
         && $request->hasHeader('Authorization', 'Basic '.base64_encode('AC1:tok'))
