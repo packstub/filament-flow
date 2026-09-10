@@ -25,6 +25,8 @@ use Throwable;
  * @property int|null $max_consecutive_failures
  * @property int $consecutive_failures
  * @property string|null $on_failure_workflow_id
+ * @property string|null $created_by
+ * @property string|null $updated_by
  * @property string|null $tenant_type
  * @property string|null $tenant_id
  */
