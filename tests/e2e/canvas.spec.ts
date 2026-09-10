@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { existsSync } from "node:fs";
 
 // Add a trigger, connect an action to it, save — the path every user takes.
 test("builds a workflow on the canvas and saves it", async ({ page }) => {
@@ -104,4 +105,62 @@ test("starts a workflow from a template", async ({ page }) => {
     await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit$/);
     await expect(page.locator(".fi-flow-canvas .svelte-flow__node")).toHaveCount(4);
     await expect(page.locator(".fi-flow-canvas .svelte-flow__edge")).toHaveCount(3);
+});
+
+// The real Ask AI node, offered by the workbench once packstub/agents is
+// installed (composer require packstub/agents --dev; CI's canvas job does):
+// its own AI group in the sidebar, the teal look on the canvas, the settings
+// slide-over, and a dry run that names the model it would ask.
+test("offers the real Ask AI node in the AI group and dry-runs it", async ({ page }) => {
+    test.skip(!existsSync("vendor/packstub/agents"), "packstub/agents is not installed in the workbench");
+
+    await signIn(page);
+    await page.goto("/admin/workflows/create");
+    await page.getByRole("textbox", { name: /^Name/ }).fill("Triage with AI");
+
+    const canvas = page.locator(".fi-flow-canvas");
+    await canvas.getByRole("button", { name: "Add a trigger" }).click();
+    await canvas.locator(".fi-flow-sidebar").getByRole("button", { name: /^Manual/ }).click();
+    await expect(canvas.locator(".svelte-flow__node")).toHaveCount(1);
+
+    // The groups: the three built-in ones, then AI because Ask AI is offered.
+    await canvas.locator(".svelte-flow__node").getByRole("button", { name: "Add node" }).click();
+    const sidebar = canvas.locator(".fi-flow-sidebar");
+    await expect(sidebar.getByRole("button", { name: /^Triggers/ })).toBeVisible();
+    await expect(sidebar.getByRole("button", { name: /^Conditions/ })).toBeVisible();
+    await sidebar.getByRole("button", { name: /^AI Ask a model/ }).click();
+    await expect(sidebar.getByRole("heading", { name: "AI" })).toBeVisible();
+    await sidebar.getByRole("button", { name: /^Ask AI/ }).click();
+
+    const askAi = canvas.locator(".svelte-flow__node").filter({ hasText: "Ask AI" });
+    await expect(askAi).toHaveCount(1);
+    await expect(askAi.locator(".bg-teal-600")).toBeVisible();
+    await expect(canvas.locator(".svelte-flow__edge")).toHaveCount(1);
+
+    // The settings come from the engine: the model picker lists the platform's entries.
+    await askAi.dblclick();
+    const slideOver = page.locator(".fi-modal-window").filter({ hasText: "Ask AI" });
+    await slideOver.getByRole("textbox", { name: /^Question/ }).fill("Is order {{ manual }} urgent?");
+    await slideOver.getByRole("textbox", { name: /^Name/ }).last().fill("urgent");
+    await slideOver.getByRole("combobox", { name: /^Type/ }).selectOption("boolean");
+    await expect(slideOver.getByRole("combobox", { name: /^Model/ }).locator("option", { hasText: /Claude/ }).first()).toBeAttached();
+    await slideOver.getByRole("button", { name: "Apply" }).click();
+    await expect(slideOver).toBeHidden();
+
+    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit$/);
+
+    // Loaded from the saved definition, the node finds its group again by identifier.
+    const saved = page.locator(".fi-flow-canvas .svelte-flow__node").filter({ hasText: "Ask AI" });
+    await expect(saved).toHaveCount(1);
+    await expect(saved.locator(".bg-teal-600")).toBeVisible();
+
+    // A test run never asks the model and logs the one it would ask.
+    await page.getByRole("button", { name: "Test", exact: true }).click();
+    await page.getByRole("button", { name: "Run test" }).click();
+    const result = page.locator(".fi-modal-window").filter({ hasText: "Test result" });
+    await expect(result).toBeVisible();
+    await expect(result.getByText("simulated", { exact: true })).toBeVisible();
+    await result.getByText("Would use").click();
+    await expect(result.getByText(/"would_ask": "Claude/)).toBeVisible();
 });

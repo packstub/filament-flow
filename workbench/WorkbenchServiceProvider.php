@@ -6,6 +6,9 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Ai\AiServiceProvider;
+use Laravel\Mcp\Server\McpServiceProvider;
+use Packstub\Agents\AgentsServiceProvider;
 use Packstub\Flow\Tests\Fixtures\Order;
 use Packstub\Flow\Tests\Fixtures\User;
 
@@ -13,6 +16,10 @@ use Packstub\Flow\Tests\Fixtures\User;
  * The app behind `vendor/bin/testbench serve` for the Playwright smoke test.
  * The skeleton's sqlite file starts empty, so the schema and the user are
  * created here, on the first boot, before the panel handles anything.
+ *
+ * With packstub/agents installed (`composer require packstub/agents --dev`,
+ * PHP 8.4; CI's canvas job does it) the engine is registered too, so the
+ * real Ask AI node is offered and the AI group shows in the sidebar.
  */
 class WorkbenchServiceProvider extends ServiceProvider
 {
@@ -26,6 +33,20 @@ class WorkbenchServiceProvider extends ServiceProvider
         $this->app['config']->set('packstub-flow.models_for_triggers', [Order::class]);
         $this->app['config']->set('packstub-flow.queue.enabled', false);
 
+        if (static::engineInstalled()) {
+            $this->app->register(AiServiceProvider::class);
+            $this->app->register(McpServiceProvider::class);
+            $this->app->register(AgentsServiceProvider::class);
+
+            // No MCP endpoint in the smoke test; a key so the model picker lists the provider's entries.
+            $this->app['config']->set('packstub-agents.mcp.enabled', false);
+            $this->app['config']->set('ai.providers.anthropic.key', 'e2e-placeholder');
+        }
+    }
+
+    public static function engineInstalled(): bool
+    {
+        return class_exists(AgentsServiceProvider::class);
     }
 
     public function boot(): void
@@ -75,6 +96,12 @@ class WorkbenchServiceProvider extends ServiceProvider
         });
 
         (include __DIR__.'/../database/migrations/create_flow_tables.php.stub')->up();
+
+        if (static::engineInstalled()) {
+            foreach (glob(dirname(__DIR__).'/vendor/packstub/agents/database/migrations/*.php') ?: [] as $migration) {
+                (include $migration)->up();
+            }
+        }
 
         User::query()->create([
             'name' => 'Admin',

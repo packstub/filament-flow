@@ -13,6 +13,7 @@ bun run build               # rebuilds resources/dist (flow.js, flow.css) — co
 bun run check               # svelte-check
 bun run test                # vitest, tests/js
 bun run test:e2e            # Playwright, tests/e2e, boots `vendor/bin/testbench serve` (testbench.yaml + workbench/) itself; run `vendor/bin/testbench filament:assets` once first
+composer require packstub/agents --dev   # optional, PHP 8.4: the workbench then offers the real Ask AI node and the e2e suite covers it (skipped otherwise); CI's canvas job does this — never commit the composer.json change
 DB_CONNECTION=mysql DB_DATABASE=... composer test   # the suite on a MySQL server (schema built once, a transaction per test)
 ```
 
