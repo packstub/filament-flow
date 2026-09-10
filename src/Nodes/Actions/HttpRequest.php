@@ -168,6 +168,18 @@ class HttpRequest extends Action
      *
      * @param  array<string, mixed>  $payload
      */
+    /**
+     * The JSON body with placeholders filled in, decoded — for other
+     * actions that send JSON the same way (Send to Zapier, Make or n8n).
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function interpolateBody(?string $raw, array $payload): mixed
+    {
+        return $this->decodeBody($raw, $payload);
+    }
+
+    /** @param array<string, mixed> $payload */
     protected function decodeBody(?string $raw, array $payload): mixed
     {
         if ($raw === null || trim($raw) === '') {

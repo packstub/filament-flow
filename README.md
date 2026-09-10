@@ -146,6 +146,7 @@ Actions do the work. Each one's settings are a small Filament form; text fields 
 | Send Slack / Discord / Teams / Telegram message | Posts to a Slack or Discord webhook, a Teams Workflows webhook, or a Telegram bot chat |
 | Send SMS (Twilio) | An SMS or WhatsApp message through the Twilio Messages API |
 | HTTP request | Calls any URL with headers and a JSON body; can fail the run on a 4xx / 5xx response |
+| Send to Zapier, Make or n8n | Posts the run (or a JSON body of your own) to a Catch Hook, custom webhook or Webhook node, signed with HMAC-SHA256, so the integration side happens on the platform you already use |
 | Update record | Sets attributes on the record that started the run, quietly by default |
 | Create record | Creates a record, on its own or through a relationship of the current one |
 | Assign owner | Sets a user on the record: a fixed one, or round robin over a list |

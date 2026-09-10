@@ -119,6 +119,50 @@ The response is available to the nodes after the request:
 
 Destinations are checked before the request is sent: private and reserved addresses (`localhost`, `10.x`, `192.168.x`, `169.254.x`, …) are refused, and `http.allowed_hosts` in the config can restrict requests to a list of hosts. See [Configuration](configuration.md#outgoing-http).
 
+## Send to Zapier, Make or n8n
+
+Hands the run to an automation platform: Filament Flow is the in-app half (it knows your records, your users and your panel), Zapier, Make or n8n is the integration half (thousands of apps, no code). The action is an HTTP POST with a JSON body and an HMAC-SHA256 signature, so any webhook receiver works.
+
+| Setting | |
+| --- | --- |
+| Platform | Zapier (Catch Hook), Make (Custom webhook), n8n (Webhook node) or any receiver; only the hints change |
+| Webhook URL | The URL the platform gave you, or `{{ secrets.zapier_hook }}`; placeholders allowed |
+| What to send | **The whole run** (below) or **A JSON body of my own** — the same JSON field as [HTTP request](#http-request), placeholders and a bare `{{ model }}` included |
+| Signing secret | Optional; `{{ secrets.zapier_secret }}` rather than the value. See [Verifying the signature](#verifying-the-signature) |
+| Timeout, Fail the run on a 4xx / 5xx response | As for HTTP request |
+
+**The whole run** sends:
+
+```json
+{
+    "event": "record.updated",
+    "workflow": {"id": "9c1f…", "name": "Order shipped"},
+    "run": {"id": "9c20…", "trigger": "Packstub\\Flow\\Nodes\\Triggers\\RecordUpdated", "started_at": "2026-09-10T09:12:44+00:00"},
+    "model": {"type": "App\\Models\\Order", "id": 42, "url": "https://app.test/admin/orders/42/edit", "attributes": {"reference": "ORD-0042", "status": "shipped", "...": "..."}},
+    "changes": {"status": "shipped"},
+    "original": {"status": "paid"},
+    "webhook": {"...": "..."},
+    "event_data": {"...": "..."},
+    "outputs": {"http-1": {"status": 200, "...": "..."}},
+    "sent_at": "2026-09-10T09:12:45+00:00"
+}
+```
+
+`event` is the trigger's kind (`record.created`, `record.updated`, `record.deleted`, `date.reached`, `schedule`, `webhook`, `event`, `manual`, `user.registered`, `state.transitioned`, `status.changed`, `workflow.called`). Models are sent as their visible attributes (hidden ones such as passwords never leave), with the panel URL when a Filament resource exists for them; other objects in the payload become their public properties; secrets are never included. Every key is present only when the run has it, so a Zap built on an order update will not see `webhook`.
+
+The response is available as `{{ last.status }}`, `{{ last.ok }}` and `{{ last.body.* }}`, as for HTTP request. Destinations pass the same [network guard](configuration.md#outgoing-http).
+
+### Verifying the signature
+
+With a signing secret, every request carries `X-Flow-Timestamp` (Unix seconds) and `X-Flow-Signature`: the hex HMAC-SHA256 of `"<timestamp>.<raw body>"` with the secret. Verify it before trusting the payload, and reject timestamps older than a few minutes to stop replays:
+
+- **n8n**: a **Crypto** node (Action: *Hmac*, Type: *SHA256*, Value: `{{ $json.headers['x-flow-timestamp'] + '.' + $json.rawBody }}` — enable *Raw Body* on the Webhook node) followed by an **IF** comparing it to `{{ $json.headers['x-flow-signature'] }}`.
+- **Make**: a **Custom webhook** with *Get request headers* on, then a **Text parser** / **Set variable** step computing `sha256(…; hmac)` and a **Filter** on equality.
+- **Zapier**: a **Code by Zapier** step (`crypto.createHmac('sha256', secret).update(timestamp + '.' + rawBody).digest('hex')`), comparing with the header; Catch Raw Hook keeps the raw body.
+- **Your own endpoint**: `hash_equals(hash_hmac('sha256', $timestamp.'.'.$rawBody, $secret), $signature)`.
+
+(The plugin's own [webhook trigger](triggers.md#webhook) verifies incoming requests the simpler way, an HMAC of the body alone in `X-Signature`; to call another Filament Flow install, use the **HTTP request** action and a shared secret there.)
+
 ## Update record
 
 Sets attributes on the record that started the run — the `model` in the payload of a record trigger, the user of **User registered**, or whatever you passed as `model` to `Flow::run()`.
