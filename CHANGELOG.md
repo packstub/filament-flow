@@ -17,6 +17,8 @@ All notable changes to `packstub/filament-flow` are documented here.
 - **Audit trail**: `created_by` / `updated_by` on workflows (the user's email or id; a guarded `add_audit_columns_to_flow_workflows` migration adds them to existing installs), "Last saved by … " under the edit page title, two hidden-by-default table columns; with `spatie/laravel-activitylog` installed, `created` / `updated` / `activated` / `deactivated` / `deleted` entries under the `packstub-flow` log (`audit.activity_log`, `audit.log_name`; `Audit::record()`).
 - **Replicate** gives the copy its own webhook tokens (`WorkflowTransfer::freshWebhookTokens()`), so a copy never answers to the original's URL.
 
+- **Send to Zapier, Make or n8n** action (`SendToAutomation`): posts the whole run (trigger kind, workflow, run, the record's visible attributes with its panel URL, changes, original, webhook / event data, earlier outputs) or a JSON body of your own to a Catch Hook, custom webhook, Webhook node or any receiver, with `X-Flow-Timestamp` and an `X-Flow-Signature` HMAC-SHA256 header when a signing secret is set; response exposed as `{{ last.* }}`; the outgoing network guard applies. Verification recipes for the three platforms in the docs.
+
 ### Changed
 
 - The node settings slide-over keeps a node's settings under their own `config` key in the form, so a custom node whose schema has a field called `label` or `description` no longer collides with the General section. `ManageNode::open()` takes `label` and `description` as separate arguments; the flat shape is still accepted. The `packstub-flow-node-updated` event carries `label`, `description` and `config` separately.

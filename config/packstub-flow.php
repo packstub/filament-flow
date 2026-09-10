@@ -279,6 +279,7 @@ return [
         Nodes\Actions\SendTelegramMessage::class,
         Nodes\Actions\SendSms::class,
         Nodes\Actions\HttpRequest::class,
+        Nodes\Actions\SendToAutomation::class,
         Nodes\Actions\UpdateRecord::class,
         Nodes\Actions\CreateRecord::class,
         Nodes\Actions\AssignOwner::class,

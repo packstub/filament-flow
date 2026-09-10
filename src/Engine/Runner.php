@@ -52,6 +52,9 @@ class Runner
     /** How many runs are executing synchronously in this process, one inside another. */
     protected static int $depth = 0;
 
+    /** @var array<int, WorkflowRun> the runs in progress, outermost first */
+    protected static array $running = [];
+
     protected Graph $graph;
 
     protected NodeRegistry $registry;
@@ -178,6 +181,15 @@ class Runner
         return static::$depth;
     }
 
+    /**
+     * The run being executed right now (the innermost one while a workflow
+     * calls another), for actions that report on the run itself.
+     */
+    public static function currentRun(): ?WorkflowRun
+    {
+        return static::$running[array_key_last(static::$running) ?? -1] ?? null;
+    }
+
     /** @return array<string, mixed> */
     public function getPayload(): array
     {
@@ -202,6 +214,7 @@ class Runner
     protected function execute(callable $callback): void
     {
         static::$depth++;
+        static::$running[] = $this->run;
 
         try {
             Tenancy::using($this->tenant(), $callback);
@@ -215,6 +228,7 @@ class Runner
             $this->fail($exception);
         } finally {
             static::$depth--;
+            array_pop(static::$running);
         }
     }
 
