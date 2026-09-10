@@ -4,15 +4,23 @@
     "type": "module",
     "scripts": {
         "dev": "vite build --watch",
-        "build": "vite build"
+        "build": "vite build",
+        "check": "svelte-check --tsconfig ./tsconfig.json",
+        "test": "vitest run",
+        "test:e2e": "playwright test"
     },
     "devDependencies": {
+        "@playwright/test": "^1.63.0",
         "@sveltejs/vite-plugin-svelte": "^7",
         "@tailwindcss/vite": "^4.3.3",
+        "@types/node": "^22.20.2",
         "@xyflow/svelte": "^1.6.6",
         "lucide-svelte": "^1",
         "svelte": "^5.57.0",
+        "svelte-check": "^4.7.6",
         "tailwindcss": "^4.3.3",
-        "vite": "^8"
+        "typescript": "^5",
+        "vite": "^8",
+        "vitest": "^5.0.0"
     }
 }

@@ -1,0 +1,48 @@
+# The app `vendor/bin/testbench serve` boots for the Playwright smoke test
+# (tests/e2e): the test fixtures' admin panel, the plugin, and one user.
+laravel: '@testbench'
+
+env:
+  - APP_KEY="base64:2fl+Ktv6fZ7c7ZQfF1Zt6Q0Wd9jz5bJ6rKq8nX0m3Yk="
+  - APP_URL="http://127.0.0.1:8787"
+  - DB_CONNECTION=sqlite
+  - CACHE_STORE=array
+  - SESSION_DRIVER=file
+  - QUEUE_CONNECTION=sync
+  - MAIL_MAILER=array
+
+providers:
+  - Filament\Actions\ActionsServiceProvider
+  - RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider
+  - BladeUI\Heroicons\BladeHeroiconsServiceProvider
+  - BladeUI\Icons\BladeIconsServiceProvider
+  - Filament\FilamentServiceProvider
+  - Filament\Forms\FormsServiceProvider
+  - Filament\Infolists\InfolistsServiceProvider
+  - Filament\Notifications\NotificationsServiceProvider
+  - Filament\Schemas\SchemasServiceProvider
+  - Filament\Support\SupportServiceProvider
+  - Filament\Tables\TablesServiceProvider
+  - Filament\Widgets\WidgetsServiceProvider
+  - Livewire\LivewireServiceProvider
+  - Spatie\Tags\TagsServiceProvider
+  - Packstub\Flow\FlowServiceProvider
+  - Packstub\Flow\Tests\Fixtures\AdminPanelProvider
+  - Packstub\Flow\Workbench\WorkbenchServiceProvider
+
+workbench:
+  start: '/admin'
+  install: true
+  health: false
+  discovers:
+    web: false
+    api: false
+    commands: false
+    components: false
+    factories: false
+    views: false
+  build:
+    - create-sqlite-db
+    - asset-publish
+  assets:
+    - laravel-assets
