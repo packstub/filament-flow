@@ -116,24 +116,30 @@ it('shows runs with their steps in the relation manager', function (): void {
 
 it('opens a new node with its schema defaults filled in', function (): void {
     Livewire::test(ManageNode::class)
-        ->call('open', 'n1', HttpRequest::class, ['label' => 'HTTP request'])
+        ->call('open', 'n1', HttpRequest::class, [], 'HTTP request')
         ->assertActionMounted('manageNode')
-        ->assertActionDataSet(['method' => 'POST', 'throw_on_error' => true, Runner::RETRIES => 0, Runner::ON_ERROR => 'fail'])
-        ->setActionData(['url' => 'https://api.example.com/x'])
+        ->assertActionDataSet(['label' => 'HTTP request', 'config.method' => 'POST', 'config.throw_on_error' => true, 'config.'.Runner::RETRIES => 0, 'config.'.Runner::ON_ERROR => 'fail'])
+        ->setActionData(['config.url' => 'https://api.example.com/x'])
         ->callMountedAction()
         ->assertHasNoActionErrors()
-        ->assertDispatched('packstub-flow-node-updated', id: 'n1');
+        ->assertDispatched('packstub-flow-node-updated', id: 'n1', label: 'HTTP request');
 });
 
 it('opens node settings only for registered nodes', function (): void {
     Livewire::test(ManageNode::class)
-        ->call('open', 'n1', SendEmail::class, ['label' => 'Send email', 'recipient' => 'a@b.c', 'subject' => 's', 'body' => 'b'])
+        ->call('open', 'n1', SendEmail::class, ['recipient' => 'a@b.c', 'subject' => 's', 'body' => 'b'], 'Send email')
         ->assertActionMounted('manageNode')
-        ->assertActionDataSet(['label' => 'Send email', 'recipient' => 'a@b.c'])
-        ->setActionData(['label' => 'Welcome mail', 'subject' => 'Hello {{ model.name }}'])
+        ->assertActionDataSet(['label' => 'Send email', 'config.recipient' => 'a@b.c'])
+        ->setActionData(['label' => 'Welcome mail', 'config.subject' => 'Hello {{ model.name }}'])
         ->callMountedAction()
         ->assertHasNoActionErrors()
-        ->assertDispatched('packstub-flow-node-updated', id: 'n1');
+        ->assertDispatched('packstub-flow-node-updated', id: 'n1', label: 'Welcome mail');
+
+    // The flat shape older canvases sent still opens.
+    Livewire::test(ManageNode::class)
+        ->call('open', 'n1', SendEmail::class, ['label' => 'Send email', 'recipient' => 'a@b.c'])
+        ->assertActionMounted('manageNode')
+        ->assertActionDataSet(['label' => 'Send email', 'config.recipient' => 'a@b.c']);
 
     Livewire::test(ManageNode::class)
         ->call('open', 'n1', stdClass::class, [])
@@ -142,10 +148,10 @@ it('opens node settings only for registered nodes', function (): void {
 
 it('validates node settings', function (): void {
     Livewire::test(ManageNode::class)
-        ->call('open', 'n1', SendEmail::class, ['label' => 'x'])
-        ->setActionData(['label' => '', 'recipient' => ''])
+        ->call('open', 'n1', SendEmail::class, [], 'x')
+        ->setActionData(['label' => '', 'config.recipient' => ''])
         ->callMountedAction()
-        ->assertHasActionErrors(['label', 'recipient']);
+        ->assertHasActionErrors(['label', 'config.recipient']);
 });
 
 it('runs a finished run again with the same payload', function (): void {

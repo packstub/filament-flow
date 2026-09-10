@@ -289,6 +289,15 @@ return [
         'empty_title' => 'Start with a trigger',
         'empty_description' => 'Add the event that starts this workflow, then connect actions and conditions to it.',
         'add_trigger' => 'Add a trigger',
+        'undo' => 'Undo',
+        'redo' => 'Redo',
+        'copy' => 'Copy',
+        'paste' => 'Paste',
+        'select_all' => 'Select all',
+        'delete_selection' => 'Delete :count nodes',
+        'duplicate_selection' => 'Duplicate :count nodes',
+        'copy_selection' => 'Copy :count nodes',
+        'node_problems' => 'This node has problems',
     ],
 
     'nodes' => [

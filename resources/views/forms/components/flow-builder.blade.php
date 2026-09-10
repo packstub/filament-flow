@@ -4,13 +4,14 @@
             state: $wire.{{ $applyStateBindingModifiers("\$entangle('{$getStatePath()}')") }},
             nodes: @js($getAvailableNodes()),
             labels: @js($getTranslations()),
+            minHeight: @js($getMinHeight()),
         })"
-        x-on:packstub-flow-open-node.window="$wire.dispatch('packstub-flow.open-node', { id: $event.detail.id, identifier: $event.detail.identifier, config: $event.detail.config })"
-        x-on:packstub-flow-node-updated.window="$dispatch('packstub-flow-apply-node', { id: $event.detail.id, config: $event.detail.config })"
+        x-on:packstub-flow-open-node.window="$wire.dispatch('packstub-flow.open-node', { id: $event.detail.id, identifier: $event.detail.identifier, config: $event.detail.config, label: $event.detail.label, description: $event.detail.description })"
+        x-on:packstub-flow-node-updated.window="$dispatch('packstub-flow-apply-node', { id: $event.detail.id, label: $event.detail.label, description: $event.detail.description, config: $event.detail.config })"
         class="fi-flow-builder"
         wire:ignore
     >
-        <div x-ref="canvas" class="fi-flow-canvas" style="min-height: {{ $getMinHeight() }}; width: 100%;"></div>
+        <div x-ref="canvas" class="fi-flow-canvas" style="width: 100%;"></div>
 
         @livewire('packstub-flow-manage-node', [], key($getId().'-manage-node'))
     </div>

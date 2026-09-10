@@ -26,6 +26,15 @@ it('reports a missing trigger, unconnected nodes and empty required settings for
         ->toContain('Node "a": the setting "Status" is required.');
 });
 
+it('keys the problems by node for the canvas', function (): void {
+    $definition = ['nodes' => [actionNode('a', SetStatusAction::class), actionNode('b', WriteLog::class, ['message' => 'hi'])], 'edges' => [edge('a', 'b')]];
+
+    expect(DefinitionValidator::problemsByNode($definition))->toBe([
+        '' => ['Add at least one trigger before activating the workflow.'],
+        'a' => ['Node "a" is not connected to anything before it.', 'Node "a": the setting "Status" is required.'],
+    ]);
+});
+
 it('treats a required setting with a default as filled', function (): void {
     $problems = DefinitionValidator::problems(['nodes' => [
         triggerNode('t', Manual::class),
@@ -57,7 +66,8 @@ it('blocks activating an incomplete workflow from the form', function (): void {
     Livewire::test(CreateWorkflow::class)
         ->fillForm(['name' => 'Broken', 'is_active' => true, 'definition' => $definition])
         ->call('create')
-        ->assertHasFormErrors(['definition']);
+        ->assertHasFormErrors(['definition'])
+        ->assertDispatched('packstub-flow-problems');
 
     Livewire::test(CreateWorkflow::class)
         ->fillForm(['name' => 'Draft', 'is_active' => false, 'definition' => $definition])
