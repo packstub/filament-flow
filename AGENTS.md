@@ -8,7 +8,12 @@ Free Filament v4/v5 plugin: visual workflow automation — triggers, conditions 
 composer test               # Pest suite
 composer test:filter <name>
 composer lint               # Pint
+composer analyse            # PHPStan level 6 (phpstan.neon)
 bun run build               # rebuilds resources/dist (flow.js, flow.css) — commit the built files
+bun run check               # svelte-check
+bun run test                # vitest, tests/js
+bun run test:e2e            # Playwright, tests/e2e, boots `vendor/bin/testbench serve` (testbench.yaml + workbench/) itself; run `vendor/bin/testbench filament:assets` once first
+DB_CONNECTION=mysql DB_DATABASE=... composer test   # the suite on a MySQL server (schema built once, a transaction per test)
 ```
 
 ## Layout

@@ -346,7 +346,11 @@ The same pages live in the [`docs/`](https://github.com/packstub/filament-flow/t
 ## Testing
 
 ```bash
-composer test
+composer test       # Pest, sqlite in memory (DB_CONNECTION=mysql for a MySQL server)
+composer analyse    # PHPStan
+bun run check       # svelte-check on the canvas sources
+bun run test        # vitest, the canvas helpers
+bun run test:e2e    # Playwright smoke test against `vendor/bin/testbench serve`
 ```
 
 ## Changelog
