@@ -4,6 +4,8 @@ A workflow is data, so it can travel: start one from a template, download one as
 
 ## Templates
 
+![The template picker on the Workflows page](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/templates.png)
+
 **New from template** on the Workflows page lists ready-made workflows by area. Pick one, give it a name, and it opens on the canvas. Nodes that need a choice from you carry a note in their description — the record type of a trigger, the agents of a round-robin assignment — and the workflow cannot be switched on until they are filled, exactly like any other incomplete draft (see [Building workflows](building-workflows.md#saving)).
 
 Built in:

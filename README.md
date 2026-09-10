@@ -88,7 +88,11 @@ use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
 FlowBuilder::make('definition')->minHeight('70vh')
 ```
 
-Read more: [Building workflows](https://packstub.dev/docs/filament-flow/building-workflows).
+Not sure where to start? **New from template** on the Workflows page offers a welcome series, a high-value order alert, dunning reminders, an SLA escalation and an approval flow, ready to adapt; **Export** and **Import** move a workflow between panels as a JSON file.
+
+![The template picker on the Workflows page](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/templates.png)
+
+Read more: [Building workflows](https://packstub.dev/docs/filament-flow/building-workflows), [Templates, import and export](https://packstub.dev/docs/filament-flow/templates).
 
 ## Triggers
 

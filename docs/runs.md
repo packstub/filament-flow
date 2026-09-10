@@ -111,6 +111,8 @@ Besides the Runs tab under each workflow, the **Runs** page (next to Workflows i
 
 Above the table: four stats (runs today, failed today, runs waiting, the 7-day success rate) and a **Runs per day** chart of succeeded and failed runs over the last 7, 14 or 30 days. Below it, **Slowest workflows** lists the five workflows whose runs took longest in the last 7 days, with the run count, the average duration (the sum of a run's step timings) and the failure rate. Test runs are left out of all of them, and in a panel with tenancy they cover the current tenant's runs. The widgets are `Packstub\Flow\Filament\Widgets\RunsOverview`, `RunsChart` and `SlowestWorkflows`; they can be placed on a dashboard like any Filament widget, and a subclass of the page can override `getHeaderWidgets()` / `getFooterWidgets()` to change the set.
 
+![The Slowest workflows widget under the Runs table](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/runs-slowest.png)
+
 Steps are stored one row per step in the `flow_workflow_steps` table (`WorkflowStep` model; `$run->steps` returns them as arrays, `$run->steps()` as the relationship) rather than in a JSON column, so a run with hundreds of steps costs one insert per step and the Runs page can count and filter them.
 
 ## Versions
