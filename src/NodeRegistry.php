@@ -84,7 +84,7 @@ class NodeRegistry
      */
     protected static function available(array $classes): array
     {
-        return array_values(array_filter($classes, fn (string $class): bool => is_a($class, Node::class, true) && $class::isAvailable()));
+        return array_values(array_filter($classes, fn (string $class): bool => $class::isAvailable()));
     }
 
     /** @return array<int, class-string<Trigger>> */

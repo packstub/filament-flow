@@ -41,11 +41,13 @@ class WorkflowStep extends Model
         return config('packstub-flow.tables.steps', 'flow_workflow_steps');
     }
 
+    /** @return BelongsTo<WorkflowRun, $this> */
     public function run(): BelongsTo
     {
         return $this->belongsTo(Flow::runModel(), 'run_id');
     }
 
+    /** @return BelongsTo<Workflow, $this> */
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Flow::workflowModel(), 'workflow_id');

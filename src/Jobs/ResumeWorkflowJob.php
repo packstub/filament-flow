@@ -50,7 +50,7 @@ class ResumeWorkflowJob implements ShouldQueueAfterCommit
         $runner = new Runner(
             $run->workflow,
             PayloadSerializer::unserialize($this->payload),
-            new Graph($this->graph['nodes'] ?? [], $this->graph['edges'] ?? []),
+            new Graph($this->graph['nodes'], $this->graph['edges']),
         );
 
         $runner->resume($run, $this->nodeIds, $this->message, $this->originNodeId);

@@ -50,6 +50,7 @@
         "spatie/laravel-package-tools": "^1.92"
     },
     "require-dev": {
+        "larastan/larastan": "^3.11",
         "laravel/pint": "^1.27",
         "orchestra/testbench": "^10.0 || ^11.0",
         "pestphp/pest": "^4.0 || ^5.0",
@@ -66,7 +67,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Packstub\\Flow\\Tests\\": "tests/"
+            "Packstub\\Flow\\Tests\\": "tests/",
+            "Packstub\\Flow\\Workbench\\": "workbench/"
         }
     },
     "scripts": {
@@ -74,7 +76,9 @@
         "test:filter": "pest --filter",
         "lint": "vendor/bin/pint",
         "lint:test": "vendor/bin/pint --test",
-        "build": "bun run build"
+        "build": "bun run build",
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "serve": "testbench serve --port=8787"
     },
     "config": {
         "sort-packages": true,

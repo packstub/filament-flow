@@ -33,6 +33,7 @@ class WorkflowTrigger extends Model
         return config('packstub-flow.tables.triggers', 'flow_workflow_triggers');
     }
 
+    /** @return BelongsTo<Workflow, $this> */
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Flow::workflowModel(), 'workflow_id');

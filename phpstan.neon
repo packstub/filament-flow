@@ -1,0 +1,21 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 6
+    paths:
+        - src
+    tmpDir: build/phpstan
+    checkOctaneCompatibility: true
+    checkModelProperties: true
+    ignoreErrors:
+        # Package views live under the "packstub-flow::" namespace, which is
+        # only known once the service provider has booted; PHPStan cannot
+        # resolve them, so the view-string check is skipped.
+        -
+            message: '#expects view-string#'
+            identifier: argument.type
+        # HasWorkflows is applied by the host application's models.
+        -
+            identifier: trait.unused
+            path: src/Concerns/HasWorkflows.php

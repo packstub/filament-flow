@@ -68,21 +68,31 @@ class WorkflowWait extends Model
         return config('packstub-flow.tables.waits', 'flow_workflow_waits');
     }
 
+    /** @return BelongsTo<Workflow, $this> */
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Flow::workflowModel(), 'workflow_id');
     }
 
+    /** @return BelongsTo<WorkflowRun, $this> */
     public function run(): BelongsTo
     {
         return $this->belongsTo(Flow::runModel(), 'run_id');
     }
 
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', self::PENDING);
     }
 
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
     public function scopeApprovals(Builder $query): Builder
     {
         return $query->where('type', 'approval');
@@ -91,6 +101,9 @@ class WorkflowWait extends Model
     /**
      * Pending approvals this user may decide: listed as an approver, or
      * anyone when the node has no approver list.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeForApprover(Builder $query, ?string $email): Builder
     {

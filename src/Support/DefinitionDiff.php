@@ -77,7 +77,7 @@ class DefinitionDiff
         $nodes = [];
 
         foreach ((array) ($definition['nodes'] ?? []) as $node) {
-            if (is_array($node) && isset($node['id'])) {
+            if (isset($node['id'])) {
                 $nodes[(string) $node['id']] = $node;
             }
         }

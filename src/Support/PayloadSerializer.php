@@ -78,7 +78,7 @@ class PayloadSerializer
     }
 
     /**
-     * @param  array{__flow_model: class-string<Model>, key: mixed, attributes: array<string, mixed>}  $value
+     * @param  array{__flow_model: string, key?: mixed, attributes?: array<string, mixed>}  $value
      */
     protected static function restoreModel(array $value): ?Model
     {
@@ -91,10 +91,11 @@ class PayloadSerializer
         $query = $class::query();
 
         if (in_array(SoftDeletes::class, class_uses_recursive($class), true)) {
+            /** @phpstan-ignore method.notFound (withTrashed is a SoftDeletes scope) */
             $query->withTrashed();
         }
 
-        $model = $value['key'] !== null ? $query->find($value['key']) : null;
+        $model = ($value['key'] ?? null) !== null ? $query->find($value['key']) : null;
 
         if ($model) {
             return $model;

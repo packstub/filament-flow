@@ -2,6 +2,7 @@
 
 namespace Packstub\Flow\Engine;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -61,7 +62,10 @@ class Dispatcher
         /** @var Collection<int, WorkflowTrigger> $rows */
         $rows = $triggerModel::query()
             ->where('type', $triggerClass)
-            ->whereHas('workflow', fn ($query) => $query->withoutGlobalScopes()->where('is_active', true)->forTenant($tenant))
+            ->whereHas('workflow', function (Builder $query) use ($tenant): void {
+                /** @var Builder<Workflow> $query */
+                $query->withoutGlobalScopes()->where('is_active', true)->forTenant($tenant);
+            })
             ->with(['workflow' => fn ($query) => $query->withoutGlobalScopes()])
             ->get();
 

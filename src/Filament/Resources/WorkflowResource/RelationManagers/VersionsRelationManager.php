@@ -33,6 +33,14 @@ class VersionsRelationManager extends RelationManager
         // Receiving the event re-renders the table with the fresh rows.
     }
 
+    protected function latestNumber(): int
+    {
+        /** @var Workflow $workflow */
+        $workflow = $this->getOwnerRecord();
+
+        return (int) $workflow->latestVersion?->number;
+    }
+
     public function table(Table $table): Table
     {
         return $table
@@ -43,7 +51,7 @@ class VersionsRelationManager extends RelationManager
                     ->label(__('packstub-flow::flow.versions.number'))
                     ->formatStateUsing(fn (int $state): string => "v{$state}")
                     ->badge()
-                    ->color(fn (WorkflowVersion $record): string => $record->number === (int) $this->getOwnerRecord()->latestVersion?->number ? 'success' : 'gray')
+                    ->color(fn (WorkflowVersion $record): string => $record->number === $this->latestNumber() ? 'success' : 'gray')
                     ->sortable(),
                 TextColumn::make('summary')
                     ->label(__('packstub-flow::flow.versions.summary'))
@@ -67,7 +75,7 @@ class VersionsRelationManager extends RelationManager
                     ->label(__('packstub-flow::flow.versions.compare'))
                     ->icon('heroicon-o-arrows-right-left')
                     ->color('gray')
-                    ->modalHeading(fn (WorkflowVersion $record): string => __('packstub-flow::flow.versions.compare_heading', ['number' => $record->number, 'previous' => max(0, $record->previous()?->number ?? 0)]))
+                    ->modalHeading(fn (WorkflowVersion $record): string => __('packstub-flow::flow.versions.compare_heading', ['number' => $record->number, 'previous' => $record->previous()->number ?? 0]))
                     ->modalWidth(Width::TwoExtraLarge)
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel(__('packstub-flow::flow.runs.close'))
@@ -77,7 +85,7 @@ class VersionsRelationManager extends RelationManager
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->requiresConfirmation()
                     ->modalDescription(__('packstub-flow::flow.versions.restore_description'))
-                    ->visible(fn (WorkflowVersion $record): bool => $record->number !== (int) $this->getOwnerRecord()->latestVersion?->number)
+                    ->visible(fn (WorkflowVersion $record): bool => $record->number !== $this->latestNumber())
                     ->action(function (WorkflowVersion $record): void {
                         /** @var Workflow $workflow */
                         $workflow = $this->getOwnerRecord();

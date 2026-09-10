@@ -38,6 +38,7 @@ class WorkflowVersion extends Model
         return config('packstub-flow.tables.versions', 'flow_workflow_versions');
     }
 
+    /** @return BelongsTo<Workflow, $this> */
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Flow::workflowModel(), 'workflow_id');
