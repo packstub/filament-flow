@@ -31,7 +31,7 @@ abstract class Node
      */
     public function getCategory(): string
     {
-        return $this->getType()->value.'s';
+        return str($this->getType()->value)->plural()->toString();
     }
 
     /**
