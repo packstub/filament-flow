@@ -55,7 +55,7 @@ Every change to the graph — a node added, moved, edited, connected or removed 
 
 The canvas is a form field; the usual **Save** (or **Create**) button of the page stores the graph together with the name, description and **Active** toggle. After creating a workflow you land on its edit page.
 
-Only active workflows run. New workflows start inactive, and a copy made with the table's **Replicate** action is inactive too, so you can finish a draft safely before switching it on.
+Only active workflows run. New workflows start inactive, and a copy made with the table's **Replicate** action is inactive too, so you can finish a draft safely before switching it on. A copy gets its own webhook tokens, so it never answers to the original's URL.
 
 Saving an **active** workflow checks the definition first and refuses it with a message per problem: no trigger node, a node nothing leads to, or a required setting left empty (a node dropped on the canvas whose settings were never opened). The nodes concerned get a red badge on the canvas; hover it for the messages. The badge disappears when the node is edited or connected, and every badge clears when the next save passes. Inactive drafts are only checked for nodes whose class is no longer registered.
 
