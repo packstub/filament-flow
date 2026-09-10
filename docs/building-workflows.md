@@ -22,7 +22,7 @@ Drag from a node's output handle (on its right) to another node's input handle (
 
 - Every node connected to the same output runs, in the order the edges were drawn, one branch after the other.
 - A condition follows only the edges leaving the output that matches its result. Leave an output unconnected when nothing should happen on that branch.
-- A node cannot lead back to itself along the same path: the runner stops the run with a "Cycle detected" error rather than loop. A node reachable through two different branches runs once per branch.
+- A node cannot lead back to itself along the same path: the canvas refuses a connection that would close a loop (the handle does not snap), and the runner stops such a run with a "Cycle detected" error should one reach it from code. The canvas also refuses an edge into a trigger, a node connected to itself, and a second edge between the same two handles. A node reachable through two different branches runs once per branch.
 
 Select an edge or a node and press **Backspace** or **Delete** to remove it; deleting a node also removes its edges.
 
@@ -41,9 +41,15 @@ The slide-over is a Filament form:
 
 **Apply** writes the values back to the node on the canvas. They are stored when you save the workflow.
 
-## Duplicate and delete
+## Selecting, copying, duplicating and deleting
 
-Right-click a node for **Settings**, **Duplicate** and **Delete**. A duplicate keeps the label, description and settings and is placed slightly offset from the original, unconnected.
+Click a node to select it; **Shift + drag** on the background draws a selection box, **Cmd / Ctrl + click** adds a node to the selection, and **Cmd / Ctrl + A** selects everything. Right-click a node for **Settings** (a single node), **Copy**, **Duplicate** and **Delete**; when the node is part of a selection, the menu acts on the whole selection and says so ("Delete 3 nodes"). Right-click the background for **Add node**, **Paste** and **Select all**. The menu can be driven from the keyboard: **Shift + F10** or the Menu key opens it for the selected node, the arrow keys move, **Enter** activates, **Escape** closes.
+
+A duplicate keeps the label, description and settings, is placed slightly offset from the original, and keeps the edges between the duplicated nodes; nothing connects it to the rest of the graph. Copy and paste (**Cmd / Ctrl + C**, **Cmd / Ctrl + V**) do the same through a clipboard that lives in the page, so a selection can be pasted several times; **Cmd / Ctrl + D** duplicates the selection in one step.
+
+## Undo and redo
+
+Every change to the graph — a node added, moved, edited, connected or removed — is a step. **Cmd / Ctrl + Z** undoes, **Shift + Cmd / Ctrl + Z** (or **Ctrl + Y**) redoes; the two buttons next to the **+** in the top-right corner do the same. Selecting or panning is not a step, and a drag counts once, when it ends. The history is kept while the page is open and starts afresh on reload.
 
 ## Saving
 
@@ -51,7 +57,7 @@ The canvas is a form field; the usual **Save** (or **Create**) button of the pag
 
 Only active workflows run. New workflows start inactive, and a copy made with the table's **Replicate** action is inactive too, so you can finish a draft safely before switching it on.
 
-Saving an **active** workflow checks the definition first and refuses it with a message per problem: no trigger node, a node nothing leads to, or a required setting left empty (a node dropped on the canvas whose settings were never opened). Inactive drafts are only checked for nodes whose class is no longer registered.
+Saving an **active** workflow checks the definition first and refuses it with a message per problem: no trigger node, a node nothing leads to, or a required setting left empty (a node dropped on the canvas whose settings were never opened). The nodes concerned get a red badge on the canvas; hover it for the messages. The badge disappears when the node is edited or connected, and every badge clears when the next save passes. Inactive drafts are only checked for nodes whose class is no longer registered.
 
 When a workflow is saved, its trigger nodes are mirrored into the `flow_workflow_triggers` table. That is how the dispatcher finds candidate workflows for an incoming event with one indexed query — you never edit that table yourself.
 
@@ -60,6 +66,19 @@ When a workflow is saved, its trigger nodes are mirrored into the `flow_workflow
 - Scroll to zoom, drag the background to pan; the controls in the bottom-left corner zoom and fit the view, and a minimap in the bottom-right corner shows where you are.
 - **Escape** closes the sidebar and any open menu.
 - The canvas follows Filament's light and dark mode.
+- Drag the bottom-right corner of the canvas to make it taller; `FlowBuilder::minHeight()` sets the starting height (see [Configuration](configuration.md#the-canvas-field)).
+
+| Shortcut | |
+| --- | --- |
+| **Backspace** / **Delete** | Remove the selected nodes and edges |
+| **Cmd / Ctrl + Z**, **Shift + Cmd / Ctrl + Z** | Undo, redo |
+| **Cmd / Ctrl + C**, **Cmd / Ctrl + V** | Copy, paste the selection |
+| **Cmd / Ctrl + D** | Duplicate the selection |
+| **Cmd / Ctrl + A** | Select all |
+| **Shift + F10** / Menu key | Open the menu for the selected node |
+| **Escape** | Close the sidebar or the menu |
+
+Shortcuts apply while the canvas has focus; typing in the search box or in the settings slide-over never triggers them.
 
 ## How a definition is stored
 

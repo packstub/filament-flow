@@ -21,6 +21,19 @@ class DefinitionValidator
      */
     public static function problems(?array $definition, bool $active = true): array
     {
+        return array_merge(...array_values(self::problemsByNode($definition, $active)) ?: [[]]);
+    }
+
+    /**
+     * The same problems keyed by the id of the node they concern; the empty
+     * key holds the ones about the workflow as a whole (no trigger). The
+     * canvas shows them as badges on the nodes.
+     *
+     * @param  array{nodes?: array<int, array<string, mixed>>, edges?: array<int, array<string, mixed>>}|null  $definition
+     * @return array<string, array<int, string>>
+     */
+    public static function problemsByNode(?array $definition, bool $active = true): array
+    {
         $graph = Graph::fromDefinition($definition);
         $registry = app(NodeRegistry::class);
         $problems = [];
@@ -29,11 +42,12 @@ class DefinitionValidator
         $triggers = $graph->nodesOfType(NodeType::Trigger->value);
 
         foreach ($nodes as $node) {
+            $id = (string) $node['id'];
             $identifier = $node['data']['identifier'] ?? null;
-            $label = (string) ($node['data']['label'] ?? $node['id']);
+            $label = (string) ($node['data']['label'] ?? $id);
 
             if (! is_string($identifier) || ! $registry->has($identifier)) {
-                $problems[] = __('packstub-flow::flow.validation.unknown_node', ['node' => $label]);
+                $problems[$id][] = __('packstub-flow::flow.validation.unknown_node', ['node' => $label]);
             }
         }
 
@@ -42,20 +56,21 @@ class DefinitionValidator
         }
 
         if ($triggers === []) {
-            $problems[] = __('packstub-flow::flow.validation.no_trigger');
+            $problems[''][] = __('packstub-flow::flow.validation.no_trigger');
         }
 
         $targets = array_fill_keys(array_map(fn (array $edge): string => (string) ($edge['target'] ?? ''), $graph->edges()), true);
 
         foreach ($nodes as $node) {
-            $label = (string) ($node['data']['label'] ?? $node['id']);
+            $id = (string) $node['id'];
+            $label = (string) ($node['data']['label'] ?? $id);
 
-            if (($node['type'] ?? null) !== NodeType::Trigger->value && ! isset($targets[(string) $node['id']])) {
-                $problems[] = __('packstub-flow::flow.validation.unconnected', ['node' => $label]);
+            if (($node['type'] ?? null) !== NodeType::Trigger->value && ! isset($targets[$id])) {
+                $problems[$id][] = __('packstub-flow::flow.validation.unconnected', ['node' => $label]);
             }
 
             foreach (self::missingSettings($node, $registry) as $setting) {
-                $problems[] = __('packstub-flow::flow.validation.missing_setting', ['node' => $label, 'setting' => $setting]);
+                $problems[$id][] = __('packstub-flow::flow.validation.missing_setting', ['node' => $label, 'setting' => $setting]);
             }
         }
 

@@ -33,8 +33,13 @@ class FlowBuilder extends Field
             }
 
             $active = (bool) ($get('is_active') ?? true);
+            $problems = DefinitionValidator::problemsByNode(static::normalizeState($value), $active);
 
-            foreach (DefinitionValidator::problems(static::normalizeState($value), $active) as $problem) {
+            // The canvas marks the nodes concerned (and clears old marks
+            // when everything is fine).
+            $this->getLivewire()->dispatch('packstub-flow-problems', problems: (object) $problems);
+
+            foreach (array_merge(...array_values($problems) ?: [[]]) as $problem) {
                 $fail($problem);
             }
         });

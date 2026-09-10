@@ -40,10 +40,15 @@ class ManageNode extends Component implements HasActions, HasForms
     public ?string $nodeClass = null;
 
     /**
+     * Opened by the canvas with the node's label, description and config.
+     * The settings form keeps the config under its own key, so a node whose
+     * schema has a field called "label" or "description" never collides
+     * with the general section.
+     *
      * @param  array<string, mixed>  $config
      */
     #[On('packstub-flow.open-node')]
-    public function open(string $id, string $identifier, array $config = []): void
+    public function open(string $id, string $identifier, array $config = [], ?string $label = null, ?string $description = null): void
     {
         if (! app(NodeRegistry::class)->has($identifier)) {
             return;
@@ -52,7 +57,15 @@ class ManageNode extends Component implements HasActions, HasForms
         $this->nodeId = $id;
         $this->nodeClass = $identifier;
 
-        $this->mountAction('manageNode', ['data' => $config]);
+        if ($label === null && $description === null) {
+            // The flat shape older canvases sent: label and description
+            // mixed into the config.
+            $label = is_string($config['label'] ?? null) ? $config['label'] : null;
+            $description = is_string($config['description'] ?? null) ? $config['description'] : null;
+            unset($config['label'], $config['description']);
+        }
+
+        $this->mountAction('manageNode', ['data' => ['label' => $label, 'description' => $description, 'config' => $config]]);
     }
 
     public function manageNodeAction(): Action
@@ -65,9 +78,20 @@ class ManageNode extends Component implements HasActions, HasForms
             ->modalWidth(Width::TwoExtraLarge)
             ->modalSubmitActionLabel(__('packstub-flow::flow.node_settings.apply'))
             ->schema(fn (Schema $schema): Schema => $this->nodeSchema($schema))
-            ->fillForm(fn (array $arguments): array => ($arguments['data'] ?? []) + $this->defaults())
+            ->fillForm(function (array $arguments): array {
+                $data = $arguments['data'] ?? [];
+                $data['config'] = ((array) ($data['config'] ?? [])) + $this->defaults();
+
+                return $data;
+            })
             ->action(function (array $data): void {
-                $this->dispatch('packstub-flow-node-updated', id: $this->nodeId, config: $data);
+                $this->dispatch(
+                    'packstub-flow-node-updated',
+                    id: $this->nodeId,
+                    label: $data['label'] ?? null,
+                    description: $data['description'] ?? null,
+                    config: (object) ($data['config'] ?? []),
+                );
             });
     }
 
@@ -143,6 +167,7 @@ class ManageNode extends Component implements HasActions, HasForms
         if ($settings !== []) {
             $components[] = Section::make(__('packstub-flow::flow.node_settings.settings'))
                 ->description($placeholders !== [] ? __('packstub-flow::flow.node_settings.placeholders_hint') : null)
+                ->statePath('config')
                 ->schema($settings);
         }
 
@@ -151,6 +176,7 @@ class ManageNode extends Component implements HasActions, HasForms
                 ->description(__('packstub-flow::flow.node_settings.error_handling_help'))
                 ->collapsed()
                 ->columns(3)
+                ->statePath('config')
                 ->schema([
                     TextInput::make(Runner::RETRIES)
                         ->label(__('packstub-flow::flow.node_settings.retries'))

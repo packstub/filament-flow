@@ -4,6 +4,17 @@ All notable changes to `packstub/filament-flow` are documented here.
 
 ## Unreleased
 
+### Added
+
+- **Canvas**: undo / redo (Cmd/Ctrl+Z, Shift+Cmd/Ctrl+Z, two buttons next to **+**), copy / paste / duplicate of the selection (Cmd/Ctrl+C / V / D, in the page's own clipboard, edges between the copied nodes kept), select all (Cmd/Ctrl+A); the right-click menu acts on the whole selection ("Delete 3 nodes"), offers Paste and Select all on the background, and can be driven from the keyboard (Shift+F10 or the Menu key, arrows, Enter, Escape).
+- **Canvas**: a connection is refused while dragging when it would close a loop, lead into a trigger, connect a node to itself or duplicate an existing edge (`isValidConnection`, the same rules the runner enforces).
+- **Canvas**: when an active workflow is refused on save, the nodes concerned get a red badge with the messages; it clears when the node is edited or connected, and on the next successful save. `DefinitionValidator::problemsByNode()` returns the problems keyed by node id; the field dispatches them as the `packstub-flow-problems` browser event.
+- **Canvas**: the bottom-right corner drags the canvas taller; `FlowBuilder::minHeight()` is the starting height and is honoured (the canvas used to be 600 px whatever the field said).
+
+### Changed
+
+- The node settings slide-over keeps a node's settings under their own `config` key in the form, so a custom node whose schema has a field called `label` or `description` no longer collides with the General section. `ManageNode::open()` takes `label` and `description` as separate arguments; the flat shape is still accepted. The `packstub-flow-node-updated` event carries `label`, `description` and `config` separately.
+
 ### Fixed
 
 - Saving right after a change on the canvas no longer loses that change: the canvas pushed its state to the form 400 ms after the last edit, so a Save click inside that window stored the previous graph. The pending state is now flushed when the form is submitted.
