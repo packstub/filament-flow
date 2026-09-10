@@ -23,6 +23,18 @@ abstract class Node
     }
 
     /**
+     * The sidebar group the node is offered in: "triggers", "actions" or
+     * "conditions" after the type, or a group of its own ("ai", "crm"); the
+     * canvas colours nodes of a known group alike. The label and description
+     * come from the "builder" translations under the group's key, a
+     * capitalised key otherwise.
+     */
+    public function getCategory(): string
+    {
+        return str($this->getType()->value)->plural()->toString();
+    }
+
+    /**
      * A Heroicon name (heroicon-o-bolt) or raw <svg> markup.
      */
     public function getIcon(): ?string
@@ -80,7 +92,7 @@ abstract class Node
     }
 
     /**
-     * @return array{identifier: class-string<static>, type: string, name: string, description: string, icon: string|null, outputs: array<int, array{id: string, label: string}>}
+     * @return array{identifier: class-string<static>, type: string, category: string, name: string, description: string, icon: string|null, outputs: array<int, array{id: string, label: string}>}
      */
     public function toArray(): array
     {
@@ -93,6 +105,7 @@ abstract class Node
         return [
             'identifier' => static::class,
             'type' => $this->getType()->value,
+            'category' => $this->getCategory(),
             'name' => $this->getName(),
             'description' => $this->getDescription(),
             'icon' => $this->renderIcon(),

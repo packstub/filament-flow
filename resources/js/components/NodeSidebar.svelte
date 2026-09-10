@@ -1,7 +1,8 @@
 <script lang="ts">
     import { fly } from "svelte/transition";
-    import { Zap, Rocket, Scale, ChevronLeft, X, Search, ChevronRight } from "lucide-svelte";
+    import { Zap, Rocket, Scale, Sparkles, Box, ChevronLeft, X, Search, ChevronRight } from "lucide-svelte";
     import { t } from "./labels";
+    import { fallbackCategoryLabel, sidebarCategories, sidebarNodes } from "./categories";
 
     let {
         availableNodes = {},
@@ -19,24 +20,28 @@
 
     let searchQuery = $state("");
 
-    const categories = [
-        { id: "triggers", type: "trigger", icon: Zap, color: "text-amber-500", tile: "bg-amber-500" },
-        { id: "actions", type: "action", icon: Rocket, color: "text-blue-500", tile: "bg-blue-600" },
-        { id: "conditions", type: "condition", icon: Scale, color: "text-purple-500", tile: "bg-purple-600" },
-    ];
+    // Icon and colours per group; a custom group ("crm") gets the neutral look.
+    const looks: Record<string, { icon: any; color: string; tile: string }> = {
+        triggers: { icon: Zap, color: "text-amber-500", tile: "bg-amber-500" },
+        actions: { icon: Rocket, color: "text-blue-500", tile: "bg-blue-600" },
+        conditions: { icon: Scale, color: "text-purple-500", tile: "bg-purple-600" },
+        ai: { icon: Sparkles, color: "text-teal-500", tile: "bg-teal-600" },
+    };
+    const defaultLook = { icon: Box, color: "text-gray-500", tile: "bg-gray-600" };
 
-    let allNodes = $derived(
-        categories.flatMap((category) =>
-            (availableNodes[category.id] || []).map((node: any) => ({
-                category: category.id,
-                type: category.type,
-                label: node.name,
-                icon: node.icon,
-                description: node.description,
-                color: category.tile,
-                data: { label: node.name, description: node.description, identifier: node.identifier, config: {} },
-            })),
-        ),
+    let allNodes = $derived(sidebarNodes(availableNodes).map((node) => ({ ...node, color: (looks[node.category] ?? defaultLook).tile })));
+
+    let categories = $derived(
+        sidebarCategories(allNodes).map((id) => {
+            const label = t(id);
+            const description = t(`${id}_description`);
+            return {
+                id,
+                ...(looks[id] ?? defaultLook),
+                label: label === id ? fallbackCategoryLabel(id) : label,
+                description: description === `${id}_description` ? "" : description,
+            };
+        }),
     );
 
     let filteredNodes = $derived(
@@ -97,7 +102,7 @@
                         {#if searchQuery}
                             {t("search_results")}
                         {:else if selectedCategory}
-                            {t(selectedCategory)}
+                            {categories.find((category) => category.id === selectedCategory)?.label ?? fallbackCategoryLabel(selectedCategory)}
                         {:else}
                             {t("components")}
                         {/if}
@@ -163,10 +168,12 @@
                                 <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-700/50 {category.color}">
                                     <category.icon size={16} />
                                 </div>
-                                <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">{t(category.id)}</span>
+                                <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">{category.label}</span>
                                 <ChevronRight size={16} class="ml-auto text-gray-300 transition-colors group-hover:text-primary-500 dark:text-gray-600 dark:group-hover:text-primary-400" />
                             </div>
-                            <p class="text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">{t(`${category.id}_description`)}</p>
+                            {#if category.description}
+                                <p class="text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">{category.description}</p>
+                            {/if}
                         </button>
                     {/each}
                 </div>

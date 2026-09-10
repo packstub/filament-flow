@@ -8,6 +8,9 @@ parameters:
     tmpDir: build/phpstan
     checkOctaneCompatibility: true
     checkModelProperties: true
+    # packstub/agents and laravel/ai are suggested, not installed: the Ask AI action is analysed against the test stubs.
+    scanDirectories:
+        - tests/Fixtures/Agents
     ignoreErrors:
         # HasWorkflows is applied by the host application's models.
         -

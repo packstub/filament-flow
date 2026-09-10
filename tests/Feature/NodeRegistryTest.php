@@ -35,8 +35,10 @@ it('describes nodes for the builder sidebar', function (): void {
     expect($described)->toHaveKeys(['triggers', 'actions', 'conditions'])
         ->and(collect($described['triggers'])->pluck('identifier'))->toContain(Manual::class)
         ->and(collect($described['actions'])->firstWhere('identifier', SendEmail::class))
-        ->toMatchArray(['type' => 'action', 'name' => 'Send email'])
-        ->and(collect($described['actions'])->firstWhere('identifier', SendEmail::class)['icon'])->toContain('<svg');
+        ->toMatchArray(['type' => 'action', 'category' => 'actions', 'name' => 'Send email'])
+        ->and(collect($described['actions'])->firstWhere('identifier', SendEmail::class)['icon'])->toContain('<svg')
+        ->and(collect($described['triggers'])->firstWhere('identifier', Manual::class)['category'])->toBe('triggers')
+        ->and(collect($described['conditions'])->first()['category'])->toBe('conditions');
 });
 
 it('can forget nodes and rejects unknown classes', function (): void {

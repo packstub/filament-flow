@@ -186,6 +186,16 @@ Applies to the **HTTP request** and **Send Slack message** actions.
 | `block_private_networks` | Refuses URLs whose host is, or resolves to, a loopback, private, link-local or otherwise reserved address (`localhost`, `127.0.0.1`, `10.0.0.0/8`, `192.168.0.0/16`, `169.254.169.254`, `::1`, …). The host is checked against the system resolver as well as DNS, and a host that cannot be resolved at all is refused. Only `http` and `https` are ever allowed. Turn off when workflows must reach services on your private network — and make sure only trusted users can edit workflows |
 | `allowed_hosts` | When not empty, requests may only go to these hosts: exact names or `*.example.com` wildcards. Everything else is refused, whatever `block_private_networks` says |
 
+### Ask AI
+
+```php
+'ai' => [
+    'timeout' => (int) env('PACKSTUB_FLOW_AI_TIMEOUT', 60),
+],
+```
+
+The default timeout of one question from the **Ask AI** action, in seconds; a node can set its own. Everything else about the model — provider, key, model picker, budgets and limits — is the engine's: `config/packstub-agents.php` and `config/ai.php` of [Agents for Laravel](https://packstub.dev/docs/agents), which the action needs installed (see [Actions](actions.md#ask-ai)).
+
 ### Schedule
 
 ```php

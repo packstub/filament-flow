@@ -2,7 +2,7 @@
     import BaseNode from "./BaseNode.svelte";
     import { Position } from "@xyflow/svelte";
     import FlowHandle from "./FlowHandle.svelte";
-    import { outputsFor } from "../nodeDefinitions";
+    import { categoryFor, outputsFor } from "../nodeDefinitions";
     import { t } from "../labels";
 
     let { id, data, selected } = $props();
@@ -12,6 +12,7 @@
     // Output handles come from the node definition (For each: body / done,
     // Ask for approval: approved / rejected / timed out); a node whose
     // error handling is "follow the error branch" gets an extra Error handle.
+    const category = $derived(categoryFor(data?.identifier, "actions"));
     const outputs = $derived(outputsFor(data?.identifier, [{ id: "output", label: t("next") }]));
     const hasErrorHandle = $derived(data?.config?._on_error === "branch");
     const multiple = $derived(outputs.length > 1 || hasErrorHandle);
@@ -19,14 +20,14 @@
 
 {#if multiple}
     <div class="relative">
-        <BaseNode {id} {data} {selected} type="action" {inputs}>
+        <BaseNode {id} {data} {selected} type="action" {category} {inputs}>
             <div style="height: {(outputs.length + (hasErrorHandle ? 1 : 0)) * 24 - 8}px"></div>
 
             <div class="absolute -right-1.5 top-[60px] flex flex-col gap-3">
                 {#each outputs as output (output.id)}
                     <div class="relative flex h-3 items-center justify-end">
-                        <span class="mr-2 text-[8px] font-black uppercase text-blue-700 dark:text-blue-300">{output.label}</span>
-                        <FlowHandle type="source" position={Position.Right} id={output.id} nodeId={id} class="!h-3 !w-3 !border-2 !border-white !bg-blue-500 dark:!border-gray-800" />
+                        <span class="mr-2 text-[8px] font-black uppercase {category === 'ai' ? 'text-teal-700 dark:text-teal-300' : 'text-blue-700 dark:text-blue-300'}">{output.label}</span>
+                        <FlowHandle type="source" position={Position.Right} id={output.id} nodeId={id} class="!h-3 !w-3 !border-2 !border-white {category === 'ai' ? '!bg-teal-500' : '!bg-blue-500'} dark:!border-gray-800" />
                     </div>
                 {/each}
                 {#if hasErrorHandle}
@@ -39,5 +40,5 @@
         </BaseNode>
     </div>
 {:else}
-    <BaseNode {id} {data} {selected} type="action" {inputs} outputs={outputs.map((o) => ({ id: o.id }))} />
+    <BaseNode {id} {data} {selected} type="action" {category} {inputs} outputs={outputs.map((o) => ({ id: o.id }))} />
 {/if}

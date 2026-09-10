@@ -4,15 +4,20 @@ use Illuminate\Support\Facades\Hash;
 use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\Nodes\Triggers\Manual;
 use Packstub\Flow\Tests\Fixtures\EchoAction;
+use Packstub\Flow\Tests\Fixtures\FakeEngine;
 use Packstub\Flow\Tests\Fixtures\FlakyAction;
 use Packstub\Flow\Tests\Fixtures\Order;
 use Packstub\Flow\Tests\Fixtures\SetStatusAction;
 use Packstub\Flow\Tests\Fixtures\User;
 use Packstub\Flow\Tests\TestCase;
 
+// packstub/agents and laravel/ai are suggested, not installed: the stubs stand in for them (tests/Fixtures/Agents).
+require_once __DIR__.'/Fixtures/Agents/stubs.php';
+
 pest()->extend(TestCase::class)->in('Feature');
 
 pest()->beforeEach(function (): void {
+    FakeEngine::reset();
     SetStatusAction::$calls = [];
     FlakyAction::$attempts = 0;
     EchoAction::$last = null;

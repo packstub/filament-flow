@@ -6,6 +6,7 @@
 - Laravel 12 or 13
 - Filament 4 or 5
 - A queue worker if you use **Wait** steps or queued runs (see [Queue & scheduling](queue-and-scheduling.md))
+- Optional: `packstub/agents` (PHP 8.4) for the **Ask AI** action — see [Actions](actions.md#ask-ai)
 
 ## 1. Require the package
 

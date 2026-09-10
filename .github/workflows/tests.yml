@@ -159,6 +159,11 @@ jobs:
       - name: Install PHP dependencies
         run: composer update --prefer-dist --no-interaction --no-progress
 
+      # The engine behind Ask AI (PHP 8.4, so a dev dependency only here): the workbench registers it when present
+      # and the smoke test then covers the real node, its AI group and a dry run.
+      - name: Install packstub/agents for the Ask AI test
+        run: composer require packstub/agents --dev --no-interaction --no-progress
+
       - name: Install Playwright's browser
         run: bunx playwright install --with-deps chromium
 

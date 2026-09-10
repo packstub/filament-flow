@@ -11,6 +11,7 @@ All nodes extend `Packstub\Flow\Nodes\Node` through one of three base classes an
 | `getName(): string` | yes | Shown in the sidebar, as the default node label, and as the slide-over heading |
 | `getDescription(): string` | no | One line under the name in the sidebar and slide-over |
 | `getIcon(): ?string` | no | A Heroicon name (`heroicon-o-bolt`) or raw `<svg>` markup, shown in the sidebar |
+| `getCategory(): string` | no | The sidebar group: `triggers`, `actions` or `conditions` after the base class, or a group of your own (`crm`, `billing`); see [Sidebar groups](#sidebar-groups) |
 | `getFormSchema(): array` | no | Filament form components for the node's settings. The values are stored on the node as `config` and passed to `matches()` / `handle()` / `evaluate()` |
 | `getPlaceholders(): array` | no | `['{{ model.name }}' => 'The record name', ...]`, listed in the slide-over's Placeholders section |
 | `isAvailable(): bool` (static) | no | Return `false` when a package the node needs is missing; the node is then never registered nor offered (the spatie state triggers work this way) |
@@ -250,6 +251,19 @@ use Packstub\Flow\Facades\Flow;
 
 Flow::register(AssignToTeam::class);   // sorted into triggers / actions / conditions by base class
 ```
+
+### Sidebar groups
+
+The sidebar lists **Triggers**, **Actions** and **Conditions**, and any other group a node asks for through `getCategory()` — the built-in **Ask AI** lives in **AI** this way, and a group only shows while a node is offered in it. Group your own nodes when a dozen of them would otherwise stretch the Actions list:
+
+```php
+public function getCategory(): string
+{
+    return 'crm';
+}
+```
+
+The group's name and the line under it come from the builder translations, `packstub-flow::flow.builder.crm` and `builder.crm_description`, so add them to `lang/vendor/packstub-flow/en/flow.php` in your app (a group without a translation shows its key capitalised). The base class still decides how the node behaves and connects — a CRM action is drawn and run as an action — and the category is never stored in a workflow, so renaming a group later touches nothing saved. Nodes in **AI** take a teal look on the canvas; other custom groups keep their type's colours.
 
 Hide built-in nodes with `FlowPlugin::make()->without([...])` or by removing them from the config lists. A node that is no longer registered disappears from the sidebar, and a saved workflow that still uses it fails its runs with "is not registered" — so clean up workflows before removing a node they depend on. The registry is application-wide: nodes registered for one panel are available in every panel.
 

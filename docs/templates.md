@@ -16,6 +16,7 @@ Built in:
 | **High-value order alert** | Sales | Record created → total ≥ 500? → Slack message (`{{ secrets.slack_webhook }}`) and a panel notification |
 | **Dunning: unpaid invoice reminders** | Finance | 3 days after `due_at` → still unpaid? → reminder → wait 7 days → still unpaid? → flag for the finance team |
 | **SLA escalation** | Support | 4 hours after `created_at` → still open? → assign round robin → alert the assignee |
+| **Ticket triage with AI** | Support | Record created → [Ask AI](actions.md#ask-ai) answers with urgency, category and a summary → urgent? → assign round robin → alert the assignee. Offered when `packstub/agents` is installed |
 | **Approval before a record goes live** | Operations | Record created → ask a manager (1 day) → approved: publish; rejected: tell the author; timed out: nudge the manager |
 
 Templates use only what the package ships; a template is offered only when every node it uses is registered, so hiding a node with `without()` hides the templates that need it.

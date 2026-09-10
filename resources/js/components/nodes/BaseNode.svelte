@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Position } from "@xyflow/svelte";
     import FlowHandle from "./FlowHandle.svelte";
-    import { Zap, Rocket, CircleHelp, Box, Settings } from "lucide-svelte";
+    import { Zap, Rocket, CircleHelp, Sparkles, Box, Settings } from "lucide-svelte";
     import { t } from "../labels";
     import { problemsFor } from "../problems.svelte";
     import type { Snippet } from "svelte";
@@ -12,6 +12,7 @@
         data,
         selected = false,
         type = "default",
+        category = undefined,
         inputs = [],
         outputs = [],
         children,
@@ -20,6 +21,7 @@
         data: any;
         selected?: boolean;
         type?: string;
+        category?: string;
         inputs?: { id: string }[];
         outputs?: { id: string }[];
         children?: Snippet;
@@ -47,6 +49,13 @@
             text: "text-purple-900 dark:text-purple-100",
             icon: CircleHelp,
         },
+        ai: {
+            border: "border-teal-200/50 dark:border-teal-500/30",
+            header: "bg-teal-600 dark:bg-teal-700",
+            bg: "bg-teal-50/50 dark:bg-teal-900/10",
+            text: "text-teal-900 dark:text-teal-100",
+            icon: Sparkles,
+        },
         default: {
             border: "border-gray-200/50 dark:border-gray-700",
             header: "bg-gray-600 dark:bg-gray-700",
@@ -56,7 +65,8 @@
         },
     };
 
-    const theme = $derived(themes[type] || themes.default);
+    // A node in a group with a look of its own (AI) takes it; otherwise the type's.
+    const theme = $derived((category && themes[category]) || themes[type] || themes.default);
     const problems = $derived(problemsFor(id));
 
     function openSettings(event: MouseEvent) {

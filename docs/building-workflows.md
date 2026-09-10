@@ -12,7 +12,7 @@ An empty canvas shows a **Start with a trigger** card; **Add a trigger** opens t
 - **right-click** on an empty spot of the canvas and choose **Add node** — the node is placed where you clicked;
 - the **plus** next to an unconnected output handle — the new node is placed beside it and connected to that handle in one go.
 
-The sidebar lists **Triggers**, **Actions** and **Conditions**; open a category or type in the search box to filter every node by name. Click a node to place it, or drag it onto the canvas to drop it exactly where you want. A node added through the **+** button lands in the centre of the visible area, nudged aside if something is already there.
+The sidebar lists **Triggers**, **Actions** and **Conditions** — plus **AI** once [Agents for Laravel](actions.md#ask-ai) is installed, and any group your own nodes [declare](extending.md#sidebar-groups); open a category or type in the search box to filter every node by name. Click a node to place it, or drag it onto the canvas to drop it exactly where you want. A node added through the **+** button lands in the centre of the visible area, nudged aside if something is already there.
 
 ![The add-node sidebar](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/node-sidebar.png)
 
