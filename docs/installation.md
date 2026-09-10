@@ -27,6 +27,17 @@ The migration creates seven tables: `flow_workflows`, `flow_workflow_triggers`, 
 > [!NOTE]
 > The table names come from `tables` in the config file. If you want different names, change them **before** migrating — see [Configuration](configuration.md#tables-and-models).
 
+### Upgrading
+
+A new minor may add columns; it never renames or drops one. The additions ship as their own guarded migrations, so an existing install publishes and runs whatever is new:
+
+```bash
+php artisan vendor:publish --tag="packstub-flow-migrations"
+php artisan migrate
+```
+
+Only files you do not have yet are copied. 1.2 adds `add_audit_columns_to_flow_workflows` (`created_by` / `updated_by`); the [changelog](https://github.com/packstub/filament-flow/blob/main/CHANGELOG.md) lists the migration of every release.
+
 ## 2. Prepare your models
 
 Add the `HasWorkflows` trait to every model that should be able to start a workflow. It fires the **Record created**, **Record updated** and **Record deleted** triggers from the model's own events, and the model is listed under "Record type" in those triggers' settings.

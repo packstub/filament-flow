@@ -123,6 +123,8 @@ Destinations are checked before the request is sent: private and reserved addres
 
 Hands the run to an automation platform: Filament Flow is the in-app half (it knows your records, your users and your panel), Zapier, Make or n8n is the integration half (thousands of apps, no code). The action is an HTTP POST with a JSON body and an HMAC-SHA256 signature, so any webhook receiver works.
 
+![The settings of a Send to Zapier node: platform, webhook URL and signing secret from the secrets store](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/send-to-automation.png)
+
 | Setting | |
 | --- | --- |
 | Platform | Zapier (Catch Hook), Make (Custom webhook), n8n (Webhook node) or any receiver; only the hints change |
