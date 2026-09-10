@@ -61,6 +61,7 @@ Some actions expose a result to the nodes after them on the same branch:
 | Placeholder | |
 | --- | --- |
 | `{{ last.status }}`, `{{ last.body.id }}` | The output of the most recent action that produced one — an **HTTP request**'s status, body and headers, or the `changes` of **Update record** |
+| `{{ last.urgency }}`, `{{ last.raw }}` | The fields an **Ask AI** step answered with, and the answer as the model wrote it (see [Actions](actions.md#ask-ai)) |
 | `{{ outputs.<node id>.body.id }}` | The output of a specific node, by its id (shown in the definition; see [Building workflows](building-workflows.md#how-a-definition-is-stored)) |
 
 Outputs follow the branch: a node on another branch leaving the same trigger does not see them. They are stored on the run's step log (up to `max_output_bytes`) and shown in the run details. Your own actions expose values with `$this->output([...])` — see [Extending](extending.md#actions).

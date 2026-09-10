@@ -165,6 +165,33 @@ With a signing secret, every request carries `X-Flow-Timestamp` (Unix seconds) a
 
 (The plugin's own [webhook trigger](triggers.md#webhook) verifies incoming requests the simpler way, an HMAC of the body alone in `X-Signature`; to call another Filament Flow install, use the **HTTP request** action and a shared secret there.)
 
+## Ask AI
+
+Asks a language model a question built from the run and gets **named fields** back, so the nodes after it can branch on the answer: a ticket comes in → Ask AI returns `urgency`, `category` and a one-line `summary` → a condition on `{{ last.urgency }}` → assign round robin → notify. The step runs on [Agents for Laravel](https://packstub.dev/docs/agents) (`packstub/agents`, free): provider and model, the workspace's own API key, the operator's budgets and limits and the structured output (through `laravel/ai`) all come from the engine, so a workflow never holds a provider key and the same limits apply as in the chat.
+
+```bash
+composer require packstub/agents
+```
+
+The engine needs PHP 8.4. It is a suggested dependency: without it the node is simply not offered — not in the sidebar, not in the validator, and templates that use it (Ticket triage) stay hidden — and everything else works as before. Configure a provider once (`AGENT_PROVIDER` and the key in `config/ai.php`, see the [engine's installation](https://packstub.dev/docs/agents/installation)); the node then lists the engine's model picker entries.
+
+| Setting | |
+| --- | --- |
+| Question | What to look at and what to decide; placeholders allowed (`{{ model.subject }}`, `{{ webhook.body }}`, `{{ secrets.* }}`) |
+| Answer | **Fields I name**: a list of fields, each with a name, a type (text, number, whole number, yes / no, one of a list, list of texts), an optional hint for the model and a required switch. Or **A JSON Schema**: an object schema with `properties` (string, number, integer, boolean, array, object, `enum`, `description`, nullable types such as `["integer", "null"]`) and `required`, for nested answers |
+| Instructions | Optional. The role and the rules, sent as the system prompt; placeholders allowed. Without one the model is told to answer with the fields requested and nothing else |
+| Model | The entries of the engine's model picker (auto / fast / deep, or whatever `packstub-agents.models` lists, by model name); **The default model** is what the workspace uses in the chat |
+| Timeout (seconds) | Default from `ai.timeout` in the config (60) |
+| Fail the run when there is no answer | On by default. Off, the run continues with `{{ last.ok }}` false and the reason in `{{ last.error }}` |
+
+The answer is exposed to the rest of the branch as `{{ last.<field> }}` for every field, plus `{{ last.raw }}` (the answer as the model wrote it, JSON), `{{ last.ok }}`, `{{ last.model }}`, `{{ last.provider }}` and `{{ last.usage.input }}` / `{{ last.usage.output }}` (tokens). Field names may not be `ok`, `raw`, `model`, `provider`, `usage` or `error`. A nested answer reads as `{{ last.customer.vip }}`; a list as `{{ last.tags | join:, }}`. The step log stores the answer and the usage, never the provider key; a secret used in the question is masked there as everywhere.
+
+**Budgets and workspaces.** Before the question is sent the engine's budget is consulted (`AgentBudget::refusal()`: the workspace switched off, too many questions in a minute or a day, the daily or monthly token budget spent, a question longer than allowed) and after the answer the question is counted (`AgentBudget::hit()`), so the operator's [AI limits](https://packstub.dev/docs/agents/limits) apply to workflows too. In a panel with tenancy the question runs *inside the run's tenant* the way a queued chat turn does — `AgentRuntime::enter()`, which fires Filament's `TenantSet` (a tenancy plugin switches the database) or your `Agents::enteringTenant()` hook — so the budget, the limits and the workspace's own provider key are that tenant's, exactly as [secrets and runs](tenancy.md) are scoped. That happens when the engine's workspace model is the one Flow scopes by (`Agents::tenantModel()` / the panel's tenant model); otherwise, or for a run without a tenant, the central limits apply.
+
+**Errors.** A refusal by the budget and a provider error (a timeout, an outage, a content refusal) are ordinary failures of the node: the engine's message becomes the step error, and the node's *Error handling* settings decide — retry, log and continue, or follow the **Error** branch with `{{ error.message }}`. A [test run](runs.md#test-runs) never asks the model: the step is logged as simulated with the model it would ask, the question with placeholders filled in and the shape of the answer.
+
+Next to the chat's own budget the engine counts turns from what `laravel/ai` stores with each conversation message; a question from a workflow is a one-off call and is not stored as a conversation, so it counts against the per-minute limit and is refused by the daily and monthly ones, but its tokens are not added to them.
+
 ## Update record
 
 Sets attributes on the record that started the run — the `model` in the payload of a record trigger, the user of **User registered**, or whatever you passed as `model` to `Flow::run()`.

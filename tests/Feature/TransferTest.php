@@ -67,7 +67,7 @@ it('refuses documents it cannot read or run', function (): void {
 it('lists the built-in templates and creates workflows from them', function (): void {
     $templates = Templates::all();
 
-    expect(array_keys($templates))->toBe(['approval', 'dunning', 'high-value-order-alert', 'sla-escalation', 'welcome-series'])
+    expect(array_keys($templates))->toBe(['approval', 'dunning', 'high-value-order-alert', 'sla-escalation', 'ticket-triage', 'welcome-series'])
         ->and($templates['dunning']['category'])->toBe('Finance')
         ->and(Templates::byCategory())->toHaveKey('Sales');
 

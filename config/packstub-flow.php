@@ -170,6 +170,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Ask AI
+    |--------------------------------------------------------------------------
+    |
+    | The Ask AI action runs on packstub/agents (Agents for Laravel), when it
+    | is installed: provider, model, credentials, budgets and limits come from
+    | the engine. This is only the default timeout of one question, in
+    | seconds; every node can set its own.
+    |
+    */
+
+    'ai' => [
+        'timeout' => (int) env('PACKSTUB_FLOW_AI_TIMEOUT', 60),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Schedule
     |--------------------------------------------------------------------------
     |
@@ -280,6 +296,7 @@ return [
         Nodes\Actions\SendSms::class,
         Nodes\Actions\HttpRequest::class,
         Nodes\Actions\SendToAutomation::class,
+        Nodes\Actions\AskAi::class,
         Nodes\Actions\UpdateRecord::class,
         Nodes\Actions\CreateRecord::class,
         Nodes\Actions\AssignOwner::class,

@@ -1,0 +1,162 @@
+{
+  "format": "packstub-flow/1",
+  "key": "ticket-triage",
+  "name": "Ticket triage with AI",
+  "category": "Support",
+  "description": "A new ticket is read by a model, which answers with its urgency, category and a one-line summary; urgent ones are assigned round robin and the assignee is alerted. Pick the ticket model in the trigger; {{ last.category }} is there for an Update record step.",
+  "settings": {},
+  "definition": {
+    "nodes": [
+      {
+        "id": "trigger-created",
+        "type": "trigger",
+        "position": {
+          "x": 0,
+          "y": 120
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Triggers\\RecordCreated",
+          "label": "Ticket created",
+          "description": "Choose your ticket model here.",
+          "config": {
+            "model_class": null,
+            "once": false
+          }
+        }
+      },
+      {
+        "id": "action-ask",
+        "type": "action",
+        "position": {
+          "x": 320,
+          "y": 120
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\AskAi",
+          "label": "Classify the ticket",
+          "description": "Adjust the attributes in the question to your model.",
+          "config": {
+            "prompt": "Classify this support ticket.\n\nSubject: {{ model.subject }}\nMessage: {{ model.body }}",
+            "shape": "fields",
+            "fields": [
+              {
+                "name": "urgency",
+                "type": "enum",
+                "options": "low, normal, high, urgent",
+                "description": "How urgent it is for the customer: urgent when they cannot work",
+                "required": true
+              },
+              {
+                "name": "category",
+                "type": "enum",
+                "options": "billing, bug, question, feature, other",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "summary",
+                "type": "string",
+                "options": "",
+                "description": "One line, in plain words, for the agent who picks it up",
+                "required": true
+              }
+            ],
+            "schema": "",
+            "instructions": "You triage support tickets. Billing and payment problems are billing; anything that blocks a customer from working is urgent.",
+            "model": "default",
+            "timeout": null,
+            "throw_on_error": true
+          }
+        }
+      },
+      {
+        "id": "condition-urgent",
+        "type": "condition",
+        "position": {
+          "x": 640,
+          "y": 120
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Conditions\\CompareValues",
+          "label": "Urgent?",
+          "description": null,
+          "config": {
+            "left": "{{ last.urgency }}",
+            "operator": "in",
+            "value": "high, urgent"
+          }
+        }
+      },
+      {
+        "id": "action-assign",
+        "type": "action",
+        "position": {
+          "x": 960,
+          "y": 40
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\AssignOwner",
+          "label": "Assign round robin",
+          "description": "List the agents' ids or emails, one per line.",
+          "config": {
+            "attribute": "assignee_id",
+            "mode": "round_robin",
+            "users": "",
+            "silently": false
+          }
+        }
+      },
+      {
+        "id": "action-notify",
+        "type": "action",
+        "position": {
+          "x": 1280,
+          "y": 40
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\SendNotification",
+          "label": "Alert the assignee",
+          "description": null,
+          "config": {
+            "title": "{{ outputs.action-ask.urgency | upper }}: {{ outputs.action-ask.summary }}",
+            "body": "Ticket {{ model.id }} ({{ outputs.action-ask.category }}) needs someone now.",
+            "status": "danger",
+            "recipients": "{{ model.assignee.email }}",
+            "action_label": "Open ticket",
+            "action_url": "{{ model.url }}"
+          }
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "trigger-created",
+        "sourceHandle": "output",
+        "target": "action-ask",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e2",
+        "source": "action-ask",
+        "sourceHandle": "output",
+        "target": "condition-urgent",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e3",
+        "source": "condition-urgent",
+        "sourceHandle": "true",
+        "target": "action-assign",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e4",
+        "source": "action-assign",
+        "sourceHandle": "output",
+        "target": "action-notify",
+        "targetHandle": "input"
+      }
+    ]
+  }
+}

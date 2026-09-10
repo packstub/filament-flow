@@ -2,6 +2,12 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
+## Unreleased
+
+### Added
+
+- **Ask AI** action (`AskAi`): asks a language model a question built from the run's placeholders and gets named fields back — a fields builder (text, number, whole number, yes / no, one of a list, list of texts, required, a hint for the model) or a raw JSON Schema for nested answers — exposed as `{{ last.<field> }}`, with `{{ last.raw }}`, `{{ last.ok }}`, `{{ last.model }}`, `{{ last.provider }}` and `{{ last.usage.* }}`; instructions, a model from the engine's picker (the workspace default first), a timeout and a "fail the run when there is no answer" switch. It runs on `packstub/agents` (Agents for Laravel, free, PHP 8.4), now a suggested dependency: provider and model (`AgentModels`), the workspace's own key, the operator's budgets and limits (`AgentBudget::refusal()` before the question, `hit()` after it) and the structured output through `laravel/ai`; in a panel with tenancy the question runs inside the run's tenant (`AgentRuntime::enter()`) so budgets are scoped like secrets and runs. Refusals and provider errors take the node's error path (retries, continue, error branch) with the engine's message; a test run never asks the model and logs the model it would ask. The node is offered only when the engine is installed (`isAvailable()`), which also hides the new **Ticket triage with AI** template (record created → Ask AI → urgent? → assign round robin → alert). Config: `ai.timeout` (`PACKSTUB_FLOW_AI_TIMEOUT`, 60 s).
+
 ## 1.2.0 — 2026-09-10
 
 Upgrading: publish the migrations again and migrate — `php artisan vendor:publish --tag="packstub-flow-migrations"` then `php artisan migrate` — to get the guarded `add_audit_columns_to_flow_workflows` migration (`created_by` / `updated_by` on workflows). Nothing was removed or renamed.
