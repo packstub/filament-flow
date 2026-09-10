@@ -3,7 +3,9 @@
     import FlowHandle from "./FlowHandle.svelte";
     import { Zap, Rocket, CircleHelp, Box, Settings } from "lucide-svelte";
     import { t } from "../labels";
+    import { problemsFor } from "../problems.svelte";
     import type { Snippet } from "svelte";
+    import { TriangleAlert } from "lucide-svelte";
 
     let {
         id,
@@ -55,6 +57,7 @@
     };
 
     const theme = $derived(themes[type] || themes.default);
+    const problems = $derived(problemsFor(id));
 
     function openSettings(event: MouseEvent) {
         event.stopPropagation();
@@ -63,7 +66,9 @@
                 detail: {
                     id,
                     identifier: data.identifier,
-                    config: { label: data.label, description: data.description, ...(data.config || {}) },
+                    label: data.label ?? null,
+                    description: data.description ?? null,
+                    config: { ...(data.config || {}) },
                 },
             }),
         );
@@ -74,7 +79,9 @@
     <div
         class="min-w-[180px] max-w-[240px] overflow-hidden rounded-xl border bg-white shadow-sm ring-1 ring-gray-950/5 transition-all duration-200 dark:bg-gray-900 dark:ring-white/10 {theme.border} {selected
             ? 'ring-2 ring-primary-500 ring-offset-2 dark:ring-primary-400 dark:ring-offset-gray-950'
-            : 'hover:shadow-md dark:hover:shadow-primary-500/10'}"
+            : problems.length
+              ? 'ring-2 ring-rose-500 dark:ring-rose-400'
+              : 'hover:shadow-md dark:hover:shadow-primary-500/10'}"
     >
         <div class="{theme.header} flex items-center gap-2 px-3 py-1.5">
             <span class="text-white"><theme.icon size={12} strokeWidth={2.5} /></span>
@@ -97,6 +104,18 @@
             <div class="text-xs font-medium {theme.text}">{@render children?.()}</div>
         </div>
     </div>
+
+    {#if problems.length}
+        <div
+            class="fi-flow-node-problems absolute -top-2.5 -right-2.5 z-20 flex h-5 min-w-5 items-center justify-center gap-0.5 rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow ring-2 ring-white dark:ring-gray-950"
+            role="img"
+            aria-label={t("node_problems")}
+            title={problems.join("\n")}
+        >
+            <TriangleAlert size={11} strokeWidth={2.5} />
+            {#if problems.length > 1}{problems.length}{/if}
+        </div>
+    {/if}
 
     <div class="absolute top-0 bottom-0 -left-2 flex flex-col justify-center gap-4">
         {#each inputs as input (input.id)}

@@ -9,26 +9,41 @@
         type Edge,
         type NodeTypes,
         type ColorMode,
+        type Connection,
         BackgroundVariant,
     } from "@xyflow/svelte";
     import NodeSidebar from "./NodeSidebar.svelte";
     import ContextMenu from "./ContextMenu.svelte";
-    import { Plus, Zap } from "lucide-svelte";
+    import { Plus, Zap, Undo2, Redo2 } from "lucide-svelte";
     import { t } from "./labels";
+    import { clearProblems } from "./problems.svelte";
+    import {
+        copySelection,
+        duplicateNodes,
+        isValidConnection as connectionAllowed,
+        newId,
+        pasteClipboard,
+        removeNodes,
+        selectedIds,
+        type Clipboard,
+    } from "../lib/graph";
+    import { History } from "../lib/history";
 
     let {
         nodes = $bindable([]),
         edges = $bindable([]),
         nodeTypes,
         availableNodes = {},
+        minHeight = "600px",
     }: {
         nodes?: Node[];
         edges?: Edge[];
         nodeTypes: NodeTypes;
         availableNodes?: Record<string, any>;
+        minHeight?: string;
     } = $props();
 
-    const { screenToFlowPosition, getNodes, fitView } = useSvelteFlow();
+    const { screenToFlowPosition, flowToScreenPosition, getNodes, fitView } = useSvelteFlow();
 
     let container = $state<HTMLDivElement>();
     let menu = $state<{
@@ -54,9 +69,75 @@
     } | null>(null);
 
     let isEmpty = $derived(nodes.length === 0);
+    let selectedCount = $derived(nodes.filter((n) => n.selected).length);
 
-    const newId = (type: string) => `${type}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    // ----- Undo / redo -------------------------------------------------------
+    // Every settled change (a drag counts once it ends) is a step; applying a
+    // step sets the graph back, which the effect sees as "already current".
+    const history = new History();
+    let canUndo = $state(false);
+    let canRedo = $state(false);
 
+    $effect(() => {
+        if (nodes.some((n) => n.dragging)) return;
+
+        history.push({ nodes, edges });
+        canUndo = history.canUndo;
+        canRedo = history.canRedo;
+    });
+
+    function applySnapshot(snapshot: { nodes: any[]; edges: any[] } | null) {
+        if (!snapshot) return;
+        nodes = snapshot.nodes;
+        edges = snapshot.edges;
+        canUndo = history.canUndo;
+        canRedo = history.canRedo;
+    }
+
+    const undo = () => applySnapshot(history.undo());
+    const redo = () => applySnapshot(history.redo());
+
+    // ----- Clipboard -----------------------------------------------------------
+    let clipboard = $state<Clipboard<Node, Edge>>({ nodes: [], edges: [] });
+    let canPaste = $derived(clipboard.nodes.length > 0);
+
+    function copy(ids?: string[]) {
+        const wanted = ids ? new Set(ids) : null;
+        const source = wanted ? nodes.map((n) => ({ ...n, selected: wanted.has(n.id) })) : nodes;
+        const copied = copySelection(source, edges);
+        if (copied.nodes.length) clipboard = copied;
+    }
+
+    function paste() {
+        const result = pasteClipboard(clipboard, nodes, edges);
+        if (!result.pasted.length) return;
+        nodes = result.nodes;
+        edges = result.edges;
+    }
+
+    function duplicate(ids: string[]) {
+        const result = duplicateNodes(ids, nodes, edges);
+        nodes = result.nodes;
+        edges = result.edges;
+    }
+
+    function remove(ids: string[]) {
+        const result = removeNodes(ids, nodes, edges);
+        nodes = result.nodes;
+        edges = result.edges;
+    }
+
+    function selectAll() {
+        nodes = nodes.map((n) => ({ ...n, selected: true }));
+    }
+
+    /** The nodes a menu action on `id` applies to: the selection when the node is part of it. */
+    function targetsOf(id: string): string[] {
+        const selected = selectedIds(nodes);
+        return selected.includes(id) ? selected : [id];
+    }
+
+    // ----- Adding nodes --------------------------------------------------------
     function onDragOver(event: DragEvent) {
         event.preventDefault();
         if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
@@ -65,17 +146,6 @@
     function addNode(newNode: Node) {
         const updatedNodes = nodes.map((n) => ({ ...n, selected: false }));
         nodes = [...updatedNodes, { ...newNode, selected: true }];
-    }
-
-    function duplicateNode(id: string) {
-        const node = getNodes().find((n) => n.id === id);
-        if (!node) return;
-        addNode({
-            ...node,
-            id: newId(node.type ?? "node"),
-            position: { x: node.position.x + 40, y: node.position.y + 40 },
-            data: JSON.parse(JSON.stringify(node.data)),
-        });
     }
 
     function onDrop(event: DragEvent) {
@@ -88,11 +158,10 @@
         addNode({ id: newId(type), type, position, data });
     }
 
-    function menuAt(event: MouseEvent, id: string, type: "node" | "canvas") {
-        event.preventDefault();
+    function menuAt(clientX: number, clientY: number, id: string, type: "node" | "canvas") {
         const rect = container!.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
 
         menu = {
             id,
@@ -101,9 +170,27 @@
             left: x < clientWidth - 200 ? x : undefined,
             right: x >= clientWidth - 200 ? clientWidth - x : undefined,
             bottom: y >= clientHeight - 200 ? clientHeight - y : undefined,
-            clientX: event.clientX,
-            clientY: event.clientY,
+            clientX,
+            clientY,
         };
+    }
+
+    function onContextMenu(event: MouseEvent, id: string, type: "node" | "canvas") {
+        event.preventDefault();
+        menuAt(event.clientX, event.clientY, id, type);
+    }
+
+    /** The menu from the keyboard (Shift+F10 / the Menu key): on the selected node, else on the canvas. */
+    function openMenuFromKeyboard() {
+        const rect = container!.getBoundingClientRect();
+        const selected = getNodes().find((n) => n.selected);
+
+        if (selected) {
+            const { x, y } = flowToScreenPosition({ x: selected.position.x + (selected.measured?.width ?? 180) / 2, y: selected.position.y + (selected.measured?.height ?? 60) / 2 });
+            menuAt(x, y, selected.id, "node");
+        } else {
+            menuAt(rect.left + rect.width / 2, rect.top + rect.height / 2, "canvas", "canvas");
+        }
     }
 
     function closeMenu() {
@@ -188,16 +275,14 @@
                 };
             }
 
-            if (newEdge) edges = [...edges, newEdge];
+            if (newEdge) {
+                edges = [...edges, newEdge];
+                clearProblems(newEdge.target);
+            }
             pendingConnection = null;
         }
 
         addNodePosition = null;
-    }
-
-    function handleDeleteNode(id: string) {
-        nodes = nodes.filter((n) => n.id !== id);
-        edges = edges.filter((e) => e.source !== id && e.target !== id);
     }
 
     function handleOpenSettings(id: string) {
@@ -209,10 +294,66 @@
                 detail: {
                     id,
                     identifier: data.identifier,
-                    config: { label: data.label, description: data.description, ...(data.config || {}) },
+                    label: data.label ?? null,
+                    description: data.description ?? null,
+                    config: { ...(data.config || {}) },
                 },
             }),
         );
+    }
+
+    // ----- Connections ---------------------------------------------------------
+    const isValidConnection = (connection: Edge | Connection) => connectionAllowed(connection, nodes, edges);
+
+    function onConnect(connection: Connection) {
+        if (connection.target) clearProblems(connection.target);
+    }
+
+    // ----- Keyboard ------------------------------------------------------------
+    // Shortcuts apply while something in the canvas has focus (a node, the
+    // pane), never while typing in a field.
+    function isTyping(target: EventTarget | null): boolean {
+        const el = target as HTMLElement | null;
+        return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+        if (isTyping(event.target)) return;
+
+        const mod = event.metaKey || event.ctrlKey;
+        const key = event.key.toLowerCase();
+
+        if (mod && key === "z") {
+            event.preventDefault();
+            return event.shiftKey ? redo() : undo();
+        }
+        if (mod && key === "y") {
+            event.preventDefault();
+            return redo();
+        }
+        if (mod && key === "c") {
+            if (selectedCount === 0) return;
+            event.preventDefault();
+            return copy();
+        }
+        if (mod && key === "v") {
+            if (!canPaste) return;
+            event.preventDefault();
+            return paste();
+        }
+        if (mod && key === "d") {
+            if (selectedCount === 0) return;
+            event.preventDefault();
+            return duplicate(selectedIds(nodes));
+        }
+        if (mod && key === "a") {
+            event.preventDefault();
+            return selectAll();
+        }
+        if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+            event.preventDefault();
+            return openMenuFromKeyboard();
+        }
     }
 
     // "?node=<id>" in the URL (from a run's step log) selects that node and
@@ -258,13 +399,19 @@
             observer.disconnect();
         };
     });
+
+    const toolButtonClass =
+        "rounded-lg p-2 text-gray-600 transition hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-gray-600 dark:text-gray-400 dark:hover:text-primary-400 dark:disabled:hover:text-gray-400";
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-    class="relative h-[600px] w-full overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-950 dark:ring-white/10"
+    class="fi-flow-canvas-root relative w-full resize-y overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-950 dark:ring-white/10"
+    style="height: {minHeight}; min-height: {minHeight};"
     bind:this={container}
     bind:clientWidth
     bind:clientHeight
+    onkeydown={onKeyDown}
 >
     <div class="absolute inset-0" role="presentation" ondragover={onDragOver} ondrop={onDrop}>
         <SvelteFlow
@@ -272,12 +419,16 @@
             bind:nodes
             bind:edges
             {colorMode}
+            {isValidConnection}
             fitView
             fitViewOptions={{ padding: 0.15, maxZoom: 1.1 }}
             deleteKey={["Backspace", "Delete"]}
+            selectionKey="Shift"
+            onconnect={onConnect}
             onnodeclick={closeOverlays}
-            onnodecontextmenu={({ event, node }) => menuAt(event as MouseEvent, node.id, "node")}
-            onpanecontextmenu={({ event }) => menuAt(event as MouseEvent, "canvas", "canvas")}
+            onnodecontextmenu={({ event, node }) => onContextMenu(event as MouseEvent, node.id, "node")}
+            onselectioncontextmenu={({ event, nodes: selected }) => onContextMenu(event as MouseEvent, selected[0]?.id ?? "canvas", selected.length ? "node" : "canvas")}
+            onpanecontextmenu={({ event }) => onContextMenu(event as MouseEvent, "canvas", "canvas")}
             onpaneclick={closeOverlays}
         >
             <Controls showLock={false} />
@@ -288,11 +439,16 @@
         {#if menu}
             <ContextMenu
                 {...menu}
+                selection={menu.type === "node" ? targetsOf(menu.id).length : 0}
+                {canPaste}
                 onclick={closeMenu}
                 onAddNode={handleAddNode}
                 onOpenSettings={handleOpenSettings}
-                onDuplicateNode={duplicateNode}
-                onDeleteNode={handleDeleteNode}
+                onDuplicateNode={(id) => duplicate(targetsOf(id))}
+                onDeleteNode={(id) => remove(targetsOf(id))}
+                onCopy={(id) => copy(targetsOf(id))}
+                onPaste={paste}
+                onSelectAll={selectAll}
             />
         {/if}
     </div>
@@ -325,16 +481,26 @@
         onClose={closeNodeSidebar}
     />
 
-    <button
-        type="button"
-        onclick={() => {
-            closeMenu();
-            openSidebar();
-        }}
-        class="group absolute top-4 right-4 z-10 rounded-xl bg-white p-3 text-gray-600 shadow-lg ring-1 ring-gray-950/10 transition-all hover:text-primary-600 hover:ring-primary-500 dark:bg-gray-800 dark:text-gray-400 dark:ring-white/10 dark:hover:text-primary-400 dark:hover:ring-primary-400"
-        title={t("add_node")}
-        aria-label={t("add_node")}
-    >
-        <Plus size={20} class="transition-transform group-hover:scale-110" />
-    </button>
+    <div class="absolute top-4 right-4 z-10 flex items-center gap-2">
+        <div class="flex items-center rounded-xl bg-white p-1 shadow-lg ring-1 ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">
+            <button type="button" class={toolButtonClass} onclick={undo} disabled={!canUndo} title="{t('undo')} (⌘Z)" aria-label={t("undo")}>
+                <Undo2 size={18} />
+            </button>
+            <button type="button" class={toolButtonClass} onclick={redo} disabled={!canRedo} title="{t('redo')} (⇧⌘Z)" aria-label={t("redo")}>
+                <Redo2 size={18} />
+            </button>
+        </div>
+        <button
+            type="button"
+            onclick={() => {
+                closeMenu();
+                openSidebar();
+            }}
+            class="group rounded-xl bg-white p-3 text-gray-600 shadow-lg ring-1 ring-gray-950/10 transition-all hover:text-primary-600 hover:ring-primary-500 dark:bg-gray-800 dark:text-gray-400 dark:ring-white/10 dark:hover:text-primary-400 dark:hover:ring-primary-400"
+            title={t("add_node")}
+            aria-label={t("add_node")}
+        >
+            <Plus size={20} class="transition-transform group-hover:scale-110" />
+        </button>
+    </div>
 </div>
