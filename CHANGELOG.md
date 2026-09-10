@@ -2,7 +2,9 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
-## Unreleased
+## 1.2.0 — 2026-09-10
+
+Upgrading: publish the migrations again and migrate — `php artisan vendor:publish --tag="packstub-flow-migrations"` then `php artisan migrate` — to get the guarded `add_audit_columns_to_flow_workflows` migration (`created_by` / `updated_by` on workflows). Nothing was removed or renamed.
 
 ### Added
 
@@ -21,16 +23,13 @@ All notable changes to `packstub/filament-flow` are documented here.
 
 ### Changed
 
+- Tooling: PHPStan (larastan, level 6) with `composer analyse`; `svelte-check` (`bun run check`) and vitest (`bun run test`) for the canvas; a Playwright smoke test (`bun run test:e2e`) that adds a trigger, connects an action and saves, against a panel served by `vendor/bin/testbench serve`; the suite also runs against MySQL 8 in CI (`DB_CONNECTION=mysql` locally). No behaviour change beyond the fixes below.
 - The node settings slide-over keeps a node's settings under their own `config` key in the form, so a custom node whose schema has a field called `label` or `description` no longer collides with the General section. `ManageNode::open()` takes `label` and `description` as separate arguments; the flat shape is still accepted. The `packstub-flow-node-updated` event carries `label`, `description` and `config` separately.
 
 ### Fixed
 
 - Saving right after a change on the canvas no longer loses that change: the canvas pushed its state to the form 400 ms after the last edit, so a Save click inside that window stored the previous graph. The pending state is now flushed when the form is submitted.
 - `RunWorkflowBulkAction` filters the offered workflows by the first selected record, as the single-record action does; before, a bulk action offered every workflow with a Manual trigger.
-
-### Changed
-
-- Tooling: PHPStan (larastan, level 6) with `composer analyse`; `svelte-check` (`bun run check`) and vitest (`bun run test`) for the canvas; a Playwright smoke test (`bun run test:e2e`) that adds a trigger, connects an action and saves, against a panel served by `vendor/bin/testbench serve`; the suite also runs against MySQL 8 in CI (`DB_CONNECTION=mysql` locally). No behaviour change beyond the fixes above.
 
 ## 1.1.0 — 2026-09-03
 
