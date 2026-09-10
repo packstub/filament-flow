@@ -114,6 +114,33 @@ return [
         'limit_reached' => 'The limit of :limit workflows has been reached.',
     ],
 
+    'transfer' => [
+        'export' => 'Export',
+        'import' => 'Import',
+        'import_heading' => 'Import a workflow',
+        'import_description' => 'Paste or upload a workflow exported from any Filament Flow install. It is created inactive, so you can check it before switching it on.',
+        'file' => 'Export file',
+        'json' => 'Or paste the JSON',
+        'submit' => 'Import',
+        'imported' => '":name" imported. Review it, then switch it on.',
+        'nothing' => 'Choose a file or paste the JSON of an export.',
+        'invalid_json' => 'This is not a workflow export: the JSON could not be read.',
+        'empty' => 'The export has no nodes.',
+        'default_name' => 'Imported workflow',
+    ],
+
+    'templates' => [
+        'action' => 'New from template',
+        'heading' => 'Start from a template',
+        'description' => 'A ready-made workflow you can adapt. Nodes marked with a note need a choice from you — a model, a channel — before the workflow can be switched on.',
+        'template' => 'Template',
+        'name' => 'Name',
+        'submit' => 'Create workflow',
+        'created' => '":name" created from the template. Fill in the marked nodes, then switch it on.',
+        'other' => 'Other',
+        'none' => 'No templates are available.',
+    ],
+
     'versions' => [
         'title' => 'Versions',
         'version' => 'Version',

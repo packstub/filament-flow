@@ -24,6 +24,7 @@ use Packstub\Flow\Listeners\DispatchEventTriggers;
 use Packstub\Flow\Support\ModelFinder;
 use Packstub\Flow\Support\Placeholders;
 use Packstub\Flow\Support\Secrets;
+use Packstub\Flow\Support\Templates;
 use Packstub\Flow\Support\Tenancy;
 use Packstub\Flow\Tests\Fixtures\AdminPanelProvider;
 use Packstub\Flow\Tests\Fixtures\User;
@@ -51,6 +52,7 @@ abstract class TestCase extends Orchestra
         Dispatcher::flushCache();
         ModelFinder::flush();
         Secrets::flush();
+        Templates::flush();
         Placeholders::forgetUsedSecrets();
         Tenancy::resolveUsing(null);
     }

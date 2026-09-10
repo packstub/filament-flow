@@ -1,0 +1,162 @@
+{
+  "format": "packstub-flow/1",
+  "key": "dunning",
+  "name": "Dunning: unpaid invoice reminders",
+  "category": "Finance",
+  "description": "Three days after an invoice's due date, remind the customer if it is still unpaid; escalate a week later. Pick the invoice model and the date attribute in the trigger.",
+  "settings": {},
+  "definition": {
+    "nodes": [
+      {
+        "id": "trigger-due",
+        "type": "trigger",
+        "position": {
+          "x": 0,
+          "y": 120
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Triggers\\DateReached",
+          "label": "3 days after due date",
+          "description": "Choose your invoice model here.",
+          "config": {
+            "model_class": null,
+            "attribute": "due_at",
+            "amount": 3,
+            "unit": "days",
+            "direction": "after",
+            "once": true
+          }
+        }
+      },
+      {
+        "id": "condition-unpaid",
+        "type": "condition",
+        "position": {
+          "x": 320,
+          "y": 120
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Conditions\\RecordAttribute",
+          "label": "Still unpaid?",
+          "description": null,
+          "config": {
+            "attribute": "status",
+            "operator": "!=",
+            "value": "paid"
+          }
+        }
+      },
+      {
+        "id": "action-reminder",
+        "type": "action",
+        "position": {
+          "x": 660,
+          "y": 120
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\SendEmail",
+          "label": "Friendly reminder",
+          "description": null,
+          "config": {
+            "recipient": "{{ model.customer.email }}",
+            "subject": "Invoice {{ model.number }} is past due",
+            "body": "Hi {{ model.customer.name }},\n\nInvoice {{ model.number }} for {{ model.total | number:2 }} was due on {{ model.due_at | date:Y-m-d }}. You can pay it here: {{ model.url }}"
+          }
+        }
+      },
+      {
+        "id": "action-wait",
+        "type": "action",
+        "position": {
+          "x": 980,
+          "y": 120
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\Wait",
+          "label": "Wait 7 days",
+          "description": null,
+          "config": {
+            "mode": "duration",
+            "duration": 7,
+            "unit": "days"
+          }
+        }
+      },
+      {
+        "id": "condition-still",
+        "type": "condition",
+        "position": {
+          "x": 1300,
+          "y": 120
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Conditions\\RecordAttribute",
+          "label": "Still unpaid?",
+          "description": null,
+          "config": {
+            "attribute": "status",
+            "operator": "!=",
+            "value": "paid"
+          }
+        }
+      },
+      {
+        "id": "action-escalate",
+        "type": "action",
+        "position": {
+          "x": 1640,
+          "y": 120
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\SendNotification",
+          "label": "Flag for the finance team",
+          "description": null,
+          "config": {
+            "title": "Invoice {{ model.number }} is 10 days overdue",
+            "body": "Two reminders sent; time for a call.",
+            "status": "warning",
+            "action_label": "Open invoice",
+            "action_url": "{{ model.url }}"
+          }
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "trigger-due",
+        "sourceHandle": "output",
+        "target": "condition-unpaid",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e2",
+        "source": "condition-unpaid",
+        "sourceHandle": "true",
+        "target": "action-reminder",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e3",
+        "source": "action-reminder",
+        "sourceHandle": "output",
+        "target": "action-wait",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e4",
+        "source": "action-wait",
+        "sourceHandle": "output",
+        "target": "condition-still",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e5",
+        "source": "condition-still",
+        "sourceHandle": "true",
+        "target": "action-escalate",
+        "targetHandle": "input"
+      }
+    ]
+  }
+}

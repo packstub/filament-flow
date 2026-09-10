@@ -289,6 +289,20 @@ return [
     |--------------------------------------------------------------------------
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Templates
+    |--------------------------------------------------------------------------
+    |
+    | Ready-made workflows offered by "New from template" on the Workflows
+    | page, in addition to the ones shipped with the package: paths to
+    | *.json export files, directories of them, or the documents as arrays.
+    | FlowPlugin::make()->templates([...]) adds to this list.
+    |
+    */
+
+    'templates' => [],
+
     'navigation' => [
         'group' => null,
         'icon' => 'heroicon-o-bolt',

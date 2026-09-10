@@ -59,6 +59,8 @@ FlowPlugin::make()
 | `withoutApprovalsPage()` | page registered | Hide the [Approvals page](approvals.md) (notification and email links keep working) |
 | `resolveTenantUsing()` | `null` | See [Multi-tenancy](tenancy.md) |
 | `maxWorkflows()` | `null` | Workflows a tenant (or the app) may have; the Create button is disabled beyond it |
+| `templates()` | `[]` | Files, directories or documents offered by **New from template**; see [Templates](templates.md#your-own-templates) |
+| `withoutBuiltInTemplates()` | built-in offered | Only your own templates |
 
 `FlowPlugin::get()` returns the plugin instance of the current panel. Nodes and models are registered in application-wide singletons, so a class added on one panel is known to all panels.
 
@@ -246,6 +248,14 @@ Models offered by the **Record created / updated / deleted** triggers, in additi
 ```
 
 The nodes offered in the builder (`Nodes` is `Packstub\Flow\Nodes`). Remove a class to hide it everywhere; add your own classes here or through the plugin — see [Extending](extending.md#registering-nodes).
+
+### Templates
+
+```php
+'templates' => [],
+```
+
+Paths to `*.json` export files, directories of them, or the documents as arrays, offered by **New from template** next to the built-in ones. See [Templates](templates.md).
 
 ### Navigation
 

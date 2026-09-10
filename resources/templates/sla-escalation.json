@@ -1,0 +1,114 @@
+{
+  "format": "packstub-flow/1",
+  "key": "sla-escalation",
+  "name": "SLA escalation",
+  "category": "Support",
+  "description": "Four hours after a ticket is opened, if it is still open, assign it round robin and alert the panel. Pick the ticket model in the trigger.",
+  "settings": {},
+  "definition": {
+    "nodes": [
+      {
+        "id": "trigger-opened",
+        "type": "trigger",
+        "position": {
+          "x": 0,
+          "y": 120
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Triggers\\DateReached",
+          "label": "4 hours after opening",
+          "description": "Choose your ticket model here.",
+          "config": {
+            "model_class": null,
+            "attribute": "created_at",
+            "amount": 4,
+            "unit": "hours",
+            "direction": "after",
+            "once": true
+          }
+        }
+      },
+      {
+        "id": "condition-open",
+        "type": "condition",
+        "position": {
+          "x": 320,
+          "y": 120
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Conditions\\RecordAttribute",
+          "label": "Still open?",
+          "description": null,
+          "config": {
+            "attribute": "status",
+            "operator": "=",
+            "value": "open"
+          }
+        }
+      },
+      {
+        "id": "action-assign",
+        "type": "action",
+        "position": {
+          "x": 660,
+          "y": 120
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\AssignOwner",
+          "label": "Assign round robin",
+          "description": "List the agents' ids or emails, one per line.",
+          "config": {
+            "attribute": "assignee_id",
+            "mode": "round_robin",
+            "users": "",
+            "silently": false
+          }
+        }
+      },
+      {
+        "id": "action-notify",
+        "type": "action",
+        "position": {
+          "x": 980,
+          "y": 120
+        },
+        "data": {
+          "identifier": "Packstub\\Flow\\Nodes\\Actions\\SendNotification",
+          "label": "Alert the assignee",
+          "description": null,
+          "config": {
+            "title": "Ticket {{ model.id }} breached its SLA",
+            "body": "Open for 4 hours without a reply: {{ model.subject }}",
+            "status": "danger",
+            "recipients": "{{ model.assignee.email }}",
+            "action_label": "Open ticket",
+            "action_url": "{{ model.url }}"
+          }
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "trigger-opened",
+        "sourceHandle": "output",
+        "target": "condition-open",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e2",
+        "source": "condition-open",
+        "sourceHandle": "true",
+        "target": "action-assign",
+        "targetHandle": "input"
+      },
+      {
+        "id": "e3",
+        "source": "action-assign",
+        "sourceHandle": "output",
+        "target": "action-notify",
+        "targetHandle": "input"
+      }
+    ]
+  }
+}

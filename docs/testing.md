@@ -36,7 +36,7 @@ function createWorkflow(array $nodes, array $edges = [], array $attributes = [])
 }
 ```
 
-Saving the workflow mirrors its trigger nodes into the triggers table, so the dispatcher finds it immediately.
+Saving the workflow mirrors its trigger nodes into the triggers table, so the dispatcher finds it immediately. A workflow exported from the panel can be loaded the same way: `Workflow::import(file_get_contents('tests/fixtures/dunning.flow.json'), ['is_active' => true])` (see [Templates, import and export](templates.md#import)).
 
 ## Triggering through a model
 

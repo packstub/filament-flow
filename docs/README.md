@@ -20,6 +20,7 @@ Visual workflow automations for Filament panels: triggers, conditions and action
 | **Secrets** | An encrypted store for tokens and webhook URLs, resolved only inside actions and masked in run logs; per tenant when you need it. |
 | **Multi-tenancy** | In a panel with tenancy each team manages its own workflows, secrets, runs and approvals; global workflows run for everyone; a plan limit hook caps workflows per tenant. |
 | **Versions** | Every change to a workflow is kept, with who saved it and what changed; compare and restore from the panel; runs pin the version they ran. |
+| **Templates, import & export** | Start from a ready-made workflow (welcome series, order alert, dunning, SLA escalation, approval) or your own; export a workflow as JSON and import it elsewhere, in the panel or from a seeder. |
 | **Runs** | Every run is stored with status, trigger, record, payload summary, a step log (one row per step) and the error, shown in a Runs tab and on a cross-workflow Runs page with stats; a **Test** button for dry runs; `packstub-flow:run` and `packstub-flow:prune` commands; `WorkflowStarted` / `WorkflowCompleted` / `WorkflowFailed` / `WorkflowDeactivated` events. |
 | **Queue & scheduling** | Inline or queued runs, Wait steps served by delayed jobs, and a `packstub-flow:cron` command registered with the scheduler for you. |
 | **Extensible** | Subclass `Trigger`, `Action` or `Condition`, give it a form schema, and register it on the plugin, in the config or with `Flow::register()`. |
@@ -36,6 +37,7 @@ Visual workflow automations for Filament panels: triggers, conditions and action
 | [Placeholders](placeholders.md) | Syntax, resolution, aliases, how values become text, what each trigger exposes |
 | [Secrets](secrets.md) | The encrypted secrets store, `{{ secrets.* }}` in actions, masking in run logs |
 | [Approvals & signals](approvals.md) | Pausing a run for a human decision or an external signal, the Approvals page, `Flow::signal()` |
+| [Templates, import and export](templates.md) | Starting from a template, the export file, importing in the panel or from a seeder, your own templates |
 | [Multi-tenancy](tenancy.md) | Tenant-scoped workflows, runs and secrets; global workflows; tenant resolution; plan limits |
 | [Runs](runs.md) | Statuses, the step log, Run now, console commands, retention, failure limits, events and the safety guards |
 | [Queue & scheduling](queue-and-scheduling.md) | Sync versus queued runs, Wait steps, the cron command and scheduler registration |
