@@ -40,7 +40,7 @@ class FlowServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews(static::$name)
             ->hasTranslations()
-            ->hasMigration('create_flow_tables')
+            ->hasMigrations(['create_flow_tables', 'add_audit_columns_to_flow_workflows'])
             ->hasCommands([
                 RunScheduledWorkflowsCommand::class,
                 RunWorkflowCommand::class,

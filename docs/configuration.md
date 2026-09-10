@@ -136,6 +136,17 @@ The user model used by **Send notification** is `auth.providers.users.model`.
 
 The relationship of a triggering record that leads to its tenant (`team`), used when no resolver is set — see [Multi-tenancy](tenancy.md). `versions.keep` is how many definition [versions](runs.md#versions) are kept per workflow.
 
+### Audit trail
+
+```php
+'audit' => [
+    'activity_log' => true,
+    'log_name' => 'packstub-flow',
+],
+```
+
+`created_by` / `updated_by` are always recorded. With `spatie/laravel-activitylog` installed, `activity_log` also writes every creation, change, activation, deactivation and deletion to the activity log — see [Audit trail](runs.md#audit-trail).
+
 ### Approvals
 
 ```php

@@ -81,12 +81,7 @@ class WorkflowTransfer
             throw new WorkflowException(implode(' ', $problems));
         }
 
-        foreach ($definition['nodes'] as &$node) {
-            if (($node['data']['identifier'] ?? null) === Webhook::class) {
-                $node['data']['config']['token'] = Str::random(40);
-                unset($node['data']['config']['signing_secret']);
-            }
-        }
+        $definition = self::freshWebhookTokens($definition, dropSecrets: true);
 
         $settings = array_intersect_key((array) ($document['settings'] ?? []), array_flip(self::SETTINGS));
 
@@ -102,6 +97,31 @@ class WorkflowTransfer
         $workflow->save();
 
         return $workflow;
+    }
+
+    /**
+     * Give every webhook trigger a new token — a copy must not answer to the
+     * original's URL — and, for documents from elsewhere, drop the signing
+     * secret too.
+     *
+     * @param  array{nodes: array<int, array<string, mixed>>, edges: array<int, array<string, mixed>>}  $definition
+     * @return array{nodes: array<int, array<string, mixed>>, edges: array<int, array<string, mixed>>}
+     */
+    public static function freshWebhookTokens(array $definition, bool $dropSecrets = false): array
+    {
+        foreach ($definition['nodes'] as &$node) {
+            if (($node['data']['identifier'] ?? null) !== Webhook::class) {
+                continue;
+            }
+
+            $node['data']['config']['token'] = Str::random(40);
+
+            if ($dropSecrets) {
+                unset($node['data']['config']['signing_secret']);
+            }
+        }
+
+        return $definition;
     }
 
     /**

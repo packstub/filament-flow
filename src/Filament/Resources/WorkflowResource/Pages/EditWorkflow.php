@@ -11,6 +11,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Enums\Width;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Packstub\Flow\Enums\NodeType;
@@ -26,6 +27,21 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class EditWorkflow extends EditRecord
 {
     protected static string $resource = WorkflowResource::class;
+
+    /**
+     * "Last saved by jane@acme.test 2 hours ago" under the title.
+     */
+    public function getSubheading(): string|Htmlable|null
+    {
+        /** @var Workflow $workflow */
+        $workflow = $this->getRecord();
+
+        if (! $workflow->updated_by) {
+            return null;
+        }
+
+        return __('packstub-flow::flow.fields.last_saved_by', ['by' => $workflow->updated_by, 'at' => $workflow->updated_at?->diffForHumans() ?? '']);
+    }
 
     protected function getHeaderActions(): array
     {

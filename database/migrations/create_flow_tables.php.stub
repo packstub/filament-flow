@@ -32,6 +32,9 @@ return new class extends Migration
             $table->unsignedInteger('consecutive_failures')->default(0);
             // A workflow (with a "Called by another workflow" trigger) to run when a run of this one fails.
             $table->uuid('on_failure_workflow_id')->nullable();
+            // Who created / last saved the workflow (the user's email, or id).
+            $table->string('created_by')->nullable();
+            $table->string('updated_by')->nullable();
             $table->timestamps();
 
             $table->index(['tenant_type', 'tenant_id'], 'flow_workflows_tenant_index');

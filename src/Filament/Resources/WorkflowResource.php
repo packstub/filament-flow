@@ -36,6 +36,7 @@ use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\NodeRegistry;
 use Packstub\Flow\Nodes\Triggers\WorkflowCalled;
 use Packstub\Flow\Support\Tenancy;
+use Packstub\Flow\Support\WorkflowTransfer;
 use UnitEnum;
 
 class WorkflowResource extends Resource
@@ -165,6 +166,14 @@ class WorkflowResource extends Resource
                     ->since()
                     ->sortable()
                     ->toggleable(),
+                TextColumn::make('updated_by')
+                    ->label(__('packstub-flow::flow.fields.updated_by'))
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('created_by')
+                    ->label(__('packstub-flow::flow.fields.created_by'))
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('updated_at', 'desc')
             ->filters([
@@ -174,10 +183,12 @@ class WorkflowResource extends Resource
                 static::runNowAction(),
                 EditAction::make(),
                 ReplicateAction::make()
-                    ->excludeAttributes(['is_active', 'runs_count'])
+                    ->excludeAttributes(['is_active', 'runs_count', 'consecutive_failures', 'created_by', 'updated_by'])
                     ->beforeReplicaSaved(function (Workflow $replica): void {
                         $replica->name = __('packstub-flow::flow.actions.copy_of', ['name' => $replica->name]);
                         $replica->is_active = false;
+                        // The copy gets its own webhook URLs.
+                        $replica->definition = WorkflowTransfer::freshWebhookTokens(FlowBuilder::normalizeState($replica->definition));
                     }),
                 DeleteAction::make(),
             ])

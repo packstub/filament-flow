@@ -4,8 +4,10 @@ namespace Packstub\Flow\Filament\Widgets;
 
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Database\Eloquent\Builder;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
+use Packstub\Flow\Support\Tenancy;
 
 /**
  * Runs today, failures today, waiting runs and the 7-day success rate.
@@ -16,7 +18,9 @@ class RunsOverview extends StatsOverviewWidget
 
     protected function getStats(): array
     {
-        $runs = Flow::runModel()::query()->where('is_test', false);
+        $runs = Flow::runModel()::query()
+            ->where('is_test', false)
+            ->when(Tenancy::panelTenant(), fn (Builder $query, $tenant) => $query->ofTenant($tenant));
 
         $today = (clone $runs)->where('started_at', '>=', now()->startOfDay())->count();
         $failedToday = (clone $runs)->where('started_at', '>=', now()->startOfDay())->where('status', RunStatus::Failed)->count();

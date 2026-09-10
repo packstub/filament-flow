@@ -83,6 +83,23 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Audit trail
+    |--------------------------------------------------------------------------
+    |
+    | Workflows record who created and last saved them (created_by /
+    | updated_by: the user's email, or id). With spatie/laravel-activitylog
+    | installed, every creation, change, activation, deactivation and
+    | deletion is also written to the activity log under this log name.
+    |
+    */
+
+    'audit' => [
+        'activity_log' => true,
+        'log_name' => 'packstub-flow',
+    ],
+
     'versions' => [
         'keep' => 50,
     ],

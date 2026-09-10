@@ -107,13 +107,21 @@ Test runs are stored like any run, flagged with a beaker icon, hidden from the R
 
 ![The Runs page with its stats and filters](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/runs-page.png)
 
-Besides the Runs tab under each workflow, the **Runs** page (next to Workflows in the navigation) lists every run across workflows, with filters by status, workflow, date and test runs, the details modal, **Run again**, and **Open on the canvas** — which opens the workflow with the failing node selected and centred. Step labels in the details modal link to their node the same way. Four stats sit above the table: runs today, failed today, runs waiting, and the 7-day success rate.
+Besides the Runs tab under each workflow, the **Runs** page (next to Workflows in the navigation) lists every run across workflows, with filters by status, workflow, date and test runs, the details modal, **Run again**, and **Open on the canvas** — which opens the workflow with the failing node selected and centred. Step labels in the details modal link to their node the same way.
+
+Above the table: four stats (runs today, failed today, runs waiting, the 7-day success rate) and a **Runs per day** chart of succeeded and failed runs over the last 7, 14 or 30 days. Below it, **Slowest workflows** lists the five workflows whose runs took longest in the last 7 days, with the run count, the average duration (the sum of a run's step timings) and the failure rate. Test runs are left out of all of them, and in a panel with tenancy they cover the current tenant's runs. The widgets are `Packstub\Flow\Filament\Widgets\RunsOverview`, `RunsChart` and `SlowestWorkflows`; they can be placed on a dashboard like any Filament widget, and a subclass of the page can override `getHeaderWidgets()` / `getFooterWidgets()` to change the set.
 
 Steps are stored one row per step in the `flow_workflow_steps` table (`WorkflowStep` model; `$run->steps` returns them as arrays, `$run->steps()` as the relationship) rather than in a JSON column, so a run with hundreds of steps costs one insert per step and the Runs page can count and filter them.
 
 ## Versions
 
 Every save that changes the definition stores a snapshot in the **Versions** tab of the workflow — the version number, who saved it, when, the node count and a summary of what changed compared to the previous one (nodes added, removed, changed; connections added or removed). Moving nodes around is not a change. **Changes** opens the summary in a modal; **Restore** puts an older definition back on the canvas as a new version, so nothing is ever lost. Each run pins the version it started from (`version_id`, the *Version* column of the Runs tab). Older versions are pruned beyond `versions.keep` (50) per workflow.
+
+## Audit trail
+
+Every workflow records who created it and who last saved it (`created_by`, `updated_by`: the user's email, or id) — shown under the title of the edit page ("Last saved by jane@acme.test 2 hours ago") and as two hidden-by-default columns of the Workflows table; the [Versions](#versions) tab has the same for every change to the definition. Saves made by the engine itself (the failure counter, a deactivation after too many failures) do not overwrite `updated_by`.
+
+With [`spatie/laravel-activitylog`](https://github.com/spatie/laravel-activitylog) installed, the plugin also writes to the activity log: `created`, `updated` (with the changed attributes and a summary of the definition change), `activated`, `deactivated` and `deleted`, under the `packstub-flow` log name, performed on the workflow and caused by the signed-in user. Switch it off with `audit.activity_log => false`; the log name is `audit.log_name`.
 
 ## Failures
 
