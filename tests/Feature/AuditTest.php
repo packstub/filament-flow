@@ -36,7 +36,7 @@ if (! function_exists('activity')) {
         public function log(string $description): void
         {
             $this->entry['description'] = $description;
-            static::$entries[] = $this->entry;
+            self::$entries[] = $this->entry;
         }
     }
 
