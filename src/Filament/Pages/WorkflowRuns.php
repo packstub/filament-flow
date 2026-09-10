@@ -23,7 +23,9 @@ use Illuminate\Support\Facades\Gate;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Filament\Resources\WorkflowResource;
+use Packstub\Flow\Filament\Widgets\RunsChart;
 use Packstub\Flow\Filament\Widgets\RunsOverview;
+use Packstub\Flow\Filament\Widgets\SlowestWorkflows;
 use Packstub\Flow\FlowPlugin;
 use Packstub\Flow\Models\WorkflowRun;
 use Packstub\Flow\Support\Tenancy;
@@ -83,9 +85,18 @@ class WorkflowRuns extends Page implements HasTable
         return parent::canAccess();
     }
 
+    /**
+     * The stats and the runs-per-day chart above the table, the slowest
+     * workflows below it. Override in a subclass to change them.
+     */
     protected function getHeaderWidgets(): array
     {
-        return [RunsOverview::class];
+        return [RunsOverview::class, RunsChart::class];
+    }
+
+    protected function getFooterWidgets(): array
+    {
+        return [SlowestWorkflows::class];
     }
 
     public function table(Table $table): Table
