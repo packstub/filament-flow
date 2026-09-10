@@ -2,7 +2,9 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
-## Unreleased
+## 1.3.0 — 2026-09-10
+
+Upgrading: nothing to do — no migration, nothing removed or renamed. `packstub/agents` (Agents for Laravel, PHP 8.4) is a new suggested dependency: installs without it see no change; installs that add it get the **Ask AI** action and the **Ticket triage with AI** template once a provider key is configured in the engine's `config/ai.php`. One new config key, `ai.timeout`, is read with a default, so a published config file needs no edit.
 
 ### Added
 
