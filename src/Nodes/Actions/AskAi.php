@@ -62,6 +62,11 @@ class AskAi extends Action
         return __('packstub-flow::flow.nodes.ask_ai.description');
     }
 
+    public function getCategory(): string
+    {
+        return 'ai';
+    }
+
     public function getIcon(): ?string
     {
         return 'heroicon-o-sparkles';

@@ -175,7 +175,7 @@ Asks a language model a question built from the run and gets **named fields** ba
 composer require packstub/agents
 ```
 
-The engine needs PHP 8.4. It is a suggested dependency: without it the node is simply not offered — not in the sidebar, not in the validator, and templates that use it (Ticket triage) stay hidden — and everything else works as before. Configure a provider once (`AGENT_PROVIDER` and the key in `config/ai.php`, see the [engine's installation](https://packstub.dev/docs/agents/installation)); the node then lists the engine's model picker entries.
+The engine needs PHP 8.4. It is a suggested dependency: without it the node is simply not offered — not in the sidebar (the **AI** group appears with it, and the node is drawn in teal on the canvas), not in the validator, and templates that use it (Ticket triage) stay hidden — and everything else works as before. Configure a provider once (`AGENT_PROVIDER` and the key in `config/ai.php`, see the [engine's installation](https://packstub.dev/docs/agents/installation)); the node then lists the engine's model picker entries.
 
 | Setting | |
 | --- | --- |

@@ -324,6 +324,8 @@ return [
         'actions_description' => 'What the workflow does',
         'conditions' => 'Conditions',
         'conditions_description' => 'Branch on a true / false check',
+        'ai' => 'AI',
+        'ai_description' => 'Ask a model and branch on its answer',
         'close' => 'Close',
         'back' => 'Back',
         'settings' => 'Settings',

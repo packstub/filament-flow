@@ -281,10 +281,11 @@ it('checks the budget centrally when the engine does not know the run\'s workspa
         ->and(LaravelContext::$entered)->toBe([]);
 });
 
-it('is offered, with its template, only when the engine is installed', function (): void {
+it('is offered in the AI group, with its template, only when the engine is installed', function (): void {
     expect(AskAi::isAvailable())->toBeTrue()
         ->and(Flow::registry()->has(AskAi::class))->toBeTrue()
-        ->and(collect(Flow::registry()->toArray()['actions'])->pluck('identifier')->all())->toContain(AskAi::class);
+        ->and(collect(Flow::registry()->toArray()['actions'])->firstWhere('identifier', AskAi::class))
+        ->toMatchArray(['type' => 'action', 'category' => 'ai']);
 
     $template = Templates::find('ticket-triage');
 
