@@ -52,21 +52,25 @@ class WorkflowRun extends Model
         return config('packstub-flow.tables.runs', 'flow_workflow_runs');
     }
 
+    /** @return BelongsTo<Workflow, $this> */
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Flow::workflowModel(), 'workflow_id');
     }
 
+    /** @return BelongsTo<WorkflowVersion, $this> */
     public function version(): BelongsTo
     {
         return $this->belongsTo(Flow::versionModel(), 'version_id');
     }
 
+    /** @return HasMany<WorkflowStep, $this> */
     public function steps(): HasMany
     {
         return $this->hasMany(Flow::stepModel(), 'run_id')->orderBy('sequence');
     }
 
+    /** @return HasMany<WorkflowWait, $this> */
     public function waits(): HasMany
     {
         return $this->hasMany(Flow::waitModel(), 'run_id');
@@ -85,6 +89,10 @@ class WorkflowRun extends Model
         return $steps->map(fn (WorkflowStep $step): array => $step->toStep())->all();
     }
 
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
     public function scopeReal(Builder $query): Builder
     {
         return $query->where('is_test', false);
@@ -134,6 +142,10 @@ class WorkflowRun extends Model
         return $payload;
     }
 
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
     public function scopeFinished(Builder $query): Builder
     {
         return $query->whereIn('status', [RunStatus::Success, RunStatus::Failed]);

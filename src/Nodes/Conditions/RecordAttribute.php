@@ -49,6 +49,7 @@ class RecordAttribute extends Condition
         ];
     }
 
+    /** @return array<string, string> */
     protected function extraOperators(): array
     {
         return [

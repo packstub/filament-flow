@@ -39,7 +39,7 @@ class Placeholders
 
         return (string) preg_replace_callback(
             self::PATTERN,
-            fn (array $matches): string => self::stringify(self::resolve($matches[1], $payload, $matches[2] ?? '')),
+            fn (array $matches): string => self::stringify(self::resolve($matches[1], $payload, $matches[2])),
             $template,
         );
     }
@@ -175,6 +175,8 @@ class Placeholders
     /**
      * When a template is exactly one placeholder, return its raw value so
      * numbers, booleans and arrays keep their type. Otherwise null.
+     *
+     * @param  array<string, mixed>  $payload
      */
     public static function raw(string $template, array $payload): mixed
     {
@@ -182,7 +184,7 @@ class Placeholders
             return null;
         }
 
-        return self::resolve($matches[1], $payload, $matches[2] ?? '');
+        return self::resolve($matches[1], $payload, $matches[2]);
     }
 
     public static function isSingle(string $template): bool

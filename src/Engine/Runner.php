@@ -366,7 +366,10 @@ class Runner
         }
     }
 
-    /** @return array<int, array<string, mixed>> */
+    /**
+     * @param  array<string, mixed>  $node
+     * @return array<int, array<string, mixed>>
+     */
     protected function visitTrigger(array $node, float $startedAt): array
     {
         $this->record($node, __('packstub-flow::flow.steps.triggered'), startedAt: $startedAt);
@@ -375,6 +378,7 @@ class Runner
     }
 
     /**
+     * @param  array<string, mixed>  $node
      * @param  array<string, mixed>  $payload
      * @return array<int, array<string, mixed>>
      */
@@ -395,6 +399,7 @@ class Runner
     }
 
     /**
+     * @param  array<string, mixed>  $node
      * @param  array<int, string>  $path
      * @param  array<string, mixed>  $payload
      * @return array{0: array<int, array<string, mixed>>, 1: array<string, mixed>}

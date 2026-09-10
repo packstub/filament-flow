@@ -14,6 +14,7 @@ use Filament\Support\SupportServiceProvider;
 use Filament\Tables\TablesServiceProvider;
 use Filament\Widgets\WidgetsServiceProvider;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Foundation\Testing\DatabaseTransactionsManager;
 use Illuminate\Support\Facades\Schema;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
@@ -100,12 +101,27 @@ abstract class TestCase extends Orchestra
 
     protected function defineEnvironment($app): void
     {
-        $app['config']->set('database.default', 'sqlite');
+        // sqlite in memory by default; DB_CONNECTION=mysql (with the usual
+        // DB_* variables) runs the same suite against a real server, as the
+        // MySQL job in CI does.
+        $app['config']->set('database.default', env('DB_CONNECTION', 'sqlite'));
         $app['config']->set('database.connections.sqlite', [
             'driver' => 'sqlite',
             'database' => ':memory:',
             'prefix' => '',
             'foreign_key_constraints' => true,
+        ]);
+        $app['config']->set('database.connections.mysql', [
+            'driver' => 'mysql',
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'filament_flow_test'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
         ]);
         $app['config']->set('auth.providers.users.model', User::class);
         $app['config']->set('app.key', 'base64:2fl+Ktv6fZ7c7ZQfF1Zt6Q0Wd9jz5bJ6rKq8nX0m3Yk=');
@@ -125,7 +141,56 @@ abstract class TestCase extends Orchestra
         }
     }
 
+    /** Whether the server-backed database already has the schema. */
+    protected static bool $schemaReady = false;
+
+    /**
+     * Build the schema. The in-memory sqlite database is new for every test;
+     * a server-backed one (DB_CONNECTION=mysql) is built once per process and
+     * every test runs inside a transaction that is rolled back afterwards.
+     */
     protected function migrate(): void
+    {
+        $persistent = config('database.default') !== 'sqlite';
+
+        if ($persistent && static::$schemaReady) {
+            $this->beginDatabaseTransaction();
+
+            return;
+        }
+
+        if ($persistent) {
+            Schema::dropAllTables();
+        }
+
+        $this->createTables();
+
+        if ($persistent) {
+            static::$schemaReady = true;
+            $this->beginDatabaseTransaction();
+        }
+    }
+
+    /**
+     * Same as Laravel's DatabaseTransactions trait; the transactions manager
+     * knows about the test transaction, so after-commit jobs still run.
+     */
+    protected function beginDatabaseTransaction(): void
+    {
+        $name = config('database.default');
+        $connection = $this->app->make('db')->connection($name);
+
+        $this->app->instance('db.transactions', $manager = new DatabaseTransactionsManager([$name]));
+        $connection->setTransactionManager($manager);
+        $connection->beginTransaction();
+
+        $this->beforeApplicationDestroyed(function () use ($connection): void {
+            $connection->rollBack();
+            $connection->disconnect();
+        });
+    }
+
+    protected function createTables(): void
     {
         Schema::create('teams', function (Blueprint $table): void {
             $table->id();

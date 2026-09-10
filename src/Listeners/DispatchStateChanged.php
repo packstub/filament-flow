@@ -15,9 +15,9 @@ class DispatchStateChanged
 
         Flow::dispatch(StateTransitioned::class, [
             'model' => $event->model,
-            'field' => property_exists($event, 'field') ? $event->field : ($to && method_exists($to, 'getField') ? $to->getField() : null),
-            'from' => $from && method_exists($from, 'getValue') ? $from->getValue() : ($from ? class_basename($from) : null),
-            'to' => $to && method_exists($to, 'getValue') ? $to->getValue() : ($to ? class_basename($to) : null),
+            'field' => $event->field,
+            'from' => $from?->getValue(),
+            'to' => $to?->getValue(),
             'from_state' => $from,
             'to_state' => $to,
         ]);

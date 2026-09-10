@@ -12,9 +12,9 @@ class DispatchStatusUpdated
     {
         Flow::dispatch(StatusChanged::class, [
             'model' => $event->model,
-            'from' => $event->oldStatus?->name,
-            'to' => $event->newStatus->name,
-            'reason' => $event->newStatus->reason,
+            'from' => $event->oldStatus?->getAttribute('name'),
+            'to' => $event->newStatus->getAttribute('name'),
+            'reason' => $event->newStatus->getAttribute('reason'),
         ]);
     }
 }

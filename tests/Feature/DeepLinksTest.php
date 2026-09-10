@@ -38,12 +38,13 @@ it('adds a button to notifications and mails when a label and URL are set', func
 
     Flow::run($workflow, ['model' => $order]);
 
-    $notifications = DB::table('notifications')->where('notifiable_id', $user->id)->orderBy('created_at')->get()->map(fn ($row) => json_decode($row->data, true));
+    // Both rows share a created_at second, so pick them by title rather than by order.
+    $notifications = DB::table('notifications')->where('notifiable_id', $user->id)->get()->map(fn ($row) => json_decode($row->data, true))->keyBy('title');
 
     expect($notifications)->toHaveCount(2)
-        ->and($notifications[0]['actions'][0]['url'])->toBe(url("/admin/orders/{$order->id}/edit"))
-        ->and($notifications[0]['actions'][0]['label'])->toBe('View order')
-        ->and($notifications[1]['actions'] ?? [])->toBe([]);
+        ->and($notifications["Order {$order->reference}"]['actions'][0]['url'])->toBe(url("/admin/orders/{$order->id}/edit"))
+        ->and($notifications["Order {$order->reference}"]['actions'][0]['label'])->toBe('View order')
+        ->and($notifications['No button']['actions'] ?? [])->toBe([]);
 
     Mail::assertSent(WorkflowMail::class, function (WorkflowMail $mail) use ($order): bool {
         return $mail->actionLabel === 'Open'

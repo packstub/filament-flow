@@ -3,8 +3,25 @@
     import FlowHandle from "./FlowHandle.svelte";
     import { Zap, Rocket, CircleHelp, Box, Settings } from "lucide-svelte";
     import { t } from "../labels";
+    import type { Snippet } from "svelte";
 
-    let { id, data, selected, type = "default", inputs = [], outputs = [], children } = $props();
+    let {
+        id,
+        data,
+        selected = false,
+        type = "default",
+        inputs = [],
+        outputs = [],
+        children,
+    }: {
+        id: string;
+        data: any;
+        selected?: boolean;
+        type?: string;
+        inputs?: { id: string }[];
+        outputs?: { id: string }[];
+        children?: Snippet;
+    } = $props();
 
     const themes = {
         trigger: {

@@ -4,6 +4,7 @@ namespace Packstub\Flow\Support;
 
 use Illuminate\Database\Eloquent\Model;
 use Packstub\Flow\Flow;
+use Packstub\Flow\Models\Secret;
 use Throwable;
 
 /**
@@ -67,7 +68,7 @@ class Secrets
                 ->withoutGlobalScopes()
                 ->ofTenant($tenant)
                 ->get()
-                ->mapWithKeys(fn ($secret): array => [(string) $secret->key => $secret->value === null ? null : (string) $secret->value])
+                ->mapWithKeys(fn (Secret $secret): array => [(string) $secret->key => $secret->value])
                 ->all();
         } catch (Throwable) {
             // Table not migrated yet.

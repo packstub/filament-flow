@@ -47,41 +47,49 @@ class Workflow extends Model
         return config('packstub-flow.tables.workflows', 'flow_workflows');
     }
 
+    /** @return HasMany<WorkflowTrigger, $this> */
     public function triggers(): HasMany
     {
         return $this->hasMany(Flow::triggerModel(), 'workflow_id');
     }
 
+    /** @return HasMany<WorkflowRun, $this> */
     public function runs(): HasMany
     {
         return $this->hasMany(Flow::runModel(), 'workflow_id');
     }
 
+    /** @return HasOne<WorkflowRun, $this> */
     public function latestRun(): HasOne
     {
         return $this->hasOne(Flow::runModel(), 'workflow_id')->latestOfMany('started_at');
     }
 
+    /** @return HasMany<WorkflowStep, $this> */
     public function steps(): HasMany
     {
         return $this->hasMany(Flow::stepModel(), 'workflow_id');
     }
 
+    /** @return HasMany<WorkflowWait, $this> */
     public function waits(): HasMany
     {
         return $this->hasMany(Flow::waitModel(), 'workflow_id');
     }
 
+    /** @return BelongsTo<Workflow, $this> */
     public function onFailureWorkflow(): BelongsTo
     {
         return $this->belongsTo(Flow::workflowModel(), 'on_failure_workflow_id');
     }
 
+    /** @return HasMany<WorkflowVersion, $this> */
     public function versions(): HasMany
     {
         return $this->hasMany(Flow::versionModel(), 'workflow_id')->orderByDesc('number');
     }
 
+    /** @return HasOne<WorkflowVersion, $this> */
     public function latestVersion(): HasOne
     {
         return $this->hasOne(Flow::versionModel(), 'workflow_id')->ofMany('number', 'max');

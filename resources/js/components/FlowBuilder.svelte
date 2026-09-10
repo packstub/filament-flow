@@ -29,6 +29,7 @@
     let edges = $state.raw<Edge[]>(untrack(() => incomingEdges));
 
     let updateTimeout: ReturnType<typeof setTimeout> | undefined;
+    let pending: (() => void) | null = null;
 
     // Push the graph back to Livewire, debounced so dragging a node does not
     // fire a request per pixel.
@@ -39,14 +40,29 @@
         if (!updateState) return;
 
         clearTimeout(updateTimeout);
-        updateTimeout = setTimeout(() => {
+        pending = () => {
+            pending = null;
             updateState({
                 nodes: JSON.parse(JSON.stringify(currentNodes)),
                 edges: JSON.parse(JSON.stringify(currentEdges)),
             });
-        }, 400);
+        };
+        updateTimeout = setTimeout(pending, 400);
 
         return () => clearTimeout(updateTimeout);
+    });
+
+    // Saving right after a change must not lose it: when the page's form is
+    // submitted (Save / Create, or Cmd+S), push whatever is still waiting
+    // for the debounce before Livewire reads the field's state.
+    $effect(() => {
+        const flush = () => {
+            clearTimeout(updateTimeout);
+            pending?.();
+        };
+
+        document.addEventListener("submit", flush, true);
+        return () => document.removeEventListener("submit", flush, true);
     });
 
     // The settings slide-over (a Livewire component) applies a node's new

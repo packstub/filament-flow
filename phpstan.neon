@@ -1,0 +1,15 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 6
+    paths:
+        - src
+    tmpDir: build/phpstan
+    checkOctaneCompatibility: true
+    checkModelProperties: true
+    ignoreErrors:
+        # HasWorkflows is applied by the host application's models.
+        -
+            identifier: trait.unused
+            path: src/Concerns/HasWorkflows.php

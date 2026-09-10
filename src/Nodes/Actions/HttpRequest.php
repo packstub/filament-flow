@@ -156,7 +156,7 @@ class HttpRequest extends Action
     {
         return trim((string) preg_replace_callback(
             Placeholders::PATTERN,
-            fn (array $matches): string => rawurlencode(Placeholders::stringify(Placeholders::resolve($matches[1], $payload, $matches[2] ?? ''))),
+            fn (array $matches): string => rawurlencode(Placeholders::stringify(Placeholders::resolve($matches[1], $payload, $matches[2]))),
             $template,
         ));
     }

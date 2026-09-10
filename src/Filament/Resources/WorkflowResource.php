@@ -175,7 +175,7 @@ class WorkflowResource extends Resource
                 EditAction::make(),
                 ReplicateAction::make()
                     ->excludeAttributes(['is_active', 'runs_count'])
-                    ->beforeReplicaSaved(function (Model $replica): void {
+                    ->beforeReplicaSaved(function (Workflow $replica): void {
                         $replica->name = __('packstub-flow::flow.actions.copy_of', ['name' => $replica->name]);
                         $replica->is_active = false;
                     }),
@@ -186,9 +186,12 @@ class WorkflowResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query
-                ->when(Tenancy::panelTenant(), fn (Builder $query, $tenant) => $query->ofTenant($tenant))
-                ->with(['triggers', 'latestRun']));
+            ->modifyQueryUsing(function (Builder $query): Builder {
+                /** @var Builder<Workflow> $query */
+                return $query
+                    ->when(Tenancy::panelTenant(), fn (Builder $query, Model $tenant): Builder => $query->ofTenant($tenant))
+                    ->with(['triggers', 'latestRun']);
+            });
     }
 
     /**

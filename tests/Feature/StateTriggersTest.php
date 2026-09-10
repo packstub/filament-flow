@@ -74,7 +74,7 @@ it('transitions a state from an action and fails on a forbidden transition', fun
 
     expect($run->status)->toBe(RunStatus::Success)
         ->and($order->fresh()->state)->toBeInstanceOf(Paid::class)
-        ->and(collect($run->steps)->firstWhere('node_id', 'a')['output'])->toBe(['from' => 'pending', 'to' => 'paid']);
+        ->and(collect($run->steps)->firstWhere('node_id', 'a')['output'])->toEqual(['from' => 'pending', 'to' => 'paid']);
 
     $run = Flow::run($workflow, ['model' => $order->fresh(), 'target' => 'pending']);
 

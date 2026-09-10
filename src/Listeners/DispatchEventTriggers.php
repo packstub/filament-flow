@@ -26,6 +26,7 @@ class DispatchEventTriggers
 
     protected static int $loadedAt = 0;
 
+    /** @param array<int, mixed> $data */
     public function handle(string $eventName, array $data): void
     {
         if (! static::isWatched($eventName)) {
@@ -47,9 +48,6 @@ class DispatchEventTriggers
         Cache::forget(self::CACHE_KEY);
     }
 
-    /**
-     * @return array<string, true>
-     */
     protected static function isWatched(string $eventName): bool
     {
         $watched = static::watched();
@@ -72,6 +70,7 @@ class DispatchEventTriggers
         return false;
     }
 
+    /** @return array<string, true> */
     protected static function watched(): array
     {
         if (static::$watched !== null && time() - static::$loadedAt < self::REFRESH_AFTER) {

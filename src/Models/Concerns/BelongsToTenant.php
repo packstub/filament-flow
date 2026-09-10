@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  */
 trait BelongsToTenant
 {
+    /** @return MorphTo<Model, $this> */
     public function tenant(): MorphTo
     {
         return $this->morphTo('tenant');
@@ -27,6 +28,9 @@ trait BelongsToTenant
 
     /**
      * Rows of this tenant only.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeOfTenant(Builder $query, ?Model $tenant): Builder
     {
@@ -39,6 +43,9 @@ trait BelongsToTenant
 
     /**
      * Rows of this tenant plus the global ones — what applies to a tenant.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeForTenant(Builder $query, ?Model $tenant): Builder
     {
@@ -51,6 +58,10 @@ trait BelongsToTenant
         });
     }
 
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
     public function scopeGlobal(Builder $query): Builder
     {
         return $query->whereNull('tenant_id');

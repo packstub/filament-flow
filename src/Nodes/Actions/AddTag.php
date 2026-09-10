@@ -76,10 +76,11 @@ class AddTag extends Action
         $tags = array_values(array_filter(array_map('trim', explode(',', $this->interpolate($config['tags'] ?? '', $payload)))));
         $type = trim($this->interpolate($config['type'] ?? '', $payload)) ?: null;
 
+        // The methods come from the HasTags trait checked above.
         match ($config['mode'] ?? 'attach') {
-            'detach' => $model->detachTags($tags, $type),
-            'sync' => $type ? $model->syncTagsWithType($tags, $type) : $model->syncTags($tags),
-            default => $model->attachTags($tags, $type),
+            'detach' => $model->detachTags($tags, $type), // @phpstan-ignore method.notFound
+            'sync' => $type ? $model->syncTagsWithType($tags, $type) : $model->syncTags($tags), // @phpstan-ignore method.notFound, method.notFound
+            default => $model->attachTags($tags, $type), // @phpstan-ignore method.notFound
         };
 
         $this->output(['tags' => $tags, 'type' => $type]);

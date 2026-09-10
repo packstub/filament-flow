@@ -3,6 +3,7 @@
 namespace Packstub\Flow\Filament\Actions\Concerns;
 
 use Closure;
+use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Collection;
@@ -63,8 +64,8 @@ trait RunsWorkflowsForRecords
     /** @return array<string, string> */
     protected function workflowOptions(): array
     {
-        $record = method_exists($this, 'getRecord') ? $this->getRecord() : null;
-        $record ??= method_exists($this, 'getRecords') ? $this->getRecords()?->first() : null;
+        $record = $this instanceof BulkAction ? $this->getSelectedRecords()->first() : $this->getRecord();
+        $record = $record instanceof Model ? $record : null;
         $ids = $this->evaluate($this->workflowIds);
 
         return Flow::workflowModel()::query()

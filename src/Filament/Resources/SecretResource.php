@@ -13,11 +13,13 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Unique;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Filament\Resources\SecretResource\Pages;
 use Packstub\Flow\FlowPlugin;
+use Packstub\Flow\Models\Secret;
 use Packstub\Flow\Support\Tenancy;
 use UnitEnum;
 
@@ -136,7 +138,10 @@ class SecretResource extends Resource
                     ->since()
                     ->sortable(),
             ])
-            ->modifyQueryUsing(fn (Builder $query) => $query->when(Tenancy::panelTenant(), fn ($query, $tenant) => $query->ofTenant($tenant)))
+            ->modifyQueryUsing(function (Builder $query): Builder {
+                /** @var Builder<Secret> $query */
+                return $query->when(Tenancy::panelTenant(), fn (Builder $query, Model $tenant): Builder => $query->ofTenant($tenant));
+            })
             ->defaultSort('key')
             ->recordActions([
                 EditAction::make(),
