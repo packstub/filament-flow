@@ -2,7 +2,7 @@
 
 Every time a workflow starts, a `WorkflowRun` row is created and updated step by step. The **Runs** tab under a workflow's edit page lists them, newest first, and refreshes every ten seconds.
 
-![The Runs tab under a workflow](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/runs.png)
+![The Runs tab under a workflow](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/runs.png)
 
 ## Statuses
 
@@ -31,7 +31,7 @@ Step messages are, in order of appearance: "Triggered", "Condition met, followin
 
 The **Details** action on a run opens a modal with the status, trigger, record, start time, duration, the error (if any), the numbered steps with their time, duration and output, and the payload summary. **Run again** on a finished run starts the workflow once more from the same trigger with the same payload — records are fetched fresh by key — so a failed HTTP call or email can be repeated after the cause is fixed.
 
-![A run's details modal](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/run-detail.png)
+![A run's details modal](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/run-detail.png)
 
 Runs can be deleted in bulk from the tab.
 
@@ -105,13 +105,13 @@ Test runs are stored like any run, flagged with a beaker icon, hidden from the R
 
 ## The Runs page
 
-![The Runs page with its stats and filters](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/runs-page.png)
+![The Runs page with its stats and filters](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/runs-page.png)
 
 Besides the Runs tab under each workflow, the **Runs** page (next to Workflows in the navigation) lists every run across workflows, with filters by status, workflow, date and test runs, the details modal, **Run again**, and **Open on the canvas** — which opens the workflow with the failing node selected and centred. Step labels in the details modal link to their node the same way.
 
 Above the table: four stats (runs today, failed today, runs waiting, the 7-day success rate) and a **Runs per day** chart of succeeded and failed runs over the last 7, 14 or 30 days. Below it, **Slowest workflows** lists the five workflows whose runs took longest in the last 7 days, with the run count, the average duration (the sum of a run's step timings) and the failure rate. Test runs are left out of all of them, and in a panel with tenancy they cover the current tenant's runs. The widgets are `Packstub\Flow\Filament\Widgets\RunsOverview`, `RunsChart` and `SlowestWorkflows`; they can be placed on a dashboard like any Filament widget, and a subclass of the page can override `getHeaderWidgets()` / `getFooterWidgets()` to change the set.
 
-![The Slowest workflows widget under the Runs table](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/runs-slowest.png)
+![The Slowest workflows widget under the Runs table](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/runs-slowest.png)
 
 Steps are stored one row per step in the `flow_workflow_steps` table (`WorkflowStep` model; `$run->steps` returns them as arrays, `$run->steps()` as the relationship) rather than in a JSON column, so a run with hundreds of steps costs one insert per step and the Runs page can count and filter them.
 
