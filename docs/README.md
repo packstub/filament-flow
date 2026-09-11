@@ -1,6 +1,6 @@
 # Filament Flow
 
-![Filament Flow](https://raw.githubusercontent.com/packstub/filament-flow/main/art/banner.jpg)
+![Filament Flow](https://raw.githubusercontent.com/packstub/art/main/filament-flow/banner.jpg)
 
 Visual workflow automations for Filament panels: triggers, conditions and actions drawn on a canvas, executed by a runner, optionally through your queue. Free and open source (MIT).
 

@@ -2,7 +2,7 @@
 
 <div class="filament-hidden">
 
-![Filament Flow — visual workflow automation for Filament panels](https://raw.githubusercontent.com/packstub/filament-flow/main/art/banner.jpg)
+![Filament Flow — visual workflow automation for Filament panels](https://raw.githubusercontent.com/packstub/art/main/filament-flow/banner.jpg)
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/packstub/filament-flow.svg?style=flat-square)](https://packagist.org/packages/packstub/filament-flow)
 [![Tests](https://img.shields.io/github/actions/workflow/status/packstub/filament-flow/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/packstub/filament-flow/actions/workflows/tests.yml)
@@ -69,7 +69,7 @@ $panel->plugin(
 
 A **Workflows** resource appears in the panel navigation.
 
-![The Workflows table with triggers, run counts and the last run's status](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/workflows-list.png)
+![The Workflows table with triggers, run counts and the last run's status](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/workflows-list.png)
 
 Full walkthrough: [Installation](https://packstub.dev/docs/filament-flow/installation).
 
@@ -77,7 +77,7 @@ Full walkthrough: [Installation](https://packstub.dev/docs/filament-flow/install
 
 A workflow is a graph: one or more trigger nodes, followed by actions and conditions connected by edges. Draw it on the canvas — add nodes with the **+** button, the right-click menu or the plus on an unconnected output handle, drag handles together to connect them, and use a condition's **True** and **False** outputs to branch.
 
-![A finished workflow on the canvas](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/canvas.png)
+![A finished workflow on the canvas](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas.png)
 
 Every node has a label, a description and its own settings, edited in a slide-over you open with the gear icon or a double-click. The graph is saved with the workflow as plain JSON (`nodes` and `edges`), so it is easy to seed, export and test.
 
@@ -90,7 +90,7 @@ FlowBuilder::make('definition')->minHeight('70vh')
 
 Not sure where to start? **New from template** on the Workflows page offers a welcome series, a high-value order alert, dunning reminders, an SLA escalation and an approval flow, ready to adapt; **Export** and **Import** move a workflow between panels as a JSON file.
 
-![The template picker on the Workflows page](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/templates.png)
+![The template picker on the Workflows page](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/templates.png)
 
 Read more: [Building workflows](https://packstub.dev/docs/filament-flow/building-workflows), [Templates, import and export](https://packstub.dev/docs/filament-flow/templates).
 
@@ -98,7 +98,7 @@ Read more: [Building workflows](https://packstub.dev/docs/filament-flow/building
 
 A trigger starts a run and decides what the payload contains. Pick one from the sidebar and configure it in its settings — the model for a record trigger, a cron expression for a schedule, the event class for an event trigger.
 
-![The add-node sidebar listing the available triggers](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/node-sidebar.png)
+![The add-node sidebar listing the available triggers](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/node-sidebar.png)
 
 | Trigger | Fires when |
 | --- | --- |
@@ -141,7 +141,7 @@ Read more: [Conditions](https://packstub.dev/docs/filament-flow/conditions).
 
 Actions do the work. Each one's settings are a small Filament form; text fields accept placeholders.
 
-![The settings slide-over for a Send email action](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/node-settings.png)
+![The settings slide-over for a Send email action](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/node-settings.png)
 
 | Action | What it does |
 | --- | --- |
@@ -166,7 +166,7 @@ Actions do the work. Each one's settings are a small Filament form; text fields 
 
 **Find records** and **For each** give a workflow a loop: query records, run a branch once per item with `{{ item.* }}`, then continue from **Done**.
 
-![A Find records node feeding a For each loop with its Each item and Done outputs](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/canvas-loop.png)
+![A Find records node feeding a For each loop with its Each item and Done outputs](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas-loop.png)
 
 Read more: [Actions](https://packstub.dev/docs/filament-flow/actions).
 
@@ -188,7 +188,7 @@ Read more: [Placeholders](https://packstub.dev/docs/filament-flow/placeholders).
 
 Tokens and webhook URLs live on the **Secrets** page, encrypted with your app key and never shown again. Actions reference them as `{{ secrets.slack_webhook }}`; conditions and triggers cannot read them, and every resolved value is masked in the run log. In a panel with tenancy each tenant keeps its own secrets.
 
-![The Secrets page listing keys, never values](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/secrets.png)
+![The Secrets page listing keys, never values](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/secrets.png)
 
 Read more: [Secrets](https://packstub.dev/docs/filament-flow/secrets).
 
@@ -196,11 +196,11 @@ Read more: [Secrets](https://packstub.dev/docs/filament-flow/secrets).
 
 Two actions pause a run until something outside the workflow happens. **Ask for approval** waits for a person: approvers are notified in the panel and by email, and the run continues along **Approved**, **Rejected** or **Timed out**. **Wait for signal** waits for your code.
 
-![An Ask for approval node with Approved, Rejected and Timed out outputs](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/canvas-approval.png)
+![An Ask for approval node with Approved, Rejected and Timed out outputs](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas-approval.png)
 
 Pending requests are listed on the **Approvals** page, with a badge counting the ones waiting for the signed-in user.
 
-![The Approvals page with a pending request](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/approvals.png)
+![The Approvals page with a pending request](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/approvals.png)
 
 ```php
 use Packstub\Flow\Facades\Flow;
@@ -215,15 +215,15 @@ Read more: [Approvals & signals](https://packstub.dev/docs/filament-flow/approva
 
 Every run is recorded: status (Running, Waiting, Succeeded, Failed), the trigger that started it, a summary of the payload, when it started and how long it took, a step-by-step log, and the error message if something threw. The **Runs** tab under a workflow lists them and refreshes on its own.
 
-![The Runs tab under a workflow](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/runs.png)
+![The Runs tab under a workflow](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/runs.png)
 
 Open a run to see each step in order.
 
-![A run's steps and payload in the details modal](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/run-detail.png)
+![A run's steps and payload in the details modal](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/run-detail.png)
 
 **Test** on the edit page performs a dry run — conditions evaluated, side effects simulated and logged as "would run". **Run now** (in the table and on the edit page) starts an active workflow from its first trigger, and `packstub-flow:run` does the same from the console. The **Runs** page lists every run across workflows with stats and a jump to the failing node on the canvas. `packstub-flow:prune` deletes finished runs older than the configured retention (or the workflow's own). A workflow can switch itself off after N consecutive failures, notify your admins, and hand failures to an on-failure workflow.
 
-![The Runs page with its stats and filters](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/runs-page.png)
+![The Runs page with its stats and filters](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/runs-page.png)
 
 ```bash
 php artisan packstub-flow:run "Welcome sequence" --payload='{"answer": 42}'

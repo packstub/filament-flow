@@ -93,6 +93,6 @@ Details in [Queue & scheduling](queue-and-scheduling.md).
 4. Save the workflow, switch **Active** on, and press **Run now** in the page header.
 5. Open the **Runs** tab below the canvas: the run shows as Succeeded with two steps, and your message is in `storage/logs/laravel.log`.
 
-![The Workflows table](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/workflows-list.png)
+![The Workflows table](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/workflows-list.png)
 
 Continue with [Building workflows](building-workflows.md).

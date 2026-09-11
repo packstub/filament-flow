@@ -2,7 +2,7 @@
 
 A workflow is a graph drawn on a canvas: **trigger** nodes start a run, **action** nodes do something, **condition** nodes branch on a true / false check. Edges connect an output handle to an input handle. The canvas lives on the create and edit pages of the Workflows resource, under the name, description and **Active** toggle.
 
-![A finished workflow on the canvas](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/canvas.png)
+![A finished workflow on the canvas](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas.png)
 
 ## Adding nodes
 
@@ -14,7 +14,7 @@ An empty canvas shows a **Start with a trigger** card; **Add a trigger** opens t
 
 The sidebar lists **Triggers**, **Actions** and **Conditions** — plus **AI** once [Agents for Laravel](actions.md#ask-ai) is installed, and any group your own nodes [declare](extending.md#sidebar-groups); open a category or type in the search box to filter every node by name. Click a node to place it, or drag it onto the canvas to drop it exactly where you want. A node added through the **+** button lands in the centre of the visible area, nudged aside if something is already there.
 
-![The add-node sidebar](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/node-sidebar.png)
+![The add-node sidebar](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/node-sidebar.png)
 
 ## Connecting nodes
 
@@ -30,7 +30,7 @@ Select an edge or a node and press **Backspace** or **Delete** to remove it; del
 
 Every node has a **label** (shown in the node header and in the run log), an optional **description**, and the settings specific to its type. Open the slide-over with the **gear icon** in the node header, by **double-clicking** the node, or from the right-click menu's **Settings**.
 
-![The node settings slide-over](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/node-settings.png)
+![The node settings slide-over](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/node-settings.png)
 
 The slide-over is a Filament form:
 
@@ -45,7 +45,7 @@ The slide-over is a Filament form:
 
 Click a node to select it; **Shift + drag** on the background draws a selection box, **Cmd / Ctrl + click** adds a node to the selection, and **Cmd / Ctrl + A** selects everything. Right-click a node for **Settings** (a single node), **Copy**, **Duplicate** and **Delete**; when the node is part of a selection, the menu acts on the whole selection and says so ("Delete 3 nodes"). Right-click the background for **Add node**, **Paste** and **Select all**. The menu can be driven from the keyboard: **Shift + F10** or the Menu key opens it for the selected node, the arrow keys move, **Enter** activates, **Escape** closes.
 
-![The right-click menu on a node: Settings, Copy, Duplicate, Delete](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/context-menu.png)
+![The right-click menu on a node: Settings, Copy, Duplicate, Delete](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/context-menu.png)
 
 A duplicate keeps the label, description and settings, is placed slightly offset from the original, and keeps the edges between the duplicated nodes; nothing connects it to the rest of the graph. Copy and paste (**Cmd / Ctrl + C**, **Cmd / Ctrl + V**) do the same through a clipboard that lives in the page, so a selection can be pasted several times; **Cmd / Ctrl + D** duplicates the selection in one step.
 
@@ -61,7 +61,7 @@ Only active workflows run. New workflows start inactive, and a copy made with th
 
 Saving an **active** workflow checks the definition first and refuses it with a message per problem: no trigger node, a node nothing leads to, or a required setting left empty (a node dropped on the canvas whose settings were never opened). The nodes concerned get a red badge on the canvas; hover it for the messages. The badge disappears when the node is edited or connected, and every badge clears when the next save passes. Inactive drafts are only checked for nodes whose class is no longer registered.
 
-![A refused save: the trigger without a model carries a red badge and the message sits under the canvas](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/canvas-problems.png)
+![A refused save: the trigger without a model carries a red badge and the message sits under the canvas](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas-problems.png)
 
 When a workflow is saved, its trigger nodes are mirrored into the `flow_workflow_triggers` table. That is how the dispatcher finds candidate workflows for an incoming event with one indexed query — you never edit that table yourself.
 

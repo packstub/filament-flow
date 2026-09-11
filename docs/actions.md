@@ -2,7 +2,7 @@
 
 An action does the work of a workflow. Its settings are a Filament form in the node's slide-over; every text field accepts [placeholders](placeholders.md), which are filled in from the run's payload when the action runs. An action that throws marks the run as **Failed** with the exception message and stops that branch — unless its *Error handling* section says to retry, continue, or follow an **Error** branch (see [Runs](runs.md#failures)).
 
-![The settings slide-over for an action](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/node-settings.png)
+![The settings slide-over for an action](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/node-settings.png)
 
 ## Send email
 
@@ -123,7 +123,7 @@ Destinations are checked before the request is sent: private and reserved addres
 
 Hands the run to an automation platform: Filament Flow is the in-app half (it knows your records, your users and your panel), Zapier, Make or n8n is the integration half (thousands of apps, no code). The action is an HTTP POST with a JSON body and an HMAC-SHA256 signature, so any webhook receiver works.
 
-![The settings of a Send to Zapier node: platform, webhook URL and signing secret from the secrets store](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/send-to-automation.png)
+![The settings of a Send to Zapier node: platform, webhook URL and signing secret from the secrets store](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/send-to-automation.png)
 
 | Setting | |
 | --- | --- |
@@ -169,7 +169,7 @@ With a signing secret, every request carries `X-Flow-Timestamp` (Unix seconds) a
 
 Asks a language model a question built from the run and gets **named fields** back, so the nodes after it can branch on the answer: a ticket comes in → Ask AI returns `urgency`, `category` and a one-line `summary` → a condition on `{{ last.urgency }}` → assign round robin → notify. The step runs on [Agents for Laravel](https://packstub.dev/docs/agents) (`packstub/agents`, free): provider and model, the workspace's own API key, the operator's budgets and limits and the structured output (through `laravel/ai`) all come from the engine, so a workflow never holds a provider key and the same limits apply as in the chat.
 
-![The settings of an Ask AI node: the question with placeholders, the answer as named fields](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/ask-ai.png)
+![The settings of an Ask AI node: the question with placeholders, the answer as named fields](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/ask-ai.png)
 
 ```bash
 composer require packstub/agents
@@ -262,7 +262,7 @@ The action changes nothing, so a [test run](runs.md#test-runs) executes it for r
 
 Runs the nodes on its **Each item** output once per item of a list, then continues along **Done**.
 
-![A Find records node feeding a For each loop with its Each item and Done outputs](https://raw.githubusercontent.com/packstub/filament-flow/main/docs/images/canvas-loop.png)
+![A Find records node feeding a For each loop with its Each item and Done outputs](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas-loop.png)
 
 | Setting | |
 | --- | --- |
