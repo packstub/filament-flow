@@ -100,9 +100,14 @@ class ListWorkflows extends ListRecords
                 $options = [];
                 $descriptions = [];
 
-                foreach (Templates::byCategory() as $category => $templates) {
+                $byCategory = Templates::byCategory();
+                // The category prefix only helps to tell groups apart — a
+                // picker with a single group reads better without it.
+                $prefixCategory = count($byCategory) > 1;
+
+                foreach ($byCategory as $category => $templates) {
                     foreach ($templates as $key => $template) {
-                        $options[$key] = $category.' — '.$template['name'];
+                        $options[$key] = ($prefixCategory ? $category.' — ' : '').$template['name'];
                         $descriptions[$key] = (string) ($template['description'] ?? '');
                     }
                 }
