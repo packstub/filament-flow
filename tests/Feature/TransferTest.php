@@ -104,6 +104,32 @@ it('offers custom templates from the config and the plugin, and only usable ones
     rmdir($dir);
 });
 
+it('drops the category prefix from the picker when only one category is offered', function (): void {
+    $this->actingAs(createUser());
+
+    $dir = sys_get_temp_dir().'/flow-templates-'.Str::random(6);
+    mkdir($dir);
+    file_put_contents($dir.'/custom-log.json', json_encode(['name' => 'Custom log', 'category' => 'Ops', 'definition' => ['nodes' => [triggerNode('t', Manual::class), actionNode('a', WriteLog::class, ['message' => 'hi'])], 'edges' => [edge('t', 'a')]]]));
+    config()->set('packstub-flow.templates', [$dir]);
+
+    $pickerOptions = function (): array {
+        $page = Livewire::test(ListWorkflows::class)->mountAction('template')->instance();
+
+        return $page->getSchema($page->getMountedActionSchemaName())->getComponent('template')->getOptions();
+    };
+
+    // Several categories: the prefix tells them apart.
+    expect($pickerOptions()['custom-log'])->toBe('Ops — Custom log');
+
+    // One category left: the prefix would only repeat itself on every line.
+    Templates::withoutBuiltIn();
+
+    expect($pickerOptions())->toBe(['custom-log' => 'Custom log']);
+
+    array_map('unlink', glob($dir.'/*.json') ?: []);
+    rmdir($dir);
+});
+
 it('exports, imports and starts from a template in the panel', function (): void {
     $this->actingAs(createUser());
 
