@@ -194,7 +194,7 @@ Applies to the **HTTP request** and **Send Slack message** actions.
 ],
 ```
 
-The default timeout of one question from the **Ask AI** action, in seconds; a node can set its own. Everything else about the model — provider, key, model picker, budgets and limits — is the engine's: `config/packstub-agents.php` and `config/ai.php` of [Agents for Laravel](https://packstub.dev/docs/agents), which the action needs installed (see [Actions](actions.md#ask-ai)).
+The default timeout of one question from the **Ask AI** action, in seconds; a node can set its own. **Describe a workflow** uses the same timeout for its one question. Everything else about the model — provider, key, model picker, budgets and limits — is the engine's: `config/packstub-agents.php` and `config/ai.php` of [Agents for Laravel](https://packstub.dev/docs/agents), which the action needs installed (see [Actions](actions.md#ask-ai)).
 
 ### Schedule
 

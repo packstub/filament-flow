@@ -167,7 +167,7 @@ With a signing secret, every request carries `X-Flow-Timestamp` (Unix seconds) a
 
 ## Ask AI
 
-Asks a language model a question built from the run and gets **named fields** back, so the nodes after it can branch on the answer: a ticket comes in → Ask AI returns `urgency`, `category` and a one-line `summary` → a condition on `{{ last.urgency }}` → assign round robin → notify. The step runs on [Agents for Laravel](https://packstub.dev/docs/agents) (`packstub/agents`, free): provider and model, the workspace's own API key, the operator's budgets and limits and the structured output (through `laravel/ai`) all come from the engine, so a workflow never holds a provider key and the same limits apply as in the chat.
+Asks a language model a question built from the run and gets **named fields** back, so the nodes after it can branch on the answer: a ticket comes in → Ask AI returns `urgency`, `category` and a one-line `summary` → a condition on `{{ last.urgency }}` → assign round robin → notify. The step runs on [Agents for Laravel](https://packstub.dev/docs/agents) (`packstub/agents`, free): provider and model, the workspace's own API key, the operator's budgets and limits and the structured output (through `laravel/ai`) all come from the engine, so a workflow never holds a provider key and the same limits apply as in the chat. The same engine powers [Describe a workflow](templates.md#describe-a-workflow) on the Workflows page.
 
 ![The settings of an Ask AI node: the question with placeholders, the answer as named fields](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/ask-ai.png)
 
