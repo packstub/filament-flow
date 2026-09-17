@@ -15,6 +15,7 @@ use Filament\Support\Enums\Width;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Facades\Flow;
+use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
 use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\FlowPlugin;
 use Packstub\Flow\Models\Workflow;
@@ -77,7 +78,7 @@ class ListWorkflows extends ListRecords
 
                 Notification::make()->title(__('packstub-flow::flow.transfer.imported', ['name' => $workflow->name]))->success()->send();
 
-                $action->redirect(WorkflowResource::getUrl('edit', ['record' => $workflow]));
+                $action->redirect(static::reviewUrl($workflow));
             });
     }
 
@@ -137,7 +138,7 @@ class ListWorkflows extends ListRecords
 
                 Notification::make()->title(__('packstub-flow::flow.templates.created', ['name' => $workflow->name]))->success()->send();
 
-                $action->redirect(WorkflowResource::getUrl('edit', ['record' => $workflow]));
+                $action->redirect(static::reviewUrl($workflow));
             });
     }
 
@@ -156,6 +157,16 @@ class ListWorkflows extends ListRecords
 
             throw $e;
         }
+    }
+
+    /**
+     * The edit page of a workflow that was just created inactive from a
+     * description, a template or an import: the canvas opens with the
+     * nodes still to fill in marked (FlowBuilder::REVIEW_QUERY).
+     */
+    public static function reviewUrl(Workflow $workflow): string
+    {
+        return WorkflowResource::getUrl('edit', ['record' => $workflow, FlowBuilder::REVIEW_QUERY => 1]);
     }
 
     /** @return array<string, string> */

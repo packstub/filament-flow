@@ -21,11 +21,15 @@
         availableNodes = {},
         labels = {},
         minHeight = "600px",
+        problems: initialProblems = {},
         updateState,
     } = $props();
 
     setLabels(untrack(() => labels));
     setNodeDefinitions(untrack(() => availableNodes));
+    // A workflow opened for review (just created from a template, an import
+    // or a description) starts with the nodes still to fill in marked.
+    setProblems(untrack(() => initialProblems));
 
     let nodes = $state.raw<Node[]>(untrack(() => incomingNodes));
     let edges = $state.raw<Edge[]>(untrack(() => incomingEdges));

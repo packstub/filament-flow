@@ -102,9 +102,37 @@ test("starts a workflow from a template", async ({ page }) => {
     await page.getByRole("radio", { name: /Welcome series/ }).check();
     await page.getByRole("button", { name: "Create workflow" }).click();
 
-    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit$/);
+    // Opened for review: nothing to fill in here, so no badge.
+    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit\?review=1$/);
     await expect(page.locator(".fi-flow-canvas .svelte-flow__node")).toHaveCount(4);
     await expect(page.locator(".fi-flow-canvas .svelte-flow__edge")).toHaveCount(3);
+    await expect(page.locator(".fi-flow-node-problems")).toHaveCount(0);
+});
+
+// A draft with a choice left to the person opens with the validator's
+// badge on that node, as after a refused save; editing the node clears it.
+test("marks the nodes still to fill in when a template opens for review", async ({ page }) => {
+    await signIn(page);
+    await page.goto("/admin/workflows");
+    await page.getByRole("button", { name: "New from template" }).click();
+    await page.getByRole("radio", { name: /High-value order alert/ }).check();
+    await page.getByRole("button", { name: "Create workflow" }).click();
+
+    // The trigger's record type and the notification's recipients are the template's choices left to the person.
+    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit\?review=1$/);
+    await expect(page.locator(".fi-flow-node-problems")).toHaveCount(2);
+    const trigger = page.locator(".fi-flow-canvas .svelte-flow__node").filter({ hasText: "Order created" });
+    await expect(trigger.locator(".fi-flow-node-problems")).toHaveAttribute("title", /Record type/);
+
+    // Choosing the record type in the trigger's settings clears its badge.
+    await trigger.dblclick();
+    const slideOver = page.locator(".fi-modal-window").filter({ hasText: "Record type" });
+    await slideOver.getByRole("combobox", { name: /^Record type/ }).click();
+    await page.getByRole("option", { name: "Order", exact: true }).click();
+    await slideOver.getByRole("button", { name: "Apply" }).click();
+    await expect(slideOver).toBeHidden();
+    await expect(trigger.locator(".fi-flow-node-problems")).toHaveCount(0);
+    await expect(page.locator(".fi-flow-node-problems")).toHaveCount(1);
 });
 
 // The real Ask AI node, offered by the workbench once packstub/agents is
