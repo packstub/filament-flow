@@ -135,6 +135,23 @@ test("marks the nodes still to fill in when a template opens for review", async 
     await expect(page.locator(".fi-flow-node-problems")).toHaveCount(1);
 });
 
+// "Describe a workflow" is offered by the workbench once packstub/agents is
+// installed: the modal takes a sentence and a model from the engine's
+// picker. The draft itself would ask a real provider, so it is not sent.
+test("offers Describe a workflow when the engine is installed", async ({ page }) => {
+    test.skip(!existsSync("vendor/packstub/agents"), "packstub/agents is not installed in the workbench");
+
+    await signIn(page);
+    await page.goto("/admin/workflows");
+    await page.getByRole("button", { name: "Describe a workflow" }).click();
+
+    const modal = page.locator(".fi-modal-window").filter({ hasText: "Describe the workflow you want" });
+    await expect(modal).toBeVisible();
+    await expect(modal.getByRole("textbox", { name: /^What should the workflow do/ })).toBeVisible();
+    await expect(modal.getByRole("combobox", { name: /^Model/ }).locator("option", { hasText: /Claude/ }).first()).toBeAttached();
+    await expect(modal.getByRole("button", { name: "Draft workflow" })).toBeVisible();
+});
+
 // The real Ask AI node, offered by the workbench once packstub/agents is
 // installed (composer require packstub/agents --dev; CI's canvas job does):
 // its own AI group in the sidebar, the teal look on the canvas, the settings

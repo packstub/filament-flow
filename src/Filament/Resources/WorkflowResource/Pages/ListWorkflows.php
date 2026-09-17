@@ -6,6 +6,7 @@ use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -19,8 +20,10 @@ use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
 use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\FlowPlugin;
 use Packstub\Flow\Models\Workflow;
+use Packstub\Flow\Nodes\Actions\AskAi;
 use Packstub\Flow\Support\Templates;
 use Packstub\Flow\Support\Tenancy;
+use Packstub\Flow\Support\WorkflowGenerator;
 use Packstub\Flow\Support\WorkflowTransfer;
 
 class ListWorkflows extends ListRecords
@@ -34,10 +37,50 @@ class ListWorkflows extends ListRecords
         $tooltip = fn (): ?string => $full() ? __('packstub-flow::flow.actions.limit_reached', ['limit' => $limit]) : null;
 
         return [
+            static::describeAction()->disabled($full)->tooltip($tooltip),
             static::templateAction()->disabled($full)->tooltip($tooltip),
             static::importAction()->disabled($full)->tooltip($tooltip),
             CreateAction::make()->disabled($full)->tooltip($tooltip),
         ];
+    }
+
+    /**
+     * Describe the workflow in a sentence; a model drafts it from the
+     * registered nodes (WorkflowGenerator) and it opens inactive, with the
+     * nodes still to fill in marked. Offered when packstub/agents is
+     * installed, like the Ask AI action.
+     */
+    public static function describeAction(): Action
+    {
+        return Action::make('describe')
+            ->label(__('packstub-flow::flow.describe.action'))
+            ->icon('heroicon-o-sparkles')
+            ->color('gray')
+            ->visible(fn (): bool => WorkflowGenerator::isAvailable())
+            ->modalHeading(__('packstub-flow::flow.describe.heading'))
+            ->modalDescription(__('packstub-flow::flow.describe.description'))
+            ->modalSubmitActionLabel(__('packstub-flow::flow.describe.submit'))
+            ->modalWidth(Width::Large)
+            ->schema([
+                Textarea::make('description')
+                    ->label(__('packstub-flow::flow.describe.field'))
+                    ->placeholder(__('packstub-flow::flow.describe.placeholder'))
+                    ->helperText(__('packstub-flow::flow.describe.help'))
+                    ->rows(4)
+                    ->required()
+                    ->maxLength(2000),
+                Select::make('model')
+                    ->label(__('packstub-flow::flow.nodes.ask_ai.model'))
+                    ->options(fn (): array => [AskAi::DEFAULT_MODEL => __('packstub-flow::flow.nodes.ask_ai.default_model')] + AskAi::modelOptions())
+                    ->default(AskAi::DEFAULT_MODEL),
+            ])
+            ->action(function (array $data, Action $action): void {
+                $workflow = static::createFrom(fn (): Workflow => WorkflowGenerator::generate((string) ($data['description'] ?? ''), $data['model'] ?? null, static::tenantAttributes()), $action);
+
+                Notification::make()->title(__('packstub-flow::flow.describe.created', ['name' => $workflow->name]))->success()->send();
+
+                $action->redirect(static::reviewUrl($workflow));
+            });
     }
 
     /**
