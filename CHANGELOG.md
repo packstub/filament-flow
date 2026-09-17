@@ -2,7 +2,7 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
-## Unreleased
+## 1.4.0 — 2026-09-17
 
 Upgrading: nothing to do — no migration, nothing removed or renamed. The **Describe a workflow** action needs `packstub/agents` (Agents for Laravel, PHP 8.4), the suggested dependency the Ask AI action already uses; installs without it see no change. The canvas bundle was rebuilt (`resources/dist`).
 
