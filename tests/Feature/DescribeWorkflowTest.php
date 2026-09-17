@@ -22,12 +22,27 @@ use Packstub\Flow\Nodes\Actions\WriteLog;
 use Packstub\Flow\Nodes\Conditions\CompareValues;
 use Packstub\Flow\Nodes\Triggers\RecordCreated;
 use Packstub\Flow\Nodes\Triggers\Webhook;
+use Packstub\Flow\Support\ModelFinder;
 use Packstub\Flow\Support\NodeCatalog;
+use Packstub\Flow\Support\Templates;
 use Packstub\Flow\Support\WorkflowGenerator;
 use Packstub\Flow\Tests\Fixtures\FakeEngine;
 use Packstub\Flow\Tests\Fixtures\Order;
 use Packstub\Flow\Tests\Fixtures\Team;
 use Packstub\Flow\Tests\Fixtures\Ticket;
+use Packstub\Flow\Tests\Fixtures\User;
+
+enum DescribedPriority: string
+{
+    case Low = 'low';
+    case High = 'high';
+}
+
+/** A ticket whose title is cast to an enum, to see its cases listed for the model. */
+class DescribedTicket extends Ticket
+{
+    protected $casts = ['title' => DescribedPriority::class];
+}
 
 // These tests drive the engine stubs (tests/Fixtures/Agents); with the real packstub/agents installed they do not apply.
 beforeEach(function (): void {
@@ -94,7 +109,7 @@ it('drafts an inactive workflow from a sentence with the registered nodes, their
     $prompt = FakeEngine::lastPrompt();
 
     expect($prompt['prompt'])->toBe('When an order over $500 comes in, post to Slack and flag it for review.')
-        ->and($prompt['instructions'])->toContain('the secrets that exist: slack_webhook', Order::class.', '.Ticket::class, '"identifier":'.json_encode(SendSlackMessage::class), '"key":"webhook_url"', '"true":"True","false":"False"')
+        ->and($prompt['instructions'])->toContain('the secrets that exist: slack_webhook', '  '.Order::class.': id, user_id, team_id, reference, status, total, state, due_at, created_at, updated_at', '  '.Ticket::class.': id', '"identifier":'.json_encode(SendSlackMessage::class), '"key":"webhook_url"', '"true":"True","false":"False"', 'each connect to the same output', 'Example of a good answer, for "Tell the team in Slack', '"node":'.json_encode(RecordCreated::class).',"label":"Order created","note":"Choose your order model here.","settings":[{"key":"once","value":"false"}]', '{"from":"condition-total","output":"true","to":"action-slack"}')
         ->and($prompt['provider'])->toBe(['anthropic' => 'claude-haiku-4-5', 'openai' => 'openai-model-for-fast'])
         ->and($prompt['timeout'])->toBe(60)
         ->and(array_keys($prompt['schema']['properties']))->toBe(['name', 'description', 'nodes', 'edges'])
@@ -260,6 +275,36 @@ it('describes every registered node for the model and coerces answers back into 
         ->and(NodeCatalog::coerce(['kind' => 'map'], "X-Key: 1\nAccept: json"))->toBe(['X-Key' => '1', 'Accept' => 'json'])
         ->and(NodeCatalog::coerce($fields, '[{"name": "urgency", "type": "enum", "options": "low, high", "required": "no"}, "junk"]'))->toBe([['name' => 'urgency', 'type' => 'enum', 'options' => 'low, high', 'description' => null, 'required' => false]])
         ->and(NodeCatalog::coerce(['kind' => 'text'], ' hello '))->toBe('hello');
+});
+
+it('tells the model what each record type looks like and shows it a template as an example', function (): void {
+    expect(ModelFinder::attributes(User::class))->toHaveKeys(['id', 'name', 'email'])
+        ->and(ModelFinder::attributes(User::class))->not->toHaveKeys(['password', 'remember_token'])
+        ->and(ModelFinder::attributes(DescribedTicket::class)['title'])->toBe(['low', 'high'])
+        ->and(ModelFinder::attributes(DescribedTicket::class)['created_at'])->toBeNull()
+        ->and(ModelFinder::attributes('App\\Nope'))->toBe([]);
+
+    ModelFinder::register([DescribedTicket::class]);
+
+    expect(WorkflowGenerator::recordTypes())->toContain('  '.DescribedTicket::class.': id, title [low, high], created_at, updated_at');
+
+    $example = WorkflowGenerator::example();
+
+    expect($example['request'])->toStartWith('Tell the team in Slack')
+        ->and($example['answer']['name'])->toBe('High-value order alert')
+        ->and(collect($example['answer']['nodes'])->pluck('node')->all())->toContain(RecordCreated::class, CompareValues::class, SendSlackMessage::class)
+        ->and(collect($example['answer']['nodes'])->firstWhere('id', 'action-slack')['settings'])->toBe([['key' => 'webhook_url', 'value' => '{{ secrets.slack_webhook }}'], ['key' => 'message', 'value' => ':tada: Order {{ model.id }} for {{ model.total | number:2 }} just came in. {{ model.url }}']])
+        ->and($example['answer']['edges'])->toHaveCount(3);
+
+    // Another template stands in when that one is not offered; none when there is no template at all.
+    Flow::registry()->forget([SendSlackMessage::class]);
+
+    expect(WorkflowGenerator::example()['answer']['name'])->toBe('Approval before a record goes live');
+
+    Templates::withoutBuiltIn();
+
+    expect(WorkflowGenerator::example())->toBeNull()
+        ->and(WorkflowGenerator::instructions(NodeCatalog::all()))->not->toContain('Example of a good answer');
 });
 
 it('drafts inside the panel\'s tenant and attaches the workflow to it', function (): void {

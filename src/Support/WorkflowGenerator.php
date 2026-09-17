@@ -174,7 +174,8 @@ class WorkflowGenerator
     public static function instructions(array $catalog): string
     {
         $secrets = Secrets::keys(Tenancy::panelTenant());
-        $models = array_keys(ModelFinder::options());
+        $models = static::recordTypes();
+        $example = static::example();
 
         $lines = [
             'You design workflows for Filament Flow, a workflow automation tool inside a Laravel admin panel. A workflow is a graph: a trigger starts it, conditions branch on true / false, actions do things. Nodes are connected by edges from an output of one node to the next node.',
@@ -182,18 +183,101 @@ class WorkflowGenerator
             'Rules:',
             '- Use only the nodes in the catalog below, by their identifier, and only the settings listed for each node, by key. Values are always text: "true" / "false" for boolean settings, digits for numbers, one of the listed option keys (or its label) for selects, JSON text for lists, maps and items.',
             '- Start with exactly one trigger unless the request clearly needs several. Every other node must be reachable from a trigger through edges. Do not add nodes the request does not ask for.',
+            '- Actions that do not depend on each other each connect to the same output (both to the condition\'s "true", for example) rather than one after the other, so one failing does not stop the rest. Chain them only when a later one needs the earlier one\'s output ({{ last.* }}).',
             '- Outputs: triggers and actions continue through "output"; conditions through "true" and "false"; an action also has "error" when its _on_error setting is "branch"; other outputs are listed with the node.',
             '- Fill in what the request says and what the catalog knows (record types, option keys). When a value cannot be known — an API endpoint, an email address, a phone number, a channel, a threshold the request does not give — leave the setting out and say in the node\'s note what the person has to fill in. Never invent URLs, addresses, keys or tokens.',
             '- Credentials and webhook URLs are secrets, referenced as {{ secrets.<name> }}'.($secrets !== [] ? '; the secrets that exist: '.implode(', ', $secrets) : '; when none fits, reference a sensible new name and say so in the note').'.',
             '- Placeholders put values of the run into text: {{ model.<attribute> }} for the record that started the run, {{ last.<key> }} for the previous action\'s output, {{ outputs.<node id>.<key> }} for an earlier one, {{ model.url }} for the record\'s page; filters such as {{ model.total | number:2 }}. Each node lists the placeholders it provides or accepts.',
-            $models !== [] ? '- Record types available for the record triggers and actions: '.implode(', ', $models).'.' : '- No record types are registered yet: leave the record type empty and say so in the note.',
+            $models !== [] ? "- Record types available for the record triggers and actions, with their attributes (use them in conditions, updates and placeholders; the allowed values of an attribute are in brackets):\n".implode("\n", $models) : '- No record types are registered yet: leave the record type empty and say so in the note.',
             '- Node ids: short and unique (trigger-1, condition-1, action-1). Labels: a few words, in the language of the request, as are the name, the description and the notes.',
             '',
             'Catalog (JSON):',
             (string) json_encode(array_values($catalog), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
         ];
 
+        if ($example !== null) {
+            $lines[] = '';
+            $lines[] = 'Example of a good answer, for "'.$example['request'].'" (JSON):';
+            $lines[] = (string) json_encode($example['answer'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        }
+
         return implode("\n", $lines);
+    }
+
+    /**
+     * The record types the record triggers and actions offer, one line
+     * each: the class, its attributes, and the allowed values of the ones
+     * cast to an enum.
+     *
+     * @return array<int, string>
+     */
+    public static function recordTypes(): array
+    {
+        $lines = [];
+
+        foreach (array_keys(ModelFinder::options()) as $class) {
+            $attributes = [];
+
+            foreach (ModelFinder::attributes($class) as $attribute => $values) {
+                $attributes[] = $values === null ? $attribute : $attribute.' ['.implode(', ', $values).']';
+            }
+
+            $lines[] = '  '.$class.($attributes !== [] ? ': '.implode(', ', $attributes) : '');
+        }
+
+        return $lines;
+    }
+
+    /**
+     * A template as the model would have answered it — the request it
+     * stands for and the answer in the shape asked for — so the model sees
+     * the conventions: parallel branches, notes only where a choice is
+     * left, secrets by name, short labels. The high-value order alert when
+     * it is offered, the first usable template otherwise, none when there
+     * is no template.
+     *
+     * @return array{request: string, answer: array<string, mixed>}|null
+     */
+    public static function example(): ?array
+    {
+        $template = Templates::find('high-value-order-alert') ?? (Templates::all()[array_key_first(Templates::all()) ?? ''] ?? null);
+
+        if ($template === null) {
+            return null;
+        }
+
+        $nodes = [];
+
+        foreach ((array) $template['definition']['nodes'] as $node) {
+            $settings = [];
+
+            foreach ((array) ($node['data']['config'] ?? []) as $key => $value) {
+                if ($value === null || $value === '' || $value === []) {
+                    continue;
+                }
+
+                $settings[] = ['key' => (string) $key, 'value' => is_bool($value) ? ($value ? 'true' : 'false') : (is_scalar($value) ? (string) $value : (string) json_encode($value, JSON_UNESCAPED_SLASHES))];
+            }
+
+            $nodes[] = [
+                'id' => (string) $node['id'],
+                'node' => (string) ($node['data']['identifier'] ?? ''),
+                'label' => (string) ($node['data']['label'] ?? ''),
+                'note' => (string) ($node['data']['description'] ?? ''),
+                'settings' => $settings,
+            ];
+        }
+
+        $edges = [];
+
+        foreach ((array) $template['definition']['edges'] as $edge) {
+            $edges[] = ['from' => (string) $edge['source'], 'output' => (string) ($edge['sourceHandle'] ?? 'output'), 'to' => (string) $edge['target']];
+        }
+
+        return [
+            'request' => (string) ($template['description'] ?? $template['name']),
+            'answer' => ['name' => (string) $template['name'], 'description' => (string) ($template['description'] ?? ''), 'nodes' => $nodes, 'edges' => $edges],
+        ];
     }
 
     /**
