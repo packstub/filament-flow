@@ -13,6 +13,11 @@ export default defineConfig({
         trace: "retain-on-failure",
         screenshot: "only-on-failure",
     },
+    // auth.setup.ts signs in once; the specs start from its cookies.
+    projects: [
+        { name: "setup", testMatch: /auth\.setup\.ts/ },
+        { name: "chromium", testMatch: /\.spec\.ts/, dependencies: ["setup"], use: { storageState: "tests/e2e/.auth/admin.json" } },
+    ],
     webServer: {
         command:
             "rm -f vendor/orchestra/testbench-core/laravel/database/database.sqlite && vendor/bin/testbench package:create-sqlite-db && vendor/bin/testbench serve --port=8787 --no-reload",
