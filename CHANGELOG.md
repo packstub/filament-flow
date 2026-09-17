@@ -14,6 +14,7 @@ Upgrading: nothing to do — no migration, nothing removed or renamed. The **Des
 
 ### Changed
 
+- **Workflows page header**: one primary **New workflow** button (sentence case, like the others) with **Describe a workflow** beside it when the engine is installed; **New from template** and **Import** moved into the more-actions menu (⋯), so the header no longer wraps on narrower screens. The template action has its own icon (a stack); sparkles now means AI everywhere. An empty table shows the same starters in its place (`ListWorkflows::starterActions()`, `WorkflowResource` empty state) instead of a bare "No workflows".
 - The Ask AI action's tenant entering moved to `AgentTenant::within()`, shared with the builder; behaviour unchanged.
 
 ## 1.3.1 — 2026-09-16

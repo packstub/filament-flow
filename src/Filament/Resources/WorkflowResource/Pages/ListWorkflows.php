@@ -3,6 +3,7 @@
 namespace Packstub\Flow\Filament\Resources\WorkflowResource\Pages;
 
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
@@ -30,6 +31,12 @@ class ListWorkflows extends ListRecords
 {
     protected static string $resource = WorkflowResource::class;
 
+    /**
+     * One primary button (a blank canvas), the model-drafted way beside it
+     * when the engine is installed, and the rarer starters — a template,
+     * an import — behind the more-actions menu at the end, where its
+     * dropdown hangs from the right edge.
+     */
     protected function getHeaderActions(): array
     {
         $limit = static::workflowLimit();
@@ -38,9 +45,35 @@ class ListWorkflows extends ListRecords
 
         return [
             static::describeAction()->disabled($full)->tooltip($tooltip),
-            static::templateAction()->disabled($full)->tooltip($tooltip),
-            static::importAction()->disabled($full)->tooltip($tooltip),
-            CreateAction::make()->disabled($full)->tooltip($tooltip),
+            static::createAction()->disabled($full)->tooltip($tooltip),
+            ActionGroup::make([
+                static::templateAction()->disabled($full),
+                static::importAction()->disabled($full),
+            ])->tooltip($tooltip),
+        ];
+    }
+
+    /**
+     * The blank-canvas starter, in sentence case like the others.
+     */
+    public static function createAction(): CreateAction
+    {
+        return CreateAction::make()->label(__('packstub-flow::flow.actions.new'));
+    }
+
+    /**
+     * Every way to start a workflow, for the empty table: a first visit
+     * lands here, so the starters are shown where the rows will be.
+     *
+     * @return array<int, Action>
+     */
+    public static function starterActions(): array
+    {
+        return [
+            static::createAction(),
+            static::describeAction(),
+            static::templateAction(),
+            static::importAction(),
         ];
     }
 
@@ -133,7 +166,7 @@ class ListWorkflows extends ListRecords
     {
         return Action::make('template')
             ->label(__('packstub-flow::flow.templates.action'))
-            ->icon('heroicon-o-sparkles')
+            ->icon('heroicon-o-rectangle-stack')
             ->color('gray')
             ->visible(fn (): bool => Templates::all() !== [])
             ->modalHeading(__('packstub-flow::flow.templates.heading'))

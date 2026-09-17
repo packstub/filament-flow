@@ -88,7 +88,7 @@ use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
 FlowBuilder::make('definition')->minHeight('70vh')
 ```
 
-Not sure where to start? **New from template** on the Workflows page offers a welcome series, a high-value order alert, dunning reminders, an SLA escalation and an approval flow, ready to adapt; with `packstub/agents` installed, **Describe a workflow** turns a sentence ("when an order over $500 comes in, post to Slack and flag it for review") into a draft built from your own triggers, conditions and actions, opened inactive with the nodes still to fill in marked; **Export** and **Import** move a workflow between panels as a JSON file.
+Not sure where to start? **New from template** (in the ⋯ menu on the Workflows page) offers a welcome series, a high-value order alert, dunning reminders, an SLA escalation and an approval flow, ready to adapt; with `packstub/agents` installed, **Describe a workflow** turns a sentence ("when an order over $500 comes in, post to Slack and flag it for review") into a draft built from your own triggers, conditions and actions, opened inactive with the nodes still to fill in marked; **Export** and **Import** (same menu) move a workflow between panels as a JSON file. An empty Workflows table offers every starter in its place.
 
 ![The template picker on the Workflows page](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/templates.png)
 

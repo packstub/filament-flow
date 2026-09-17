@@ -108,6 +108,7 @@ return [
     ],
 
     'actions' => [
+        'new' => 'New workflow',
         'run' => 'Run now',
         'run_heading' => 'Run ":name" now?',
         'run_description' => 'The workflow starts from its first trigger with a minimal payload. Steps that need a record (record conditions, "Update record") will fail; use it to try schedules, webhooks and notifications.',
@@ -115,6 +116,11 @@ return [
         'run_finished' => 'Run finished: :status',
         'copy_of' => ':name (copy)',
         'limit_reached' => 'The limit of :limit workflows has been reached.',
+    ],
+
+    'empty' => [
+        'heading' => 'No workflows yet',
+        'description' => 'Draw one on the canvas, start from a template or an export, or describe what should happen and let a model draft it.',
     ],
 
     'transfer' => [

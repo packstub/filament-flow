@@ -6,7 +6,7 @@ A workflow is data, so it can travel: start one from a template, describe it in 
 
 ![The template picker on the Workflows page](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/templates.png)
 
-**New from template** on the Workflows page lists ready-made workflows by area. The area is written before each name while more than one is offered; an install that switched the built-in templates off and ships a single category of its own sees plain names. Pick one, give it a name, and it opens on the canvas with a red badge on every node that needs a choice from you — the record type of a trigger, the agents of a round-robin assignment — and a note in the node's description; the workflow cannot be switched on until they are filled, exactly like any other incomplete draft (see [Building workflows](building-workflows.md#saving)).
+**New from template**, in the more-actions menu (⋯) beside **New workflow** on the Workflows page, lists ready-made workflows by area. The area is written before each name while more than one is offered; an install that switched the built-in templates off and ships a single category of its own sees plain names. Pick one, give it a name, and it opens on the canvas with a red badge on every node that needs a choice from you — the record type of a trigger, the agents of a round-robin assignment — and a note in the node's description; the workflow cannot be switched on until they are filled, exactly like any other incomplete draft (see [Building workflows](building-workflows.md#saving)).
 
 Built in:
 
@@ -90,7 +90,7 @@ An export carries what is needed to rebuild the workflow somewhere else and noth
 
 ## Import
 
-**Import** on the Workflows page takes an export file or its pasted JSON, creates the workflow inactive (owned by the current tenant in a panel with [tenancy](tenancy.md)), and opens it with the nodes still to fill in marked. A document is refused with a message when it is not JSON, has no nodes, or uses a trigger, action or condition that is not registered in this install.
+**Import**, in the more-actions menu (⋯) on the Workflows page, takes an export file or its pasted JSON, creates the workflow inactive (owned by the current tenant in a panel with [tenancy](tenancy.md)), and opens it with the nodes still to fill in marked. A document is refused with a message when it is not JSON, has no nodes, or uses a trigger, action or condition that is not registered in this install.
 
 From code, for seeders, tests and deployments:
 
