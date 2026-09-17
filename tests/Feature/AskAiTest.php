@@ -303,7 +303,7 @@ it('is offered in the AI group, with its template, only when the engine is insta
     $result = Process::path(dirname(__DIR__, 2))->run([PHP_BINARY, 'tests/Fixtures/without-engine.php']);
 
     expect($result->successful())->toBeTrue()
-        ->and($result->output())->toBe('unavailable');
+        ->and($result->output())->toBe('ask_ai=unavailable describe=unavailable');
 
     Flow::registry()->forget([AskAi::class]);
 

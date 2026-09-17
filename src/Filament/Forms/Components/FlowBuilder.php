@@ -14,11 +14,20 @@ use Packstub\Flow\Support\DefinitionValidator;
  */
 class FlowBuilder extends Field
 {
+    /**
+     * The query parameter that opens the canvas with the nodes still to fill
+     * in marked, as after a refused save — the edit page of a workflow just
+     * created from a template, an import or a description carries it.
+     */
+    public const REVIEW_QUERY = 'review';
+
     protected string $view = 'packstub-flow::forms.components.flow-builder';
 
     protected int|string $minHeight = 600;
 
     protected bool $validatesDefinition = true;
+
+    protected bool|Closure|null $reviewsOnOpen = null;
 
     protected function setUp(): void
     {
@@ -54,6 +63,40 @@ class FlowBuilder extends Field
         $this->validatesDefinition = ! $condition;
 
         return $this;
+    }
+
+    /**
+     * Mark the nodes an active workflow would be refused for when the
+     * canvas opens; by default only when the page URL asks for it
+     * (?review=1, see REVIEW_QUERY).
+     */
+    public function reviewOnOpen(bool|Closure|null $condition = true): static
+    {
+        $this->reviewsOnOpen = $condition;
+
+        return $this;
+    }
+
+    public function reviewsOnOpen(): bool
+    {
+        $condition = $this->evaluate($this->reviewsOnOpen);
+
+        return $condition ?? request()->boolean(self::REVIEW_QUERY);
+    }
+
+    /**
+     * The problems the canvas shows as badges when it opens, keyed by node
+     * id: those of an active workflow, when reviewsOnOpen(); none otherwise.
+     *
+     * @return array<string, array<int, string>>
+     */
+    public function getInitialProblems(): array
+    {
+        if (! $this->validatesDefinition || ! $this->reviewsOnOpen()) {
+            return [];
+        }
+
+        return array_filter(DefinitionValidator::problemsByNode(static::normalizeState($this->getState()), active: true), fn (string $id): bool => $id !== '', ARRAY_FILTER_USE_KEY);
     }
 
     public function minHeight(int|string $height): static

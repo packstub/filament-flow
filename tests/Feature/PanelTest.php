@@ -1,5 +1,6 @@
 <?php
 
+use Filament\Actions\ActionGroup;
 use Filament\Actions\Testing\TestAction;
 use Livewire\Livewire;
 use Packstub\Flow\Engine\Runner;
@@ -35,6 +36,27 @@ it('lists workflows in the panel navigation and table', function (): void {
 
     expect(WorkflowResource::getNavigationGroup())->toBe('Automation')
         ->and(WorkflowResource::getUrl())->toBe(url('/admin/workflows'));
+});
+
+it('keeps the header to a blank canvas and the model-drafted way, the other starters behind the menu beside them', function (): void {
+    [$describe, $create, $menu] = Livewire::test(ListWorkflows::class)->instance()->getCachedHeaderActions();
+
+    expect($menu)->toBeInstanceOf(ActionGroup::class)
+        ->and(array_keys($menu->getFlatActions()))->toBe(['template', 'import'])
+        ->and($menu->getFlatActions()['template']->getIcon())->toBe('heroicon-o-rectangle-stack')
+        ->and($describe->getName())->toBe('describe')
+        ->and($describe->getIcon())->toBe('heroicon-o-sparkles')
+        ->and($create->getName())->toBe('create')
+        ->and($create->getLabel())->toBe('New workflow');
+
+    // Every starter is offered where the rows will be, on a first visit.
+    Livewire::test(ListWorkflows::class)
+        ->assertSee('No workflows yet')
+        ->assertActionVisible(TestAction::make('create')->table())
+        ->assertActionVisible(TestAction::make('template')->table())
+        ->assertActionVisible(TestAction::make('import')->table())
+        ->assertSee('New workflow')
+        ->assertDontSee('New Workflow');
 });
 
 it('creates a workflow from the form with the canvas state', function (): void {

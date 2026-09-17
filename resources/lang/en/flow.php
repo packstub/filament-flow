@@ -108,6 +108,7 @@ return [
     ],
 
     'actions' => [
+        'new' => 'New workflow',
         'run' => 'Run now',
         'run_heading' => 'Run ":name" now?',
         'run_description' => 'The workflow starts from its first trigger with a minimal payload. Steps that need a record (record conditions, "Update record") will fail; use it to try schedules, webhooks and notifications.',
@@ -115,6 +116,11 @@ return [
         'run_finished' => 'Run finished: :status',
         'copy_of' => ':name (copy)',
         'limit_reached' => 'The limit of :limit workflows has been reached.',
+    ],
+
+    'empty' => [
+        'heading' => 'No workflows yet',
+        'description' => 'Draw one on the canvas, start from a template or an export, or describe what should happen and let a model draft it.',
     ],
 
     'transfer' => [
@@ -142,6 +148,23 @@ return [
         'created' => '":name" created from the template. Fill in the marked nodes, then switch it on.',
         'other' => 'Other',
         'none' => 'No templates are available.',
+    ],
+
+    'describe' => [
+        'action' => 'Describe a workflow',
+        'heading' => 'Describe the workflow you want',
+        'description' => 'Say what should happen and when, in a sentence or two. A model drafts it from the triggers, conditions and actions of this panel; it opens inactive, with the nodes still to fill in marked, so you can check it before switching it on.',
+        'field' => 'What should the workflow do?',
+        'placeholder' => 'When an order over $500 comes in, post it to the sales Slack channel and set its status to "review".',
+        'help' => 'Name the record, the moment and the outcome — which attribute to check, what to set, whom to tell. Anything the model cannot know — an address, a channel, a threshold — it leaves for you and says so on the node.',
+        'submit' => 'Draft workflow',
+        'created' => '":name" drafted. Fill in the marked nodes, then switch it on.',
+        'empty' => 'Describe the workflow first.',
+        'no_nodes' => 'No triggers, actions or conditions are registered to build with.',
+        'nothing' => 'The model did not produce a workflow from that description. Try saying what starts it and what should happen.',
+        'failed' => 'The workflow could not be drafted: :error',
+        'default_name' => 'Drafted workflow',
+        'on_error_help' => '"branch" adds an "error" output the run continues through when this action fails.',
     ],
 
     'versions' => [

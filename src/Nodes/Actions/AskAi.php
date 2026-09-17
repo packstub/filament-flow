@@ -10,17 +10,15 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 use Laravel\Ai\StructuredAnonymousAgent;
-use Packstub\Agents\Facades\Agents;
 use Packstub\Agents\Support\AgentBudget;
 use Packstub\Agents\Support\AgentModels;
-use Packstub\Agents\Support\AgentRuntime;
 use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Nodes\Action;
 use Packstub\Flow\Nodes\Concerns\InterpolatesPlaceholders;
+use Packstub\Flow\Support\AgentTenant;
 use Packstub\Flow\Support\Placeholders;
 use Packstub\Flow\Support\Tenancy;
 use Throwable;
@@ -266,11 +264,9 @@ class AskAi extends Action
     }
 
     /**
-     * Run the callback as the run's tenant, the way a queued turn runs: the
-     * engine's context enters the workspace (budgets, limits and credentials
-     * then read that workspace's) and leaves it afterwards. Nothing happens
-     * when the run has no tenant, when the engine is already on it, or when
-     * the engine's workspace model is not the one Flow scopes by.
+     * Run the callback as the run's tenant, the way a queued turn runs (see
+     * AgentTenant): budgets, limits and credentials are then that
+     * workspace's.
      *
      * @template T
      *
@@ -279,20 +275,7 @@ class AskAi extends Action
      */
     protected function withinTenant(Closure $callback): mixed
     {
-        $tenant = Tenancy::current();
-        $model = Agents::context()->tenantModel();
-
-        if (! $tenant instanceof Model || $model === null || ! $tenant instanceof $model || Agents::tenant()?->is($tenant)) {
-            return $callback();
-        }
-
-        $leave = AgentRuntime::enter(['tenant' => $tenant->getKey()]);
-
-        try {
-            return $callback();
-        } finally {
-            $leave();
-        }
+        return AgentTenant::within(Tenancy::current(), $callback);
     }
 
     /**

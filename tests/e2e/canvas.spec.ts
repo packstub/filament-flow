@@ -1,14 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { existsSync } from "node:fs";
 
+// Signed in once for the run by auth.setup.ts.
+
 // Add a trigger, connect an action to it, save — the path every user takes.
 test("builds a workflow on the canvas and saves it", async ({ page }) => {
-    await page.goto("/admin/login");
-    await page.getByRole("textbox", { name: /Email address/ }).fill("admin@example.com");
-    await page.getByRole("textbox", { name: /Password/ }).fill("password");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/admin$/);
-
     await page.goto("/admin/workflows/create");
     await page.getByRole("textbox", { name: /^Name/ }).fill("Smoke test");
 
@@ -33,16 +29,7 @@ test("builds a workflow on the canvas and saves it", async ({ page }) => {
     await expect(page.locator(".fi-flow-canvas .svelte-flow__edge")).toHaveCount(1);
 });
 
-async function signIn(page: import("@playwright/test").Page) {
-    await page.goto("/admin/login");
-    await page.getByRole("textbox", { name: /Email address/ }).fill("admin@example.com");
-    await page.getByRole("textbox", { name: /Password/ }).fill("password");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/admin$/);
-}
-
 test("undoes, redoes, copies and pastes on the canvas", async ({ page }) => {
-    await signIn(page);
     await page.goto("/admin/workflows/create");
 
     const canvas = page.locator(".fi-flow-canvas");
@@ -75,7 +62,6 @@ test("undoes, redoes, copies and pastes on the canvas", async ({ page }) => {
 });
 
 test("marks the nodes an active workflow cannot be saved with", async ({ page }) => {
-    await signIn(page);
     await page.goto("/admin/workflows/create");
     await page.getByRole("textbox", { name: /^Name/ }).fill("Incomplete");
     await page.getByRole("switch", { name: /Active/ }).check();
@@ -94,17 +80,66 @@ test("marks the nodes an active workflow cannot be saved with", async ({ page })
     await expect(page).toHaveURL(/\/admin\/workflows\/create$/);
 });
 
+// The rarer starters (a template, an import) sit behind the header's
+// more-actions menu, beside New workflow.
+async function openStarter(page: import("@playwright/test").Page, name: string) {
+    await page.locator(".fi-header .fi-dropdown-trigger button").click();
+    await page.getByRole("button", { name }).click();
+}
+
 test("starts a workflow from a template", async ({ page }) => {
-    await signIn(page);
     await page.goto("/admin/workflows");
-    await page.getByRole("button", { name: "New from template" }).click();
+    await openStarter(page, "New from template");
 
     await page.getByRole("radio", { name: /Welcome series/ }).check();
     await page.getByRole("button", { name: "Create workflow" }).click();
 
-    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit$/);
+    // Opened for review: nothing to fill in here, so no badge.
+    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit\?review=1$/);
     await expect(page.locator(".fi-flow-canvas .svelte-flow__node")).toHaveCount(4);
     await expect(page.locator(".fi-flow-canvas .svelte-flow__edge")).toHaveCount(3);
+    await expect(page.locator(".fi-flow-node-problems")).toHaveCount(0);
+});
+
+// A draft with a choice left to the person opens with the validator's
+// badge on that node, as after a refused save; editing the node clears it.
+test("marks the nodes still to fill in when a template opens for review", async ({ page }) => {
+    await page.goto("/admin/workflows");
+    await openStarter(page, "New from template");
+    await page.getByRole("radio", { name: /High-value order alert/ }).check();
+    await page.getByRole("button", { name: "Create workflow" }).click();
+
+    // The trigger's record type and the notification's recipients are the template's choices left to the person.
+    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit\?review=1$/);
+    await expect(page.locator(".fi-flow-node-problems")).toHaveCount(2);
+    const trigger = page.locator(".fi-flow-canvas .svelte-flow__node").filter({ hasText: "Order created" });
+    await expect(trigger.locator(".fi-flow-node-problems")).toHaveAttribute("title", /Record type/);
+
+    // Choosing the record type in the trigger's settings clears its badge.
+    await trigger.dblclick();
+    const slideOver = page.locator(".fi-modal-window").filter({ hasText: "Record type" });
+    await slideOver.getByRole("combobox", { name: /^Record type/ }).click();
+    await page.getByRole("option", { name: "Order", exact: true }).click();
+    await slideOver.getByRole("button", { name: "Apply" }).click();
+    await expect(slideOver).toBeHidden();
+    await expect(trigger.locator(".fi-flow-node-problems")).toHaveCount(0);
+    await expect(page.locator(".fi-flow-node-problems")).toHaveCount(1);
+});
+
+// "Describe a workflow" is offered by the workbench once packstub/agents is
+// installed: the modal takes a sentence and a model from the engine's
+// picker. The draft itself would ask a real provider, so it is not sent.
+test("offers Describe a workflow when the engine is installed", async ({ page }) => {
+    test.skip(!existsSync("vendor/packstub/agents"), "packstub/agents is not installed in the workbench");
+
+    await page.goto("/admin/workflows");
+    await page.getByRole("button", { name: "Describe a workflow" }).click();
+
+    const modal = page.locator(".fi-modal-window").filter({ hasText: "Describe the workflow you want" });
+    await expect(modal).toBeVisible();
+    await expect(modal.getByRole("textbox", { name: /^What should the workflow do/ })).toBeVisible();
+    await expect(modal.getByRole("combobox", { name: /^Model/ }).locator("option", { hasText: /Claude/ }).first()).toBeAttached();
+    await expect(modal.getByRole("button", { name: "Draft workflow" })).toBeVisible();
 });
 
 // The real Ask AI node, offered by the workbench once packstub/agents is
@@ -114,7 +149,6 @@ test("starts a workflow from a template", async ({ page }) => {
 test("offers the real Ask AI node in the AI group and dry-runs it", async ({ page }) => {
     test.skip(!existsSync("vendor/packstub/agents"), "packstub/agents is not installed in the workbench");
 
-    await signIn(page);
     await page.goto("/admin/workflows/create");
     await page.getByRole("textbox", { name: /^Name/ }).fill("Triage with AI");
 
@@ -138,6 +172,8 @@ test("offers the real Ask AI node in the AI group and dry-runs it", async ({ pag
     await expect(canvas.locator(".svelte-flow__edge")).toHaveCount(1);
 
     // The settings come from the engine: the model picker lists the platform's entries.
+    // The new node can land at the edge of the viewport; bring both nodes into view first.
+    await canvas.locator(".svelte-flow__controls-fitview").click();
     await askAi.dblclick();
     const slideOver = page.locator(".fi-modal-window").filter({ hasText: "Ask AI" });
     await slideOver.getByRole("textbox", { name: /^Question/ }).fill("Is order {{ manual }} urgent?");

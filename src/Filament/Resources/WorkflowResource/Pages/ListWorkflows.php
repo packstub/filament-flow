@@ -3,9 +3,11 @@
 namespace Packstub\Flow\Filament\Resources\WorkflowResource\Pages;
 
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -15,17 +17,26 @@ use Filament\Support\Enums\Width;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Facades\Flow;
+use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
 use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\FlowPlugin;
 use Packstub\Flow\Models\Workflow;
+use Packstub\Flow\Nodes\Actions\AskAi;
 use Packstub\Flow\Support\Templates;
 use Packstub\Flow\Support\Tenancy;
+use Packstub\Flow\Support\WorkflowGenerator;
 use Packstub\Flow\Support\WorkflowTransfer;
 
 class ListWorkflows extends ListRecords
 {
     protected static string $resource = WorkflowResource::class;
 
+    /**
+     * One primary button (a blank canvas), the model-drafted way beside it
+     * when the engine is installed, and the rarer starters — a template,
+     * an import — behind the more-actions menu at the end, where its
+     * dropdown hangs from the right edge.
+     */
     protected function getHeaderActions(): array
     {
         $limit = static::workflowLimit();
@@ -33,10 +44,76 @@ class ListWorkflows extends ListRecords
         $tooltip = fn (): ?string => $full() ? __('packstub-flow::flow.actions.limit_reached', ['limit' => $limit]) : null;
 
         return [
-            static::templateAction()->disabled($full)->tooltip($tooltip),
-            static::importAction()->disabled($full)->tooltip($tooltip),
-            CreateAction::make()->disabled($full)->tooltip($tooltip),
+            static::describeAction()->disabled($full)->tooltip($tooltip),
+            static::createAction()->disabled($full)->tooltip($tooltip),
+            ActionGroup::make([
+                static::templateAction()->disabled($full),
+                static::importAction()->disabled($full),
+            ])->tooltip($tooltip),
         ];
+    }
+
+    /**
+     * The blank-canvas starter, in sentence case like the others.
+     */
+    public static function createAction(): CreateAction
+    {
+        return CreateAction::make()->label(__('packstub-flow::flow.actions.new'));
+    }
+
+    /**
+     * Every way to start a workflow, for the empty table: a first visit
+     * lands here, so the starters are shown where the rows will be.
+     *
+     * @return array<int, Action>
+     */
+    public static function starterActions(): array
+    {
+        return [
+            static::createAction(),
+            static::describeAction(),
+            static::templateAction(),
+            static::importAction(),
+        ];
+    }
+
+    /**
+     * Describe the workflow in a sentence; a model drafts it from the
+     * registered nodes (WorkflowGenerator) and it opens inactive, with the
+     * nodes still to fill in marked. Offered when packstub/agents is
+     * installed, like the Ask AI action.
+     */
+    public static function describeAction(): Action
+    {
+        return Action::make('describe')
+            ->label(__('packstub-flow::flow.describe.action'))
+            ->icon('heroicon-o-sparkles')
+            ->color('gray')
+            ->visible(fn (): bool => WorkflowGenerator::isAvailable())
+            ->modalHeading(__('packstub-flow::flow.describe.heading'))
+            ->modalDescription(__('packstub-flow::flow.describe.description'))
+            ->modalSubmitActionLabel(__('packstub-flow::flow.describe.submit'))
+            ->modalWidth(Width::Large)
+            ->schema([
+                Textarea::make('description')
+                    ->label(__('packstub-flow::flow.describe.field'))
+                    ->placeholder(__('packstub-flow::flow.describe.placeholder'))
+                    ->helperText(__('packstub-flow::flow.describe.help'))
+                    ->rows(4)
+                    ->required()
+                    ->maxLength(2000),
+                Select::make('model')
+                    ->label(__('packstub-flow::flow.nodes.ask_ai.model'))
+                    ->options(fn (): array => [AskAi::DEFAULT_MODEL => __('packstub-flow::flow.nodes.ask_ai.default_model')] + AskAi::modelOptions())
+                    ->default(AskAi::DEFAULT_MODEL),
+            ])
+            ->action(function (array $data, Action $action): void {
+                $workflow = static::createFrom(fn (): Workflow => WorkflowGenerator::generate((string) ($data['description'] ?? ''), $data['model'] ?? null, static::tenantAttributes()), $action);
+
+                Notification::make()->title(__('packstub-flow::flow.describe.created', ['name' => $workflow->name]))->success()->send();
+
+                $action->redirect(static::reviewUrl($workflow));
+            });
     }
 
     /**
@@ -77,7 +154,7 @@ class ListWorkflows extends ListRecords
 
                 Notification::make()->title(__('packstub-flow::flow.transfer.imported', ['name' => $workflow->name]))->success()->send();
 
-                $action->redirect(WorkflowResource::getUrl('edit', ['record' => $workflow]));
+                $action->redirect(static::reviewUrl($workflow));
             });
     }
 
@@ -89,7 +166,7 @@ class ListWorkflows extends ListRecords
     {
         return Action::make('template')
             ->label(__('packstub-flow::flow.templates.action'))
-            ->icon('heroicon-o-sparkles')
+            ->icon('heroicon-o-rectangle-stack')
             ->color('gray')
             ->visible(fn (): bool => Templates::all() !== [])
             ->modalHeading(__('packstub-flow::flow.templates.heading'))
@@ -137,7 +214,7 @@ class ListWorkflows extends ListRecords
 
                 Notification::make()->title(__('packstub-flow::flow.templates.created', ['name' => $workflow->name]))->success()->send();
 
-                $action->redirect(WorkflowResource::getUrl('edit', ['record' => $workflow]));
+                $action->redirect(static::reviewUrl($workflow));
             });
     }
 
@@ -156,6 +233,16 @@ class ListWorkflows extends ListRecords
 
             throw $e;
         }
+    }
+
+    /**
+     * The edit page of a workflow that was just created inactive from a
+     * description, a template or an import: the canvas opens with the
+     * nodes still to fill in marked (FlowBuilder::REVIEW_QUERY).
+     */
+    public static function reviewUrl(Workflow $workflow): string
+    {
+        return WorkflowResource::getUrl('edit', ['record' => $workflow, FlowBuilder::REVIEW_QUERY => 1]);
     }
 
     /** @return array<string, string> */

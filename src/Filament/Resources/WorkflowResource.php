@@ -176,6 +176,10 @@ class WorkflowResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('updated_at', 'desc')
+            ->emptyStateHeading(__('packstub-flow::flow.empty.heading'))
+            ->emptyStateDescription(__('packstub-flow::flow.empty.description'))
+            ->emptyStateIcon('heroicon-o-bolt')
+            ->emptyStateActions(Pages\ListWorkflows::starterActions())
             ->filters([
                 TernaryFilter::make('is_active')->label(__('packstub-flow::flow.fields.is_active')),
             ])

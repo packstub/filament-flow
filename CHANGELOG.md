@@ -2,6 +2,21 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
+## Unreleased
+
+Upgrading: nothing to do — no migration, nothing removed or renamed. The **Describe a workflow** action needs `packstub/agents` (Agents for Laravel, PHP 8.4), the suggested dependency the Ask AI action already uses; installs without it see no change. The canvas bundle was rebuilt (`resources/dist`).
+
+### Added
+
+- **Describe a workflow** (`WorkflowGenerator`): a new action on the Workflows page — type what should happen ("when an order over $500 comes in, post to Slack and flag it for review"), pick a model, and the model drafts the workflow from the triggers, conditions and actions registered in this panel. The answer is structured output in a fixed shape (nodes with settings as key / value text, edges by output) built into a `packstub-flow/1` document — settings coerced by kind, notes on the nodes still to fill in, positions laid out by depth — and created through `Workflow::import()`, so unknown nodes are refused and webhook tokens are fresh; it opens **inactive** with the validator's badges on the nodes to complete, like a template or an import. Runs on `packstub/agents` like Ask AI: `AgentBudget::refusal()` before the question and `hit()` after it, `AgentModels::resolve()` for the model, the panel's tenant entered through the engine so the workspace's key and limits apply, `ai.timeout` for the question. Offered only when the engine is installed (`WorkflowGenerator::isAvailable()`). The model is told what each record type looks like — its attributes with the allowed values of enum casts (`ModelFinder::attributes()`), hidden ones left out — and shown a built-in template as an example of a good answer (`WorkflowGenerator::example()`), so it fills conditions, updates and placeholders from real attributes and branches actions in parallel. From code: `WorkflowGenerator::generate($sentence, $modelKey, $attributes)` returns the workflow, `draft()` the document.
+- `NodeCatalog`: the registered nodes as data — type, name, outputs, and every setting of the form with its kind (text, number, boolean, select with options, list, map, items), whether it is required, its default, example and help — read off the same form schemas the settings slide-over renders. `NodeCatalog::all()` is what the model sees; `coerce()` turns a text answer back into what a setting stores.
+- **Review on open**: the edit page of a workflow just created from a template, an import or a description opens with the validator's badges on the nodes still to fill in (`?review=1`, `FlowBuilder::REVIEW_QUERY`; `FlowBuilder::reviewOnOpen()` forces or disables it). A plain visit is unchanged.
+
+### Changed
+
+- **Workflows page header**: one primary **New workflow** button (sentence case, like the others) with **Describe a workflow** beside it when the engine is installed; **New from template** and **Import** moved into the more-actions menu (⋯), so the header no longer wraps on narrower screens. The template action has its own icon (a stack); sparkles now means AI everywhere. An empty table shows the same starters in its place (`ListWorkflows::starterActions()`, `WorkflowResource` empty state) instead of a bare "No workflows".
+- The Ask AI action's tenant entering moved to `AgentTenant::within()`, shared with the builder; behaviour unchanged.
+
 ## 1.3.1 — 2026-09-16
 
 Upgrading: nothing to do — no migration, nothing removed or renamed.

@@ -61,6 +61,8 @@ Only active workflows run. New workflows start inactive, and a copy made with th
 
 Saving an **active** workflow checks the definition first and refuses it with a message per problem: no trigger node, a node nothing leads to, or a required setting left empty (a node dropped on the canvas whose settings were never opened). The nodes concerned get a red badge on the canvas; hover it for the messages. The badge disappears when the node is edited or connected, and every badge clears when the next save passes. Inactive drafts are only checked for nodes whose class is no longer registered.
 
+A workflow just created from a [template, an import or a description](templates.md) opens with the same badges already on the nodes still to fill in: its edit URL carries `?review=1`. To open any workflow that way, or never, call `FlowBuilder::make('definition')->reviewOnOpen(true)` / `reviewOnOpen(false)` on the field.
+
 ![A refused save: the trigger without a model carries a red badge and the message sits under the canvas](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas-problems.png)
 
 When a workflow is saved, its trigger nodes are mirrored into the `flow_workflow_triggers` table. That is how the dispatcher finds candidate workflows for an incoming event with one indexed query — you never edit that table yourself.

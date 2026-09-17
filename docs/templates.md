@@ -1,12 +1,12 @@
 # Templates, import and export
 
-A workflow is data, so it can travel: start one from a template, download one as a file, load that file into another install, or seed it from code. Everything on this page produces an **inactive** workflow, so nothing runs before you have looked at it.
+A workflow is data, so it can travel: start one from a template, describe it in a sentence, download one as a file, load that file into another install, or seed it from code. Everything on this page produces an **inactive** workflow that opens with the nodes still to fill in marked, so nothing runs before you have looked at it.
 
 ## Templates
 
 ![The template picker on the Workflows page](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/templates.png)
 
-**New from template** on the Workflows page lists ready-made workflows by area. The area is written before each name while more than one is offered; an install that switched the built-in templates off and ships a single category of its own sees plain names. Pick one, give it a name, and it opens on the canvas. Nodes that need a choice from you carry a note in their description — the record type of a trigger, the agents of a round-robin assignment — and the workflow cannot be switched on until they are filled, exactly like any other incomplete draft (see [Building workflows](building-workflows.md#saving)).
+**New from template**, in the more-actions menu (⋯) beside **New workflow** on the Workflows page, lists ready-made workflows by area. The area is written before each name while more than one is offered; an install that switched the built-in templates off and ships a single category of its own sees plain names. Pick one, give it a name, and it opens on the canvas with a red badge on every node that needs a choice from you — the record type of a trigger, the agents of a round-robin assignment — and a note in the node's description; the workflow cannot be switched on until they are filled, exactly like any other incomplete draft (see [Building workflows](building-workflows.md#saving)).
 
 Built in:
 
@@ -42,6 +42,32 @@ FlowPlugin::make()
 
 The quickest way to write one: build the workflow on the canvas, **Export** it, drop the file in the directory and add `"category"`. `Packstub\Flow\Support\Templates::all()` returns what the picker shows, `Templates::create($key, $attributes)` creates a workflow from one.
 
+## Describe a workflow
+
+**Describe a workflow** on the Workflows page turns a sentence into a draft: type what should happen and when — "when an order over $500 comes in, post to Slack and flag it for review" — pick a model (the workspace default is fine), and a few seconds later the workflow opens on the canvas, inactive, with red badges on the nodes that still need a choice from you: the record type of a trigger, a webhook URL, a threshold the sentence did not give. Hover a badge for the message; the node's description says what the model left for you.
+
+The draft is built only from what this panel has. The model gets the registered triggers, conditions and actions with their settings — the same forms the settings slide-over shows, as data (`Packstub\Flow\Support\NodeCatalog`) — plus the record types of the record triggers with their attributes (hidden ones left out, the allowed values of an enum cast listed) and the names of your [secrets](secrets.md), so a condition checks `total`, an update sets `status` to one of its values, and a Slack action comes back as `{{ secrets.slack_webhook }}`, not a made-up URL. One built-in template goes along as an example of a good answer. Its answer is a graph in a fixed shape (nodes with settings as text, edges by output) that becomes an [export document](#the-export-format) and goes through the same import as a file: a node the install does not have is refused, webhook triggers get a fresh token, and the workflow is owned by the current tenant in a panel with [tenancy](tenancy.md).
+
+It runs on [Agents for Laravel](https://packstub.dev/docs/agents) (`packstub/agents`, free, PHP 8.4), like the [Ask AI](actions.md#ask-ai) action, and is offered only when the engine is installed:
+
+```bash
+composer require packstub/agents
+```
+
+Provider and model, the workspace's own key, the operator's budgets and limits all come from the engine, so a refused question ("over the monthly budget") shows as a message and costs nothing. One question takes `ai.timeout` seconds at most (see [Configuration](configuration.md#ask-ai)). Your own nodes are offered to the model as soon as they are registered, described from their form schema: give the fields labels, helper texts and placeholders and the drafts get better.
+
+From code, for a command or your own UI:
+
+```php
+use Packstub\Flow\Support\WorkflowGenerator;
+
+$workflow = WorkflowGenerator::generate('Remind the customer 3 days before an invoice is due', modelKey: null, attributes: ['tenant_type' => Team::class, 'tenant_id' => $team->id]);
+
+$document = WorkflowGenerator::draft('…'); // the export document, nothing saved
+```
+
+Both throw `Packstub\Flow\Exceptions\WorkflowException` when the workspace's limits refuse the question, the provider fails, or the answer is not a workflow.
+
 ## Export
 
 **Export** on a workflow's edit page downloads `<name>.flow.json`. From code, `$workflow->export()` returns the same document as an array and `Flow::export($workflow)` is an alias.
@@ -64,7 +90,7 @@ An export carries what is needed to rebuild the workflow somewhere else and noth
 
 ## Import
 
-**Import** on the Workflows page takes an export file or its pasted JSON, creates the workflow inactive (owned by the current tenant in a panel with [tenancy](tenancy.md)), and opens it. A document is refused with a message when it is not JSON, has no nodes, or uses a trigger, action or condition that is not registered in this install.
+**Import**, in the more-actions menu (⋯) on the Workflows page, takes an export file or its pasted JSON, creates the workflow inactive (owned by the current tenant in a panel with [tenancy](tenancy.md)), and opens it with the nodes still to fill in marked. A document is refused with a message when it is not JSON, has no nodes, or uses a trigger, action or condition that is not registered in this install.
 
 From code, for seeders, tests and deployments:
 

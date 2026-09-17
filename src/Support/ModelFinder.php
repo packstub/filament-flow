@@ -2,8 +2,10 @@
 
 namespace Packstub\Flow\Support;
 
+use BackedEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 use Packstub\Flow\Concerns\HasWorkflows;
 use ReflectionClass;
 use Throwable;
@@ -48,6 +50,37 @@ class ModelFinder
         asort($options);
 
         return $options;
+    }
+
+    /**
+     * The attributes of a model as its table has them, hidden ones left out,
+     * with the cases of an attribute cast to a backed enum: what the
+     * "Describe a workflow" builder tells the model a record looks like.
+     * Empty when the table cannot be read.
+     *
+     * @param  class-string<Model>  $class
+     * @return array<string, array<int, string|int>|null> attribute => the allowed values, or null
+     */
+    public static function attributes(string $class): array
+    {
+        try {
+            $model = new $class;
+            $columns = Schema::connection($model->getConnectionName())->getColumnListing($model->getTable());
+        } catch (Throwable) {
+            return [];
+        }
+
+        $attributes = [];
+
+        foreach (array_diff($columns, $model->getHidden()) as $column) {
+            $cast = $model->getCasts()[$column] ?? null;
+
+            $attributes[$column] = is_string($cast) && enum_exists($cast) && is_subclass_of($cast, BackedEnum::class)
+                ? array_map(fn (BackedEnum $case): string|int => $case->value, $cast::cases())
+                : null;
+        }
+
+        return $attributes;
     }
 
     /**

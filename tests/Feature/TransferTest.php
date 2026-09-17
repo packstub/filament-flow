@@ -5,6 +5,7 @@ use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Facades\Flow;
+use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
 use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\EditWorkflow;
 use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\ListWorkflows;
 use Packstub\Flow\FlowPlugin;
@@ -161,6 +162,40 @@ it('exports, imports and starts from a template in the panel', function (): void
     expect($created)->not->toBeNull()
         ->and($created->is_active)->toBeFalse()
         ->and($created->triggerNodes())->toHaveCount(1);
+});
+
+it('opens a workflow created from a template or an import for review, with the nodes still to fill in marked', function (): void {
+    $this->actingAs(createUser());
+
+    // The template's choices left to the person: the record type of the trigger, the recipients of the notification.
+    Livewire::test(ListWorkflows::class)
+        ->callAction('template', data: ['template' => 'high-value-order-alert'])
+        ->assertRedirect(ListWorkflows::reviewUrl($template = Workflow::query()->where('name', 'High-value order alert')->firstOrFail()));
+
+    expect(ListWorkflows::reviewUrl($template))->toEndWith('/edit?'.FlowBuilder::REVIEW_QUERY.'=1');
+
+    Livewire::withQueryParams([FlowBuilder::REVIEW_QUERY => '1'])
+        ->test(EditWorkflow::class, ['record' => $template->getKey()])
+        ->assertSee('problems: JSON.parse(', escape: false)
+        ->assertSee('Record type\\\\u0022 is required.', escape: false)
+        ->assertSee('Recipients\\\\u0022 is required.', escape: false);
+
+    // A plain visit shows no badges, as before; the field can be told to review every time, or never.
+    Livewire::withQueryParams([])
+        ->test(EditWorkflow::class, ['record' => $template->getKey()])
+        ->assertSee('problems: []', escape: false)
+        ->assertDontSee('is required.', escape: false);
+
+    expect(FlowBuilder::make('definition')->reviewsOnOpen())->toBeFalse()
+        ->and(FlowBuilder::make('definition')->reviewOnOpen()->reviewsOnOpen())->toBeTrue()
+        ->and(FlowBuilder::make('definition')->reviewOnOpen(fn (): bool => false)->reviewsOnOpen())->toBeFalse();
+
+    // An import opens the same way.
+    $source = createWorkflow([triggerNode('t', Manual::class), actionNode('a', SetStatusAction::class, ['status' => 'x'])], [edge('t', 'a')], ['name' => 'Copied']);
+
+    Livewire::test(ListWorkflows::class)
+        ->callAction('import', data: ['json' => WorkflowTransfer::toJson($source)])
+        ->assertRedirect(ListWorkflows::reviewUrl(Workflow::query()->where('name', 'Copied')->latest('id')->firstOrFail()));
 });
 
 it('attaches imported and templated workflows to the panel tenant', function (): void {
