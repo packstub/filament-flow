@@ -2,6 +2,13 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
+## Unreleased
+
+### Changed
+
+- **Leaner dist archive**: `composer require` now downloads only what an install runs — `src`, `config`, `database`, `resources/{dist,lang,templates,views}`, `composer.json`, the README and the licence. The canvas sources (`resources/js`, `resources/css`), the build, test and static-analysis configs, `workbench/`, the agent notes and this changelog (read it on GitHub, or in each release's notes) stay in the repository (`.gitattributes` `export-ignore`). Nothing at runtime read those files: the panel loads `resources/dist`.
+- **Package health in CI** (`.github/workflows/package-health.yml`, `.github/scripts/package-health.sh`): every push checks what the package health score on filamentphp.com checks (Powered by [Plumb](https://plumbphp.dev/packstub/filament-flow)) — a lean dist archive, no `composer.lock` in it, actions pinned to a commit SHA, Dependabot with a cooldown for every ecosystem that has a lockfile, a security policy — on the commit, before a tag ships it. A weekly run reads the published score and fails below 100.
+
 ## 1.4.0 — 2026-09-17
 
 Upgrading: nothing to do — no migration, nothing removed or renamed. The **Describe a workflow** action needs `packstub/agents` (Agents for Laravel, PHP 8.4), the suggested dependency the Ask AI action already uses; installs without it see no change. The canvas bundle was rebuilt (`resources/dist`).
