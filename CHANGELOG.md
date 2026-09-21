@@ -4,7 +4,7 @@ All notable changes to `packstub/filament-flow` are documented here.
 
 ## 1.5.0 — 2026-09-21
 
-Upgrading: nothing to do — no migration, nothing removed or renamed. The **Decide** action appears once `TYPESAFE_API_KEY` is set; installs without a key see no change. The config gained a `jev` block (publish it again only if you want to edit it; the defaults are read from the package). The canvas bundle was rebuilt (`resources/dist`).
+Upgrading: nothing to do — no migration, nothing removed or renamed. The **Decide** action appears once `TYPESAFE_API_KEY` is set; installs without a key see no change. The new `jev` config block is read with its defaults, so a published config file needs no edit for it; if yours lists the built-in `actions`, add `Nodes\Actions\Decide::class` there (or register it on the plugin) to offer the node. The canvas bundle was rebuilt (`resources/dist`).
 
 ### Added
 

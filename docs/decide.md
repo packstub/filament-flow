@@ -12,7 +12,7 @@ Create an API key in your [TypeSafe](https://typesafe.ai) account and add it to 
 TYPESAFE_API_KEY=ts-...
 ```
 
-That is all: the node appears in the **AI** group of the sidebar, drawn in teal on the canvas like Ask AI. It is plain HTTP, so it needs no other package and runs on every PHP version Flow supports. Without a key the node is not offered and everything else works as before. See [Configuration](configuration.md#decide-jev) for the model, the timeout and offering the node when every workspace brings its own key.
+That is all: the node appears in the **AI** group of the sidebar, drawn in teal on the canvas like Ask AI. It is plain HTTP, so it needs no other package and runs on every PHP version Flow supports. Without a key the node is not offered and everything else works as before. (A config file published before 1.5 lists the built-in actions itself: add `Nodes\Actions\Decide::class` to its `actions`.) See [Configuration](configuration.md#decide-jev) for the model, the timeout and offering the node when every workspace brings its own key.
 
 ## The three decisions
 
