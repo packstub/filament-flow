@@ -2,6 +2,18 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
+## 1.5.0 — 2026-09-21
+
+Upgrading: nothing to do — no migration, nothing removed or renamed. The **Decide** action appears once `TYPESAFE_API_KEY` is set; installs without a key see no change. The config gained a `jev` block (publish it again only if you want to edit it; the defaults are read from the package). The canvas bundle was rebuilt (`resources/dist`).
+
+### Added
+
+- **Decide** (`Nodes\Actions\Decide`, closes #30): a branch decided by [Jev](https://docs.typesafe.ai/concepts/system-one), TypeSafe's System One model, in the **AI** group. What to look at (text, or a JSON object / array sent as structure), one typed question — **yes / no** (`noul`), **one of your options** (`choice`, each with what it covers) or **a score on your levels** (`score`) — and the run continues along the answer. The node's branches on the canvas come from its settings: Yes / No, one per option, one per level, and a **Not sure** branch for a yes / no answer between *Yes from* and *No up to*, or a choice / score under the *Minimum confidence*, so a person or an Ask AI step takes the close calls (TypeSafe's confidence-gated routing). The next nodes read `{{ last.decision }}`, `{{ last.label }}`, `{{ last.branch }}`, `{{ last.sure }}`, `{{ last.confidence }}`, `{{ last.probability }}`, `{{ last.score }}`, `{{ last.probabilities.<option> }}`, `{{ last.model }}` (the version that answered) and `{{ last.usage.input }}`. Plain HTTP with a bearer key — the app's `TYPESAFE_API_KEY`, or a workspace's own from `{{ secrets.* }}` on the node — so it needs no other package and runs on PHP 8.3. 429 / 529 and dropped connections are retried inside the node (`jev.attempts`); any other failure is the node's ordinary error handling, and *log it and continue* follows Not sure when the node has it. A test run never calls TypeSafe: it logs the state and the question as they would be sent and follows the first branch. Guide: [Decisions with Jev](docs/decide.md).
+- `Support\Jev::ask($state, $questions, $model, $key, $timeout)`: the small client the node uses — one state, any number of typed questions in one request — for decisions in your own nodes or code.
+- **Actions that pick the branch** (`Contracts\PicksOutput`): an action names the output the run continues along with `continueAlong()`, as conditions, waits and loops already could; `outputOnFailure()` names the one followed when it failed under *log it and continue*. A test run follows the first output.
+- **Outputs from a node's settings** (`Node::getOutputsFor(array $config)`): the canvas draws them when it opens (`FlowBuilder::getNodeOutputs()`) and whenever the settings are applied (the `packstub-flow-node-updated` event carries `outputs`), refreshes the handles, and drops the edges of a branch that no longer exists. They are worked out from the settings each time and never stored in the definition. **Describe a workflow** wires edges to such outputs too.
+- Config: `jev.enabled`, `jev.key`, `jev.model`, `jev.url`, `jev.timeout`, `jev.attempts` (`PACKSTUB_FLOW_JEV`, `TYPESAFE_API_KEY`, `TYPESAFE_MODEL`, `TYPESAFE_API_URL`, `PACKSTUB_FLOW_JEV_TIMEOUT`).
+
 ## 1.4.1 — 2026-09-18
 
 Upgrading: nothing to do — no code, migration or config changed.

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Str;
 use Packstub\Flow\Contracts\Delayable;
 use Packstub\Flow\Contracts\Iterates;
+use Packstub\Flow\Contracts\PicksOutput;
 use Packstub\Flow\Contracts\ReadOnlyAction;
 use Packstub\Flow\Contracts\Waitable;
 use Packstub\Flow\Enums\NodeType;
@@ -455,7 +456,11 @@ class Runner
         if ($this->dryRun && ! $action instanceof ReadOnlyAction) {
             $this->record($node, __('packstub-flow::flow.steps.simulated'), 'simulated', $startedAt, $this->preview($action, $settings, $payload));
 
-            return [$this->graph->next($node['id']), $payload];
+            // A node that picks its branch is not asked in a test run: the
+            // run goes on along its first output, like an approval's.
+            $first = $action instanceof PicksOutput ? array_key_first($action->getOutputsFor($settings)) : null;
+
+            return [$this->graph->next($node['id'], $first !== null ? (string) $first : null), $payload];
         }
 
         $result = $this->handleWithRetries($node, $action, $config, $payload);
@@ -466,7 +471,15 @@ class Runner
 
         if ($result === false) {
             // Failed and set to "Log it and continue": the failure is already
-            // on the step log, so no "Done" step follows.
+            // on the step log, so no "Done" step follows. A node that picks
+            // its branch picked none: it names the one to follow, or the
+            // branch ends here.
+            if ($action instanceof PicksOutput) {
+                $fallback = $action->outputOnFailure($settings);
+
+                return [$fallback !== null ? $this->graph->next($node['id'], $fallback) : [], $payload];
+            }
+
             return [$this->graph->next($node['id']), $payload];
         }
 
@@ -483,7 +496,7 @@ class Runner
 
         $this->record($node, __('packstub-flow::flow.steps.action_done'), startedAt: $startedAt, output: $summary ?? $output);
 
-        return [$this->graph->next($node['id']), $payload];
+        return [$this->graph->next($node['id'], $action->pullPickedOutput()), $payload];
     }
 
     /**

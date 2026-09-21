@@ -16,6 +16,7 @@ Visual workflow automations for Filament panels: triggers, conditions and action
 | **Triggers** | Record created / updated / deleted (via the `HasWorkflows` trait, with "changed from / to" and dedup windows), a date on a record ("3 days before due_at"), spatie model-state transitions, user registered, any Laravel event, cron schedules (with catch-up), webhooks, a manual **Run now** or a **Run workflow** action on any resource, and calls from other workflows. |
 | **Conditions** | Record attribute (including "changed from / to"), compare values (placeholders on both sides), multiple conditions (AND / OR) and time of day, with twenty operators. |
 | **Actions** | Send email, Filament database notification, Slack, Discord, Teams, Telegram, SMS / WhatsApp (Twilio), HTTP request, create / update record, assign owner, add tag, transition state, find records + for each, wait, ask for approval, wait for signal, call workflow, write to log. Per-node retries, continue-on-error or an error branch; an on-failure workflow. |
+| **AI** | **Ask AI** gets named fields back from a language model (with `packstub/agents`); **Decide** branches on a typed decision from [Jev](decide.md), TypeSafe's System One model — yes / no, one of your options, a score — with a Not sure branch for the close calls. |
 | **Placeholders** | `{{ model.name }}`, `{{ webhook.order.id }}`, `{{ event.carrier }}`, `{{ original.status }}`, `{{ changes.status }}`, `{{ model.url }}`, `{{ secrets.api_key }}` — resolved from the payload in every text field. |
 | **Secrets** | An encrypted store for tokens and webhook URLs, resolved only inside actions and masked in run logs; per tenant when you need it. |
 | **Multi-tenancy** | In a panel with tenancy each team manages its own workflows, secrets, runs and approvals; global workflows run for everyone; a plan limit hook caps workflows per tenant. |
@@ -34,6 +35,7 @@ Visual workflow automations for Filament panels: triggers, conditions and action
 | [Triggers](triggers.md) | Every built-in trigger, its settings, the payload it provides and how it fires |
 | [Actions](actions.md) | Every built-in action and its settings |
 | [Conditions](conditions.md) | Every built-in condition and all operators |
+| [Decisions with Jev](decide.md) | The Decide action: a branch decided by TypeSafe's System One model — yes / no, one of your options, a score — with a Not sure branch under the confidence you ask for |
 | [Placeholders](placeholders.md) | Syntax, resolution, aliases, how values become text, what each trigger exposes |
 | [Secrets](secrets.md) | The encrypted secrets store, `{{ secrets.* }}` in actions, masking in run logs |
 | [Approvals & signals](approvals.md) | Pausing a run for a human decision or an external signal, the Approvals page, `Flow::signal()` |

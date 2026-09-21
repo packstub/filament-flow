@@ -8,6 +8,7 @@
     import { setLabels } from "./labels";
     import { setNodeDefinitions } from "./nodeDefinitions";
     import { clearProblems, setProblems } from "./problems.svelte";
+    import { outputHandles, pruneEdges, withOutputs } from "../lib/graph";
 
     const nodeTypes = {
         trigger: TriggerNode,
@@ -22,6 +23,7 @@
         labels = {},
         minHeight = "600px",
         problems: initialProblems = {},
+        outputs: initialOutputs = {},
         updateState,
     } = $props();
 
@@ -31,7 +33,9 @@
     // or a description) starts with the nodes still to fill in marked.
     setProblems(untrack(() => initialProblems));
 
-    let nodes = $state.raw<Node[]>(untrack(() => incomingNodes));
+    // Nodes whose branches come from their settings (Decide) get them from the
+    // server: when the canvas opens, and with every settings update below.
+    let nodes = $state.raw<Node[]>(untrack(() => withOutputs(incomingNodes, initialOutputs)));
     let edges = $state.raw<Edge[]>(untrack(() => incomingEdges));
 
     let updateTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -80,14 +84,14 @@
             const index = nodes.findIndex((n) => n.id === id);
             if (index === -1) return;
 
-            const updated = {
-                ...nodes[index],
-                data: { ...nodes[index].data, label, description, config: { ...(config ?? {}) } },
-            };
+            const outputs = nodes[index].type === "action" ? outputHandles(e.detail.outputs) : [];
+            const data: Record<string, unknown> = { ...nodes[index].data, label, description, config: { ...(config ?? {}) } };
+            if (outputs.length > 0) data.outputs = outputs;
 
             const next = [...nodes];
-            next[index] = updated;
+            next[index] = { ...nodes[index], data };
             nodes = next;
+            edges = pruneEdges(edges, id, outputs);
             clearProblems(id);
         };
 

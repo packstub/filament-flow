@@ -11,6 +11,7 @@ use Packstub\Agents\Support\AgentModels;
 use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Models\Workflow;
+use Packstub\Flow\NodeRegistry;
 use Packstub\Flow\Nodes\Actions\AskAi;
 
 /**
@@ -337,7 +338,7 @@ class WorkflowGenerator
                 continue;
             }
 
-            $handle = static::handle($catalog[$ids[$source]] ?? null, $raw['output'] ?? null);
+            $handle = static::handle(static::withOwnOutputs($catalog[$ids[$source]] ?? null, $nodes[$source]['data']['config']), $raw['output'] ?? null);
 
             if (isset($seen["{$source}/{$handle}/{$target}"])) {
                 continue;
@@ -395,6 +396,28 @@ class WorkflowGenerator
         }
 
         return $config;
+    }
+
+    /**
+     * A catalog entry with the outputs the node's settings give it (Decide:
+     * one per option), so an edge may leave a branch of that one node.
+     *
+     * @param  array<string, mixed>|null  $entry
+     * @param  array<string, mixed>  $config
+     * @return array<string, mixed>|null
+     */
+    protected static function withOwnOutputs(?array $entry, array $config): ?array
+    {
+        $node = $entry !== null ? app(NodeRegistry::class)->node((string) $entry['identifier']) : null;
+
+        if ($node === null) {
+            return $entry;
+        }
+
+        $own = array_map('strval', $node->getOutputsFor($config));
+        $entry['outputs'] = $own + array_intersect_key((array) ($entry['outputs'] ?? []), ['error' => true]);
+
+        return $entry;
     }
 
     /**

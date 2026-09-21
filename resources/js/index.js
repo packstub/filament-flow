@@ -3,12 +3,13 @@ import '../css/flow.css';
 import FlowBuilder from './components/FlowBuilder.svelte';
 
 const register = () => {
-    window.Alpine.data('packstubFlowBuilder', ({ state, nodes, labels, minHeight, problems }) => ({
+    window.Alpine.data('packstubFlowBuilder', ({ state, nodes, labels, minHeight, problems, outputs }) => ({
         state,
         nodes,
         labels,
         minHeight,
         problems,
+        outputs,
         app: null,
 
         init() {
@@ -23,6 +24,7 @@ const register = () => {
                     labels: this.labels,
                     minHeight: this.minHeight || '600px',
                     problems: this.problems && typeof this.problems === 'object' ? this.problems : {},
+                    outputs: this.outputs && typeof this.outputs === 'object' ? this.outputs : {},
                     updateState: (next) => {
                         this.state = next;
                     },

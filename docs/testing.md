@@ -115,6 +115,7 @@ expect((new IsVip)->evaluate(['minimum_orders' => 3], ['model' => $order]))->toB
 | --- | --- | --- |
 | Send email | `Mail::fake()` | `Mail::assertSent(WorkflowMail::class, ...)` — `$mail->mailSubject`, `$mail->body`, `$mail->hasTo()` |
 | HTTP request, Send Slack message | `Http::fake([...])` | `Http::assertSent(fn ($request) => $request->url() === '...' && $request['total'] === '12.5')` |
+| Decide (Jev) | `Http::fake(['api.typesafe.ai/*' => Http::response([...])])` | `Http::assertSent(...)` — see [Decisions with Jev](decide.md#from-code-and-in-tests) |
 | Send notification | nothing needed | `$user->notifications()->count()`, `->first()->data['title']` |
 | Write to log | `Log::shouldReceive('log')->once()->with('warning', '[flow] ...')` | |
 | Queued runs and Wait | `Queue::fake()` | `Queue::assertPushed(RunWorkflowJob::class, ...)`, `Queue::assertPushed(ResumeWorkflowJob::class, ...)` |

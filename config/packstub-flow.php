@@ -186,6 +186,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Decide (Jev)
+    |--------------------------------------------------------------------------
+    |
+    | The Decide action asks Jev, TypeSafe's System One model, one typed
+    | question — yes / no, one of your options, a score — and the run follows
+    | the answer's branch. It is offered once a key is set; "enabled" offers
+    | it without one (every node then names its own key, from a secret) or
+    | hides it. Pin "model" to a version (jev-1.13.0) when your confidence
+    | thresholds were tuned against it. https://docs.typesafe.ai
+    |
+    */
+
+    'jev' => [
+        'enabled' => env('PACKSTUB_FLOW_JEV'),
+        'key' => env('TYPESAFE_API_KEY'),
+        'model' => env('TYPESAFE_MODEL', 'jev-latest'),
+        'url' => env('TYPESAFE_API_URL', 'https://api.typesafe.ai/v1/systemone'),
+        'timeout' => (int) env('PACKSTUB_FLOW_JEV_TIMEOUT', 15),
+        // Tries in all when TypeSafe answers 429 / 529 or the connection fails.
+        'attempts' => 3,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Schedule
     |--------------------------------------------------------------------------
     |
@@ -297,6 +321,7 @@ return [
         Nodes\Actions\HttpRequest::class,
         Nodes\Actions\SendToAutomation::class,
         Nodes\Actions\AskAi::class,
+        Nodes\Actions\Decide::class,
         Nodes\Actions\UpdateRecord::class,
         Nodes\Actions\CreateRecord::class,
         Nodes\Actions\AssignOwner::class,

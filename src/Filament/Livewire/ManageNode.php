@@ -91,6 +91,8 @@ class ManageNode extends Component implements HasActions, HasForms
                     label: $data['label'] ?? null,
                     description: $data['description'] ?? null,
                     config: (object) ($data['config'] ?? []),
+                    // The branches these settings give the node, for one whose outputs depend on them.
+                    outputs: Node::handles($this->node()?->getOutputsFor((array) ($data['config'] ?? [])) ?? []),
                 );
             });
     }

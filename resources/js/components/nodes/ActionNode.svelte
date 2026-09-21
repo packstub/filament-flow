@@ -1,6 +1,7 @@
 <script lang="ts">
     import BaseNode from "./BaseNode.svelte";
-    import { Position } from "@xyflow/svelte";
+    import { Position, useUpdateNodeInternals } from "@xyflow/svelte";
+    import { tick } from "svelte";
     import FlowHandle from "./FlowHandle.svelte";
     import { categoryFor, outputsFor } from "../nodeDefinitions";
     import { t } from "../labels";
@@ -13,8 +14,17 @@
     // Ask for approval: approved / rejected / timed out); a node whose
     // error handling is "follow the error branch" gets an extra Error handle.
     const category = $derived(categoryFor(data?.identifier, "actions"));
-    const outputs = $derived(outputsFor(data?.identifier, [{ id: "output", label: t("next") }]));
+    // A node whose branches come from its settings (Decide: one per option) carries them on its data.
+    const outputs = $derived(data?.outputs?.length > 0 ? data.outputs : outputsFor(data?.identifier, [{ id: "output", label: t("next") }]));
     const hasErrorHandle = $derived(data?.config?._on_error === "branch");
+
+    // Renaming an option keeps the node's size, so Svelte Flow would not
+    // look for the handles again by itself.
+    const updateNodeInternals = useUpdateNodeInternals();
+    $effect(() => {
+        outputs.map((o: { id: string }) => o.id).join("|");
+        tick().then(() => updateNodeInternals(id));
+    });
     const multiple = $derived(outputs.length > 1 || hasErrorHandle);
 </script>
 
