@@ -267,6 +267,22 @@ it('hands the canvas the branches of the settings it applies', function (): void
     $undoRepeaterFake();
 });
 
+it('takes a gap between no and yes as a Not sure branch, and refuses a no above the yes', function (): void {
+    Livewire::test(ManageNode::class)
+        ->call('open', 'n1', Decide::class, [], 'Decide')
+        ->setActionData(['config.state' => '{{ model.body }}', 'config.question' => 'Is it urgent?', 'config.yes_from' => 0.7, 'config.no_up_to' => 0.9])
+        ->callMountedAction()
+        ->assertHasActionErrors(['config.no_up_to'])
+        ->setActionData(['config.no_up_to' => 0.3])
+        ->callMountedAction()
+        ->assertHasNoActionErrors()
+        ->assertDispatched('packstub-flow-node-updated', id: 'n1', outputs: [
+            ['id' => 'yes', 'label' => 'Yes'],
+            ['id' => 'no', 'label' => 'No'],
+            ['id' => 'unsure', 'label' => 'Not sure'],
+        ]);
+});
+
 it('opens the canvas with the branches of each node, and stores none of them', function (): void {
     $definition = [
         'nodes' => [
