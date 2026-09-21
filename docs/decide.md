@@ -4,6 +4,8 @@ The **Decide** action is a branch that reads. It hands [Jev](https://docs.typesa
 
 Jev is built for this step. It does not write text; it returns a typed decision with the probability of every outcome and a confidence, typically in well under a second, and it is priced per input token at a small fraction of a cent per decision. That makes it a comfortable fit for the judgement calls a workflow makes on every record: triage, routing, flagging, escalation. For an answer in words — a summary, a reply draft, several named fields at once — [Ask AI](actions.md#ask-ai) is the node; the two work well together, with Decide routing the clear cases and Ask AI (or a person) taking the ones Jev is not sure about.
 
+![A Decide node on the canvas: one branch per option and a Not sure branch](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas-decide.png)
+
 ## Setup
 
 Create an API key in your [TypeSafe](https://typesafe.ai) account and add it to `.env`:
@@ -25,6 +27,8 @@ That is all: the node appears in the **AI** group of the sidebar, drawn in teal 
 The branches are drawn from the node's settings: apply the settings and the handles on the canvas follow. Renaming or removing an option removes its branch, and the edges that left it, so reconnect those before saving. An answer whose branch has no edge simply ends that path of the run, the way an unconnected *False* does on a condition.
 
 ## Settings
+
+![The settings of a Decide node: what to look at, the decision type, the question and the options](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/decide.png)
 
 | Setting | |
 | --- | --- |

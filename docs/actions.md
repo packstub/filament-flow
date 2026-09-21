@@ -198,6 +198,8 @@ Next to the chat's own budget the engine counts turns from what `laravel/ai` sto
 
 A branch decided by [Jev](https://docs.typesafe.ai/concepts/system-one), TypeSafe's System One model: what to look at, one typed question — **yes / no**, **one of your options**, or **a score on your levels** — and the run continues along the answer. The node's branches on the canvas come from its settings (Yes / No, one per option, one per level), with a **Not sure** branch for answers under the confidence you ask for, so a person or an Ask AI step takes the close calls. Offered in the **AI** group once `TYPESAFE_API_KEY` is set; plain HTTP, no other package needed.
 
+![A Decide node on the canvas: one branch per option and a Not sure branch](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas-decide.png)
+
 | Setting | |
 | --- | --- |
 | What to look at | The material for the decision, placeholders allowed; a JSON object or array is sent as structure |
