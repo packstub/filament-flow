@@ -255,4 +255,23 @@ test("draws the branches of a Decide node from its settings", async ({ page }) =
     await expect(result.getByText("simulated", { exact: true })).toBeVisible();
     await result.getByText("Would use").click();
     await expect(result.getByText(/"continues_along": "billing"/)).toBeVisible();
+    await result.getByRole("button", { name: "Close" }).first().click();
+    await expect(result).toBeHidden();
+
+    // Renaming an option keeps the node's size: the canvas still finds the
+    // new handle, so a node added from that branch gets its edge drawn.
+    await saved.dblclick();
+    const again = page.locator(".fi-modal-window").filter({ hasText: "Decide" });
+    await again.getByRole("textbox", { name: /^Option/ }).nth(1).fill("tech");
+    await again.getByRole("button", { name: "Apply" }).click();
+    await expect(again).toBeHidden();
+    await expect(saved.getByText("tech", { exact: true })).toBeVisible();
+    await expect(saved.locator('.svelte-flow__handle.source[data-handleid="tech"]')).toHaveCount(1);
+
+    const edges = page.locator(".fi-flow-canvas .svelte-flow__edge");
+    await expect(edges).toHaveCount(1);
+    await saved.getByRole("button", { name: "Add node" }).nth(1).click();
+    await page.locator(".fi-flow-sidebar").getByPlaceholder("Search nodes…").fill("log");
+    await page.locator(".fi-flow-sidebar").getByRole("button", { name: /^Write to log/ }).click();
+    await expect(edges).toHaveCount(2);
 });

@@ -18,13 +18,17 @@
     const outputs = $derived(data?.outputs?.length > 0 ? data.outputs : outputsFor(data?.identifier, [{ id: "output", label: t("next") }]));
     const hasErrorHandle = $derived(data?.config?._on_error === "branch");
 
-    // Renaming an option keeps the node's size, so Svelte Flow would not
-    // look for the handles again by itself.
+    // Renaming an option keeps the node's size, so Svelte Flow would not look
+    // for the handles again by itself. Only once they change: measuring on
+    // mount would move the canvas under its first fit to view.
     const updateNodeInternals = useUpdateNodeInternals();
+    let drawn: string | null = null;
     $effect(() => {
-        outputs.map((o: { id: string }) => o.id).join("|");
-        tick().then(() => updateNodeInternals(id));
+        const key = outputs.map((o: { id: string }) => o.id).join("|");
+        if (drawn !== null && drawn !== key) tick().then(() => updateNodeInternals(id));
+        drawn = key;
     });
+
     const multiple = $derived(outputs.length > 1 || hasErrorHandle);
 </script>
 
