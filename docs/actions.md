@@ -194,6 +194,24 @@ The answer is exposed to the rest of the branch as `{{ last.<field> }}` for ever
 
 Next to the chat's own budget the engine counts turns from what `laravel/ai` stores with each conversation message; a question from a workflow is a one-off call and is not stored as a conversation, so it counts against the per-minute limit and is refused by the daily and monthly ones, but its tokens are not added to them.
 
+## Decide
+
+A branch decided by [Jev](https://docs.typesafe.ai/concepts/system-one), TypeSafe's System One model: what to look at, one typed question — **yes / no**, **one of your options**, or **a score on your levels** — and the run continues along the answer. The node's branches on the canvas come from its settings (Yes / No, one per option, one per level), with a **Not sure** branch for answers under the confidence you ask for, so a person or an Ask AI step takes the close calls. Offered in the **AI** group once `TYPESAFE_API_KEY` is set; plain HTTP, no other package needed.
+
+![A Decide node on the canvas: one branch per option and a Not sure branch](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas-decide.png)
+
+| Setting | |
+| --- | --- |
+| What to look at | The material for the decision, placeholders allowed; a JSON object or array is sent as structure |
+| Decision | Yes / no, One of my options, A score on my levels |
+| Question | One judgement, asked plainly |
+| Yes from / No up to | Yes / no: the probability from which it is a yes (0.5), and optionally the one up to which it is a no; between them the run follows **Not sure** |
+| Options / Levels | The branches of a choice (name and what it covers) or of a score (lowest first) |
+| Minimum confidence | Choice and score: under it the run follows **Not sure** |
+| Model, API key, Timeout | Optional: a pinned model version, a workspace's own key from a secret, the timeout in seconds |
+
+The next nodes read `{{ last.decision }}`, `{{ last.label }}`, `{{ last.branch }}`, `{{ last.confidence }}`, `{{ last.probability }}` / `{{ last.score }}` and `{{ last.probabilities.<option> }}`. The full guide — setup, thresholds, a worked triage example, errors and tests — is [Decisions with Jev](decide.md).
+
 ## Update record
 
 Sets attributes on the record that started the run — the `model` in the payload of a record trigger, the user of **User registered**, or whatever you passed as `model` to `Flow::run()`.

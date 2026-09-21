@@ -196,6 +196,30 @@ Applies to the **HTTP request** and **Send Slack message** actions.
 
 The default timeout of one question from the **Ask AI** action, in seconds; a node can set its own. **Describe a workflow** uses the same timeout for its one question. Everything else about the model — provider, key, model picker, budgets and limits — is the engine's: `config/packstub-agents.php` and `config/ai.php` of [Agents for Laravel](https://packstub.dev/docs/agents), which the action needs installed (see [Actions](actions.md#ask-ai)).
 
+### Decide (Jev)
+
+```php
+'jev' => [
+    'enabled' => env('PACKSTUB_FLOW_JEV'),
+    'key' => env('TYPESAFE_API_KEY'),
+    'model' => env('TYPESAFE_MODEL', 'jev-latest'),
+    'url' => env('TYPESAFE_API_URL', 'https://api.typesafe.ai/v1/systemone'),
+    'timeout' => (int) env('PACKSTUB_FLOW_JEV_TIMEOUT', 15),
+    'attempts' => 3,
+],
+```
+
+| Key | |
+| --- | --- |
+| `key` | The TypeSafe API key the [Decide](decide.md) action uses unless a node names its own (from a secret). With a key the node is offered |
+| `enabled` | Empty, the key decides. `true` offers the node without an app-wide key, for a panel where every workspace keeps its own in a secret; `false` hides the node |
+| `model` | The default model: `jev-latest` moves with TypeSafe's releases, a version (`jev-1.13.0`) stays put |
+| `url` | The evaluation endpoint, for a gateway or a proxy in front of TypeSafe |
+| `timeout` | Seconds for one decision; a node can set its own |
+| `attempts` | Tries in all when TypeSafe answers 429 / 529 or the connection fails, with a short backoff |
+
+The endpoint is configuration rather than something a workflow author types, so `http.allowed_hosts` does not apply to it.
+
 ### Schedule
 
 ```php

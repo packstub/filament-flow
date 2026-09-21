@@ -16,6 +16,9 @@ abstract class Action extends Node
     /** @var array<string, mixed> */
     protected array $payloadChanges = [];
 
+    /** The output handle handle() picked, for an action that PicksOutput. */
+    protected ?string $pickedOutput = null;
+
     public function getType(): NodeType
     {
         return NodeType::Action;
@@ -49,6 +52,26 @@ abstract class Action extends Node
     protected function setPayloadValue(string $key, mixed $value): void
     {
         $this->payloadChanges[$key] = $value;
+    }
+
+    /**
+     * Continue along one output handle only — one of getOutputsFor() — instead
+     * of every edge leaving the node. For an action that PicksOutput.
+     */
+    protected function continueAlong(string $output): void
+    {
+        $this->pickedOutput = $output;
+    }
+
+    /**
+     * @internal Called by the runner after pullResult(): the handle to follow, or null for every edge.
+     */
+    public function pullPickedOutput(): ?string
+    {
+        $output = $this->pickedOutput;
+        $this->pickedOutput = null;
+
+        return $output;
     }
 
     /**

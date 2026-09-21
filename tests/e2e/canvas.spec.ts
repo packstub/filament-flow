@@ -200,3 +200,78 @@ test("offers the real Ask AI node in the AI group and dry-runs it", async ({ pag
     await result.getByText("Would use").click();
     await expect(result.getByText(/"would_ask": "Claude/)).toBeVisible();
 });
+
+// The Decide node (Jev): its branches on the canvas come from its settings —
+// Yes / No when dropped, one per option plus Not sure once it is a choice
+// with a minimum confidence — they are there again after a save, and a test
+// run follows the first one without asking TypeSafe.
+test("draws the branches of a Decide node from its settings", async ({ page }) => {
+    await page.goto("/admin/workflows/create");
+    await page.getByRole("textbox", { name: /^Name/ }).fill("Route tickets");
+
+    const canvas = page.locator(".fi-flow-canvas");
+    await canvas.getByRole("button", { name: "Add a trigger" }).click();
+    await canvas.locator(".fi-flow-sidebar").getByRole("button", { name: /^Manual/ }).click();
+    await expect(canvas.locator(".svelte-flow__node")).toHaveCount(1);
+
+    await canvas.locator(".svelte-flow__node").getByRole("button", { name: "Add node" }).click();
+    await canvas.locator(".fi-flow-sidebar").getByPlaceholder("Search nodes…").fill("decide");
+    await canvas.locator(".fi-flow-sidebar").getByRole("button", { name: /^Decide/ }).click();
+
+    const decide = canvas.locator(".svelte-flow__node").filter({ hasText: "Decide" });
+    await expect(decide).toHaveCount(1);
+    await expect(decide.locator(".bg-teal-600")).toBeVisible();
+    await expect(decide.locator(".svelte-flow__handle.source")).toHaveCount(2);
+    await expect(decide.getByText("Yes", { exact: true })).toBeVisible();
+
+    await canvas.locator(".svelte-flow__controls-fitview").click();
+    await decide.dblclick();
+    const slideOver = page.locator(".fi-modal-window").filter({ hasText: "Decide" });
+    await slideOver.getByRole("textbox", { name: /^What to look at/ }).fill("{{ manual }}");
+    await slideOver.getByRole("combobox", { name: /^Decision/ }).selectOption("choice");
+    await slideOver.getByRole("textbox", { name: /^Question/ }).fill("Which team should handle this?");
+    await slideOver.getByRole("textbox", { name: /^Option/ }).nth(0).fill("billing");
+    await slideOver.getByRole("textbox", { name: /^Option/ }).nth(1).fill("technical");
+    await slideOver.getByRole("spinbutton", { name: /^Minimum confidence/ }).fill("0.6");
+    await slideOver.getByRole("button", { name: "Apply" }).click();
+    await expect(slideOver).toBeHidden();
+
+    await expect(decide.locator(".svelte-flow__handle.source")).toHaveCount(3);
+    for (const branch of ["billing", "technical", "Not sure"]) {
+        await expect(decide.getByText(branch, { exact: true })).toBeVisible();
+    }
+
+    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit$/);
+
+    // Worked out again from the saved settings when the canvas opens.
+    const saved = page.locator(".fi-flow-canvas .svelte-flow__node").filter({ hasText: "Decide" });
+    await expect(saved.locator(".svelte-flow__handle.source")).toHaveCount(3);
+    await expect(saved.getByText("technical", { exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "Test", exact: true }).click();
+    await page.getByRole("button", { name: "Run test" }).click();
+    const result = page.locator(".fi-modal-window").filter({ hasText: "Test result" });
+    await expect(result.getByText("simulated", { exact: true })).toBeVisible();
+    await result.getByText("Would use").click();
+    await expect(result.getByText(/"continues_along": "billing"/)).toBeVisible();
+    await result.getByRole("button", { name: "Close" }).first().click();
+    await expect(result).toBeHidden();
+
+    // Renaming an option keeps the node's size: the canvas still finds the
+    // new handle, so a node added from that branch gets its edge drawn.
+    await saved.dblclick();
+    const again = page.locator(".fi-modal-window").filter({ hasText: "Decide" });
+    await again.getByRole("textbox", { name: /^Option/ }).nth(1).fill("tech");
+    await again.getByRole("button", { name: "Apply" }).click();
+    await expect(again).toBeHidden();
+    await expect(saved.getByText("tech", { exact: true })).toBeVisible();
+    await expect(saved.locator('.svelte-flow__handle.source[data-handleid="tech"]')).toHaveCount(1);
+
+    const edges = page.locator(".fi-flow-canvas .svelte-flow__edge");
+    await expect(edges).toHaveCount(1);
+    await saved.getByRole("button", { name: "Add node" }).nth(1).click();
+    await page.locator(".fi-flow-sidebar").getByPlaceholder("Search nodes…").fill("log");
+    await page.locator(".fi-flow-sidebar").getByRole("button", { name: /^Write to log/ }).click();
+    await expect(edges).toHaveCount(2);
+});

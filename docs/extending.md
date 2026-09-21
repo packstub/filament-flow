@@ -114,6 +114,41 @@ Three more contracts let an action or a trigger take part in the runner's contro
 
 The built-in **For each**, **Ask for approval**, **Wait for signal** and **Date on a record** are the reference implementations.
 
+### Actions that pick the branch
+
+An action can be a branch of its own: implement `Contracts\PicksOutput`, list the outputs, and name the one to follow from `handle()` with `continueAlong()`. The run then follows only the edges leaving that handle (none connected ends the path).
+
+```php
+use Packstub\Flow\Contracts\PicksOutput;
+use Packstub\Flow\Nodes\Action;
+
+class RouteByRegion extends Action implements PicksOutput
+{
+    public function getOutputs(): array
+    {
+        return ['eu' => 'EU', 'us' => 'US', 'other' => 'Elsewhere'];
+    }
+
+    public function handle(array $config, array $payload): void
+    {
+        $region = Regions::of($payload['model']);
+
+        $this->output(['region' => $region]);
+        $this->continueAlong(in_array($region, ['eu', 'us'], true) ? $region : 'other');
+    }
+
+    // Followed when the action failed and the node is set to "log it and continue"; null ends the path.
+    public function outputOnFailure(array $config): ?string
+    {
+        return 'other';
+    }
+}
+```
+
+A test run does not run the action, so it follows the first output.
+
+When the outputs depend on the node's settings, return them from `getOutputsFor(array $config)` as well (`getOutputs()` stays what a newly dropped node shows). The canvas draws them when it opens and whenever the settings are applied, and drops the edges of a branch that no longer exists; they are worked out from the settings each time, never stored in the definition. The built-in [Decide](decide.md) action is the reference: one output per option.
+
 ## Conditions
 
 Extend `Packstub\Flow\Nodes\Condition` and implement `evaluate(array $config, array $payload): bool`. `true` follows the **True** output, `false` the **False** output.

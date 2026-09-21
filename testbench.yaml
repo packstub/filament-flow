@@ -10,6 +10,8 @@ env:
   - SESSION_DRIVER=file
   - QUEUE_CONNECTION=sync
   - MAIL_MAILER=array
+  # Offers the Decide node without a TypeSafe key: the e2e suite only draws and dry-runs it.
+  - PACKSTUB_FLOW_JEV=true
 
 providers:
   - Filament\Actions\ActionsServiceProvider

@@ -144,3 +144,40 @@ export function removeNodes<N extends GraphNode, E extends GraphEdge>(ids: strin
 }
 
 export const selectedIds = (nodes: GraphNode[]): string[] => nodes.filter((n) => n.selected).map((n) => n.id);
+
+export type OutputHandle = { id: string; label: string };
+
+/** Output handles as a settings update or the page sends them; anything else is "none given". */
+export function outputHandles(value: unknown): OutputHandle[] {
+    if (!Array.isArray(value)) return [];
+
+    return value.filter((o) => o && typeof o.id === "string" && o.id !== "").map((o) => ({ id: o.id, label: String(o.label ?? o.id) }));
+}
+
+/**
+ * Nodes with the output handles their settings give them (a Decide node: one
+ * per option), keyed by node id. Kept on the node's data for the canvas only;
+ * the server drops it when the workflow is saved.
+ */
+export function withOutputs<N extends GraphNode>(nodes: N[], outputs: Record<string, unknown> | null | undefined): N[] {
+    if (!outputs || typeof outputs !== "object" || Array.isArray(outputs)) return nodes;
+
+    return nodes.map((node) => {
+        const handles = outputHandles(outputs[node.id]);
+        return handles.length > 0 ? { ...node, data: { ...node.data, outputs: handles } } : node;
+    });
+}
+
+/**
+ * Edges once a node's outputs changed: those leaving a handle the node no
+ * longer has are dropped (an option that was removed). The error handle is
+ * not among the outputs and stays.
+ */
+export function pruneEdges<E extends GraphEdge>(edges: E[], nodeId: string, outputs: OutputHandle[]): E[] {
+    if (outputs.length === 0) return edges;
+
+    const ids = new Set(outputs.map((o) => o.id));
+    const kept = edges.filter((e) => e.source !== nodeId || e.sourceHandle == null || e.sourceHandle === "error" || ids.has(e.sourceHandle));
+
+    return kept.length === edges.length ? edges : kept;
+}

@@ -3,9 +3,12 @@ import {
     copySelection,
     duplicateNodes,
     isValidConnection,
+    outputHandles,
     pasteClipboard,
+    pruneEdges,
     removeNodes,
     selectedIds,
+    withOutputs,
     wouldCreateCycle,
     type GraphEdge,
     type GraphNode,
@@ -90,5 +93,42 @@ describe("copy, paste, duplicate, remove", () => {
         expect(result.nodes.map((n) => n.id)).toEqual(["t", "b"]);
         expect(result.edges).toEqual([]);
         expect(selectedIds(nodes)).toEqual(["a", "b"]);
+    });
+});
+
+describe("outputs from a node's settings", () => {
+    const handles = [
+        { id: "billing", label: "billing" },
+        { id: "sales", label: "sales" },
+    ];
+
+    it("puts the handles the page sent on the nodes they are for", () => {
+        const nodes = withOutputs([node("a"), node("b")], { a: handles, zzz: handles });
+
+        expect(nodes[0].data.outputs).toEqual(handles);
+        expect(nodes[0].data.label).toBe("a");
+        expect(nodes[1].data.outputs).toBeUndefined();
+    });
+
+    it("leaves the nodes alone when nothing usable was sent", () => {
+        const nodes = [node("a")];
+
+        expect(withOutputs(nodes, null)).toBe(nodes);
+        expect(withOutputs(nodes, [] as any)).toBe(nodes);
+        expect(withOutputs(nodes, { a: "nope" })[0].data.outputs).toBeUndefined();
+        expect(outputHandles([{ id: "yes" }, { id: "" }, null, { label: "x" }])).toEqual([{ id: "yes", label: "yes" }]);
+    });
+
+    it("drops the edges of a branch the node no longer has, and only those", () => {
+        const edges = [edge("a", "b", "billing"), edge("a", "c", "technical"), edge("a", "d", "error"), edge("x", "y", "technical")];
+
+        expect(pruneEdges(edges, "a", handles).map((e) => e.id)).toEqual(["a-b", "a-d", "x-y"]);
+    });
+
+    it("keeps the same edges when every branch is still there, or no outputs were given", () => {
+        const edges = [edge("a", "b", "billing")];
+
+        expect(pruneEdges(edges, "a", handles)).toBe(edges);
+        expect(pruneEdges(edges, "a", [])).toBe(edges);
     });
 });

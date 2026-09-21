@@ -86,6 +86,19 @@ abstract class Node
         return ['output' => __('packstub-flow::flow.builder.next')];
     }
 
+    /**
+     * The output handles of one node on the canvas, when they depend on its
+     * settings (Decide: one per option). The default is getOutputs(), which
+     * stays what a node shows before it has settings.
+     *
+     * @param  array<string, mixed>  $config
+     * @return array<string, string>
+     */
+    public function getOutputsFor(array $config): array
+    {
+        return $this->getOutputs();
+    }
+
     public static function make(): static
     {
         return app(static::class);
@@ -96,12 +109,6 @@ abstract class Node
      */
     public function toArray(): array
     {
-        $outputs = [];
-
-        foreach ($this->getOutputs() as $id => $label) {
-            $outputs[] = ['id' => (string) $id, 'label' => (string) $label];
-        }
-
         return [
             'identifier' => static::class,
             'type' => $this->getType()->value,
@@ -109,8 +116,25 @@ abstract class Node
             'name' => $this->getName(),
             'description' => $this->getDescription(),
             'icon' => $this->renderIcon(),
-            'outputs' => $outputs,
+            'outputs' => static::handles($this->getOutputs()),
         ];
+    }
+
+    /**
+     * Outputs the way the canvas takes them.
+     *
+     * @param  array<string, string>  $outputs
+     * @return array<int, array{id: string, label: string}>
+     */
+    public static function handles(array $outputs): array
+    {
+        $handles = [];
+
+        foreach ($outputs as $id => $label) {
+            $handles[] = ['id' => (string) $id, 'label' => (string) $label];
+        }
+
+        return $handles;
     }
 
     protected function renderIcon(): ?string

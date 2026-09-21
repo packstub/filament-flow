@@ -6,6 +6,7 @@ use Closure;
 use Filament\Forms\Components\Field;
 use Filament\Schemas\Components\Utilities\Get;
 use Packstub\Flow\NodeRegistry;
+use Packstub\Flow\Nodes\Node;
 use Packstub\Flow\Support\DefinitionValidator;
 
 /**
@@ -117,6 +118,36 @@ class FlowBuilder extends Field
     public function getAvailableNodes(): array
     {
         return app(NodeRegistry::class)->toArray();
+    }
+
+    /**
+     * The output handles of the nodes whose branches come from their
+     * settings (Decide: one per option), keyed by node id. They are worked
+     * out when the canvas opens and when settings are applied, never stored.
+     *
+     * @return array<string, array<int, array{id: string, label: string}>>
+     */
+    public function getNodeOutputs(): array
+    {
+        $registry = app(NodeRegistry::class);
+        $outputs = [];
+
+        foreach (static::normalizeState($this->getState())['nodes'] as $node) {
+            $class = $node['data']['identifier'] ?? null;
+            $instance = is_string($class) && $registry->has($class) ? $registry->node($class) : null;
+
+            if ($instance === null) {
+                continue;
+            }
+
+            $own = $instance->getOutputsFor($node['data']['config']);
+
+            if ($own !== $instance->getOutputs()) {
+                $outputs[$node['id']] = Node::handles($own);
+            }
+        }
+
+        return $outputs;
     }
 
     /**
