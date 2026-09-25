@@ -1,6 +1,6 @@
 # Building workflows
 
-A workflow is a graph drawn on a canvas: **trigger** nodes start a run, **action** nodes do something, **condition** nodes branch on a true / false check. Edges connect an output handle to an input handle. The canvas lives on the create and edit pages of the Workflows resource, under the name, description and **Active** toggle.
+A workflow is a graph drawn on a canvas: **trigger** nodes start a run, **action** nodes do something, **condition** nodes branch on a true / false check. Edges connect an output handle to an input handle. The canvas is the workflow's edit page: it fills the page, with the name as the heading, the **Active** switch beside it, and **Canvas**, **Runs** and **Versions** as tabs above it. The header holds **Test**, **Run now** and **Save changes**, with **Settings**, **Export** and **Delete** in the more-actions menu.
 
 ![A finished workflow on the canvas](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas.png)
 
@@ -8,11 +8,11 @@ A workflow is a graph drawn on a canvas: **trigger** nodes start a run, **action
 
 An empty canvas shows a **Start with a trigger** card; **Add a trigger** opens the sidebar on the triggers list. Afterwards there are three ways to add a node:
 
-- the **+** button in the top-right corner of the canvas;
+- the **Add node** button in the top-right corner of the canvas;
 - **right-click** on an empty spot of the canvas and choose **Add node** — the node is placed where you clicked;
 - the **plus** next to an unconnected output handle — the new node is placed beside it and connected to that handle in one go.
 
-The sidebar lists **Triggers**, **Actions** and **Conditions** — plus **AI** once [Agents for Laravel](actions.md#ask-ai) is installed, and any group your own nodes [declare](extending.md#sidebar-groups); open a category or type in the search box to filter every node by name. Click a node to place it, or drag it onto the canvas to drop it exactly where you want. A node added through the **+** button lands in the centre of the visible area, nudged aside if something is already there.
+The sidebar lists **Triggers**, **Actions** and **Conditions** — plus **AI** once [Agents for Laravel](actions.md#ask-ai) is installed, and any group your own nodes [declare](extending.md#sidebar-groups); open a category or type in the search box to filter every node by name. Click a node to place it, or drag it onto the canvas to drop it exactly where you want. A node added through the **Add node** button lands in the centre of the visible area, nudged aside if something is already there.
 
 ![The add-node sidebar](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/node-sidebar.png)
 
@@ -51,11 +51,15 @@ A duplicate keeps the label, description and settings, is placed slightly offset
 
 ## Undo and redo
 
-Every change to the graph — a node added, moved, edited, connected or removed — is a step. **Cmd / Ctrl + Z** undoes, **Shift + Cmd / Ctrl + Z** (or **Ctrl + Y**) redoes; the two buttons next to the **+** in the top-right corner do the same. Selecting or panning is not a step, and a drag counts once, when it ends. The history is kept while the page is open and starts afresh on reload.
+Every change to the graph — a node added, moved, edited, connected or removed — is a step. **Cmd / Ctrl + Z** undoes, **Shift + Cmd / Ctrl + Z** (or **Ctrl + Y**) redoes; the two buttons in the toolbar at the top-right corner of the canvas do the same. Selecting or panning is not a step, and a drag counts once, when it ends. The history is kept while the page is open and starts afresh on reload.
 
 ## Saving
 
-The canvas is a form field; the usual **Save** (or **Create**) button of the page stores the graph together with the name, description and **Active** toggle. After creating a workflow you land on its edit page.
+**New workflow** asks for a name and a description in a modal, creates the workflow inactive and opens it in the editor. **Save changes** in the header (or **Cmd / Ctrl + S**) stores the canvas. It shows while the canvas has changes to save; otherwise the header says **Saved**. On a phone, **Save** moves to a bar at the bottom of the screen that comes up with the first change, next to **Discard** (which reloads the last save).
+
+The **Active** switch next to the workflow's name turns the workflow on or off in one click. Like **Save changes**, it stores the canvas as it is, so switching on runs the checks below: when they fail, the switch stays off, a notification says so and the nodes concerned are marked.
+
+**Settings** in the header's more-actions menu holds the name, the description, the **Active** toggle and the *Run settings* (retention and failure limits, see [Runs](runs.md#retention-and-failure-limits)). Its **Save** stores them together with the canvas as it is, so switching a workflow on runs the checks below: when they fail, the workflow stays inactive, a notification says so, the nodes concerned are marked, and the other settings are saved.
 
 Only active workflows run. New workflows start inactive, and a copy made with the table's **Replicate** action is inactive too, so you can finish a draft safely before switching it on. A copy gets its own webhook tokens, so it never answers to the original's URL.
 
@@ -63,13 +67,13 @@ Saving an **active** workflow checks the definition first and refuses it with a 
 
 A workflow just created from a [template, an import or a description](templates.md) opens with the same badges already on the nodes still to fill in: its edit URL carries `?review=1`. To open any workflow that way, or never, call `FlowBuilder::make('definition')->reviewOnOpen(true)` / `reviewOnOpen(false)` on the field.
 
-![A refused save: the trigger without a model carries a red badge and the message sits under the canvas](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas-problems.png)
+![A refused switch-on: the trigger without a model carries a red badge, the Active switch stays off and a notification says why](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas-problems.png)
 
 When a workflow is saved, its trigger nodes are mirrored into the `flow_workflow_triggers` table. That is how the dispatcher finds candidate workflows for an incoming event with one indexed query — you never edit that table yourself.
 
 ## Canvas controls
 
-- Scroll to zoom, drag the background to pan; the controls in the bottom-left corner zoom and fit the view, and a minimap in the bottom-right corner shows where you are.
+- Scroll to zoom, drag the background to pan; the toolbar in the top-right corner zooms, fits the graph to the view and shows or hides the minimap, which appears by itself once a workflow has more than twelve nodes. Coming back to the Canvas tab fits the graph again.
 - **Escape** closes the sidebar and any open menu.
 - The canvas follows Filament's light and dark mode.
 - Drag the bottom-right corner of the canvas to make it taller; `FlowBuilder::minHeight()` sets the starting height (see [Configuration](configuration.md#the-canvas-field)).

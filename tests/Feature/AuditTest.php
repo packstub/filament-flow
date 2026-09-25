@@ -73,8 +73,16 @@ it('records who created and last saved a workflow', function (): void {
 
     expect($workflow->fresh()->updated_by)->toBe('tom@example.com');
 
+    // The subheading shows the user's name for the stored email, and the version.
     Livewire::test(EditWorkflow::class, ['record' => $workflow->getKey()])
-        ->assertSee('Last saved by tom@example.com');
+        ->assertSee('Last saved by User 2')
+        ->assertSee('v2')
+        ->assertDontSee('tom@example.com');
+
+    $workflow->update(['updated_by' => 'seeder']);
+
+    Livewire::test(EditWorkflow::class, ['record' => $workflow->getKey()])
+        ->assertSee('Last saved by seeder');
 });
 
 it('leaves the audit columns empty without a signed-in user and honours explicit values', function (): void {

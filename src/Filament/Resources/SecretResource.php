@@ -123,10 +123,11 @@ class SecretResource extends Resource
             ->columns([
                 TextColumn::make('key')
                     ->label(__('packstub-flow::flow.secrets.key'))
-                    ->formatStateUsing(fn (string $state): string => '{{ secrets.'.$state.' }}')
+                    ->weight('medium')
+                    ->description(fn (string $state): string => '{{ secrets.'.$state.' }}')
                     ->copyable()
                     ->copyableState(fn (string $state): string => '{{ secrets.'.$state.' }}')
-                    ->fontFamily('mono')
+                    ->copyMessage(__('packstub-flow::flow.secrets.copied'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('description')

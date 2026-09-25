@@ -44,6 +44,8 @@ class VersionsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            // The tab already names the table.
+            ->heading(null)
             ->recordTitleAttribute('number')
             ->defaultSort('number', 'desc')
             ->columns([
@@ -52,6 +54,7 @@ class VersionsRelationManager extends RelationManager
                     ->formatStateUsing(fn (int $state): string => "v{$state}")
                     ->badge()
                     ->color(fn (WorkflowVersion $record): string => $record->number === $this->latestNumber() ? 'success' : 'gray')
+                    ->description(fn (WorkflowVersion $record): ?string => $record->number === $this->latestNumber() ? __('packstub-flow::flow.versions.current') : null)
                     ->sortable(),
                 TextColumn::make('summary')
                     ->label(__('packstub-flow::flow.versions.summary'))

@@ -26,6 +26,8 @@ class FlowBuilder extends Field
 
     protected int|string $minHeight = 600;
 
+    protected bool|Closure $fillsViewport = false;
+
     protected bool $validatesDefinition = true;
 
     protected bool|Closure|null $reviewsOnOpen = null;
@@ -105,6 +107,23 @@ class FlowBuilder extends Field
         $this->minHeight = $height;
 
         return $this;
+    }
+
+    /**
+     * Stretch the canvas from where it starts on the page to the bottom of
+     * the window, following resizes; minHeight() stays the floor. The
+     * workflow edit page uses it for its full-page editor.
+     */
+    public function fillViewport(bool|Closure $condition = true): static
+    {
+        $this->fillsViewport = $condition;
+
+        return $this;
+    }
+
+    public function fillsViewport(): bool
+    {
+        return (bool) $this->evaluate($this->fillsViewport);
     }
 
     public function getMinHeight(): string

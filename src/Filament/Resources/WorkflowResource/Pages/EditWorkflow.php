@@ -2,18 +2,27 @@
 
 namespace Packstub\Flow\Filament\Resources\WorkflowResource\Pages;
 
+use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Models\Contracts\HasName;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Enums\Width;
+use Illuminate\Auth\SessionGuard as Guard;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Packstub\Flow\Enums\NodeType;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
@@ -28,8 +37,33 @@ class EditWorkflow extends EditRecord
 {
     protected static string $resource = WorkflowResource::class;
 
+    protected Width|string|null $maxContentWidth = Width::Full;
+
     /**
-     * "Last saved by jane@acme.test 2 hours ago" under the title.
+     * The workflow's name with the Active switch beside it: the header's
+     * actions on the right are then all things you do, not its state.
+     */
+    public function getHeading(): string|Htmlable
+    {
+        return new HtmlString(view('packstub-flow::editor.heading', [
+            'title' => $this->getRecordTitle(),
+            'active' => $this->getAction('active', isMounting: false),
+        ])->render());
+    }
+
+    /**
+     * The heading already names the workflow and the navigation marks
+     * Workflows; the canvas gets the room instead.
+     */
+    public function getBreadcrumbs(): array
+    {
+        return [];
+    }
+
+    /**
+     * "Last saved by Jane Doe 2 hours ago · v3" under the name: the user's
+     * name when the panel's users carry one, the version when one is
+     * stored. Hidden on a phone, where the heading needs the room.
      */
     public function getSubheading(): string|Htmlable|null
     {
@@ -40,17 +74,213 @@ class EditWorkflow extends EditRecord
             return null;
         }
 
-        return __('packstub-flow::flow.fields.last_saved_by', ['by' => $workflow->updated_by, 'at' => $workflow->updated_at?->diffForHumans() ?? '']);
+        $replace = [
+            'by' => static::actorName($workflow->updated_by),
+            'at' => $workflow->updated_at?->diffForHumans() ?? '',
+            'version' => $workflow->latestVersion?->number,
+        ];
+
+        $text = $replace['version']
+            ? __('packstub-flow::flow.fields.last_saved_version', $replace)
+            : __('packstub-flow::flow.fields.last_saved_by', $replace);
+
+        return new HtmlString('<span class="hidden sm:inline">'.e($text).'</span>');
+    }
+
+    /**
+     * The name of the user behind an actor string (Audit::actor(): the
+     * email, or the id) when the panel's user model has one; the string
+     * itself otherwise.
+     */
+    public static function actorName(string $actor): string
+    {
+        try {
+            $guard = Filament::auth();
+            $provider = $guard instanceof Guard ? $guard->getProvider() : null;
+            $user = $provider?->retrieveByCredentials(['email' => $actor]) ?? $provider?->retrieveById($actor);
+        } catch (\Throwable) {
+            return $actor;
+        }
+
+        if ($user instanceof HasName) {
+            return $user->getFilamentName();
+        }
+
+        $name = $user?->getAttribute('name');
+
+        return is_string($name) && $name !== '' ? $name : $actor;
+    }
+
+    /**
+     * Marks the page for the plugin's stylesheet: the Canvas / Runs /
+     * Versions tabs sit at the left edge of the content.
+     *
+     * @return array<string, mixed>
+     */
+    public function getExtraBodyAttributes(): array
+    {
+        return ['class' => 'fi-flow-editor'];
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            static::testAction(),
-            WorkflowResource::runNowAction(),
-            static::exportAction(),
-            DeleteAction::make(),
+            static::testAction()->labeledFrom('sm'),
+            WorkflowResource::runNowAction()->labeledFrom('sm'),
+            // One of the two shows, following the canvas's unsaved changes
+            // (the packstubFlowEditor Alpine store); on a phone the bar at
+            // the bottom of the page (getFooter()) takes their place.
+            $this->savedAction(),
+            // Submits the page's form, so the canvas flushes its last change first.
+            $this->getSaveFormAction()
+                ->formId('form')
+                ->extraAttributes([
+                    'x-show' => '$store.packstubFlowEditor?.dirty',
+                    'x-cloak' => true,
+                    'class' => 'fi-flow-header-save',
+                ]),
+            ActionGroup::make([
+                $this->settingsAction(),
+                static::exportAction(),
+                // Cmd / Ctrl + D duplicates on the canvas.
+                DeleteAction::make()->keyBindings([]),
+            ])->color('gray'),
         ];
+    }
+
+    /**
+     * "Saved", in place of Save changes while the canvas has nothing to save.
+     */
+    public function savedAction(): Action
+    {
+        return Action::make('saved')
+            ->label(__('packstub-flow::flow.editor.saved'))
+            ->icon('heroicon-m-check')
+            ->color('gray')
+            ->disabled()
+            ->extraAttributes([
+                'x-show' => '! $store.packstubFlowEditor?.dirty',
+                'class' => 'fi-flow-header-save',
+            ]);
+    }
+
+    /**
+     * On a phone, Save leaves the header: a bar at the bottom of the page
+     * offers it (and Discard) while the canvas has unsaved changes.
+     */
+    public function getFooter(): ?View
+    {
+        return view('packstub-flow::editor.unsaved-bar');
+    }
+
+    /**
+     * Save lives in the header, next to Settings.
+     */
+    protected function getFormActions(): array
+    {
+        return [];
+    }
+
+    /**
+     * The canvas, Runs and Versions as tabs at the top of the page.
+     */
+    public function hasCombinedRelationManagerTabsWithContent(): bool
+    {
+        return true;
+    }
+
+    public function getContentTabLabel(): ?string
+    {
+        return __('packstub-flow::flow.editor.canvas');
+    }
+
+    public function getContentTabIcon(): string|BackedEnum|Htmlable|null
+    {
+        return 'heroicon-o-share';
+    }
+
+    /**
+     * Name, description, Active and the run settings. Applying saves the
+     * workflow with the canvas as it is, so switching it on runs the same
+     * checks as before: when they fail, the workflow stays inactive, the
+     * nodes concerned are marked and the other settings are kept.
+     */
+    public function settingsAction(): Action
+    {
+        return Action::make('settings')
+            ->label(__('packstub-flow::flow.editor.settings'))
+            ->icon('heroicon-o-cog-6-tooth')
+            ->color('gray')
+            ->modalHeading(__('packstub-flow::flow.editor.settings_heading'))
+            ->modalWidth(Width::TwoExtraLarge)
+            ->modalSubmitActionLabel(__('packstub-flow::flow.editor.settings_submit'))
+            ->fillForm(fn (Workflow $record): array => [
+                ...$record->attributesToArray(),
+                'is_active' => (bool) ($this->data['is_active'] ?? $record->is_active),
+            ])
+            ->schema(WorkflowResource::detailsSchema())
+            ->action(function (array $data, Workflow $record): void {
+                $wasActive = (bool) ($this->data['is_active'] ?? false);
+
+                $this->saveWithActive((bool) ($data['is_active'] ?? false));
+
+                $record->fill(Arr::except($data, ['is_active']))->save();
+
+                if ($record->wasChanged() || $this->data['is_active'] !== $wasActive) {
+                    $this->getSavedNotification()?->send();
+                }
+            });
+    }
+
+    /**
+     * The "Active" switch next to the workflow's name. Flipping it saves the
+     * workflow with the canvas as it is, like the toggle in Settings.
+     */
+    public function activeAction(): Action
+    {
+        return Action::make('active')
+            ->label(fn (): string => ($this->data['is_active'] ?? false)
+                ? __('packstub-flow::flow.editor.active')
+                : __('packstub-flow::flow.editor.inactive'))
+            ->view('packstub-flow::actions.active-toggle')
+            ->action(function (): void {
+                $active = ! ($this->data['is_active'] ?? false);
+
+                if ($this->saveWithActive($active)) {
+                    Notification::make()
+                        ->title($active ? __('packstub-flow::flow.editor.activated') : __('packstub-flow::flow.editor.deactivated'))
+                        ->success()
+                        ->send();
+                }
+            });
+    }
+
+    /**
+     * Save with Active set to $active. When switching on fails the checks,
+     * the workflow stays as it was, the nodes concerned are marked on the
+     * canvas and a notification says why; returns false then.
+     */
+    protected function saveWithActive(bool $active): bool
+    {
+        $wasActive = (bool) ($this->data['is_active'] ?? false);
+        $this->data['is_active'] = $active;
+
+        try {
+            $this->save(shouldSendSavedNotification: false);
+        } catch (ValidationException) {
+            $this->data['is_active'] = $wasActive;
+            $this->resetErrorBag();
+
+            Notification::make()
+                ->title(__('packstub-flow::flow.editor.activation_refused'))
+                ->body(__('packstub-flow::flow.editor.activation_refused_body'))
+                ->danger()
+                ->send();
+
+            return false;
+        }
+
+        return true;
     }
 
     /**

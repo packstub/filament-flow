@@ -1,7 +1,8 @@
 <?php
 
 use Livewire\Livewire;
-use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\CreateWorkflow;
+use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\EditWorkflow;
+use Packstub\Flow\Models\Workflow;
 use Packstub\Flow\Nodes\Actions\HttpRequest;
 use Packstub\Flow\Nodes\Actions\SendEmail;
 use Packstub\Flow\Nodes\Actions\WriteLog;
@@ -58,19 +59,22 @@ it('only checks node classes for an inactive workflow', function (): void {
         ->toBe(['Node "x" uses a trigger, action or condition that is not registered.']);
 });
 
-it('blocks activating an incomplete workflow from the form', function (): void {
+it('blocks saving an active workflow with an incomplete canvas', function (): void {
     $this->actingAs(createUser());
 
     $definition = ['nodes' => [triggerNode('t', Manual::class), actionNode('a', SendEmail::class)], 'edges' => []];
+    $workflow = Workflow::query()->create(['name' => 'Broken', 'is_active' => true, 'definition' => ['nodes' => [], 'edges' => []]]);
 
-    Livewire::test(CreateWorkflow::class)
-        ->fillForm(['name' => 'Broken', 'is_active' => true, 'definition' => $definition])
-        ->call('create')
+    Livewire::test(EditWorkflow::class, ['record' => $workflow->getKey()])
+        ->fillForm(['definition' => $definition])
+        ->call('save')
         ->assertHasFormErrors(['definition'])
         ->assertDispatched('packstub-flow-problems');
 
-    Livewire::test(CreateWorkflow::class)
-        ->fillForm(['name' => 'Draft', 'is_active' => false, 'definition' => $definition])
-        ->call('create')
+    $workflow->update(['is_active' => false]);
+
+    Livewire::test(EditWorkflow::class, ['record' => $workflow->getKey()])
+        ->fillForm(['definition' => $definition])
+        ->call('save')
         ->assertHasNoFormErrors();
 });

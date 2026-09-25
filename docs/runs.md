@@ -59,7 +59,7 @@ php artisan packstub-flow:prune
 php artisan packstub-flow:prune --days=7
 ```
 
-Deletes **finished** runs (Succeeded or Failed) that started more than the given number of days ago — `prune_runs_after_days` from the config (30) when `--days` is omitted. A workflow with its own **Keep runs for (days)** setting (in the *Run settings* section of its form) uses that value instead. Waiting runs are kept. Schedule it as you would any cleanup:
+Deletes **finished** runs (Succeeded or Failed) that started more than the given number of days ago — `prune_runs_after_days` from the config (30) when `--days` is omitted. A workflow with its own **Keep runs for (days)** setting (in the *Run settings* of its **Settings** modal) uses that value instead. Waiting runs are kept. Schedule it as you would any cleanup:
 
 ```php
 Schedule::command('packstub-flow:prune')->daily();
@@ -71,7 +71,7 @@ Starts every active workflow whose **Schedule** trigger is due at the current mi
 
 ## Retention and failure limits
 
-The *Run settings* section of a workflow's form holds two per-workflow limits:
+The *Run settings* in a workflow's **Settings** modal hold two per-workflow limits:
 
 | Setting | |
 | --- | --- |

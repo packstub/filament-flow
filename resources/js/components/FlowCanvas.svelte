@@ -1,7 +1,6 @@
 <script lang="ts">
     import {
         SvelteFlow,
-        Controls,
         Background,
         MiniMap,
         useSvelteFlow,
@@ -14,7 +13,8 @@
     } from "@xyflow/svelte";
     import NodeSidebar from "./NodeSidebar.svelte";
     import ContextMenu from "./ContextMenu.svelte";
-    import { Plus, Zap, Undo2, Redo2 } from "lucide-svelte";
+    import { Plus, Zap, Undo2, Redo2, ZoomIn, ZoomOut, Maximize, Map } from "lucide-svelte";
+    import { untrack } from "svelte";
     import { t } from "./labels";
     import { clearProblems } from "./problems.svelte";
     import {
@@ -35,17 +35,39 @@
         nodeTypes,
         availableNodes = {},
         minHeight = "600px",
+        fillViewport = false,
     }: {
         nodes?: Node[];
         edges?: Edge[];
         nodeTypes: NodeTypes;
         availableNodes?: Record<string, any>;
         minHeight?: string;
+        fillViewport?: boolean;
     } = $props();
 
-    const { screenToFlowPosition, flowToScreenPosition, getNodes, fitView } = useSvelteFlow();
+    const { screenToFlowPosition, flowToScreenPosition, getNodes, fitView, zoomIn, zoomOut } = useSvelteFlow();
+
+    const fitAll = () => fitView({ padding: 0.15, maxZoom: 1.1, duration: 300 });
 
     let container = $state<HTMLDivElement>();
+
+    // With fillViewport the canvas runs from where it starts on the page to
+    // the bottom of the window (minus the page's bottom padding), and follows
+    // window resizes; minHeight stays the floor.
+    let fillHeight = $state<string | null>(null);
+    $effect(() => {
+        if (!fillViewport || !container) {
+            return;
+        }
+        const el = container;
+        const measure = () => {
+            const top = el.getBoundingClientRect().top + window.scrollY;
+            fillHeight = `${Math.max(0, Math.floor(window.innerHeight - top - 32))}px`;
+        };
+        measure();
+        window.addEventListener("resize", measure);
+        return () => window.removeEventListener("resize", measure);
+    });
     let menu = $state<{
         id: string;
         type: "node" | "canvas";
@@ -69,6 +91,24 @@
     } | null>(null);
 
     let isEmpty = $derived(nodes.length === 0);
+
+    // The minimap earns its corner once the graph outgrows the view; the
+    // toolbar button overrides that either way.
+    let minimapChoice = $state<boolean | null>(null);
+    let showMinimap = $derived(minimapChoice ?? nodes.length > 12);
+
+    // Coming back to the Canvas tab: the container had no size while the
+    // tab was hidden, so fit the graph again once it is shown.
+    let lastWidth = 0;
+    let hadSize = false;
+    $effect(() => {
+        const width = clientWidth;
+        untrack(() => {
+            if (width > 0 && lastWidth === 0 && hadSize) fitAll();
+            if (width > 0) hadSize = true;
+            lastWidth = width;
+        });
+    });
     let selectedCount = $derived(nodes.filter((n) => n.selected).length);
 
     // ----- Undo / redo -------------------------------------------------------
@@ -146,6 +186,34 @@
     function addNode(newNode: Node) {
         const updatedNodes = nodes.map((n) => ({ ...n, selected: false }));
         nodes = [...updatedNodes, { ...newNode, selected: true }];
+        revealNode(newNode.id);
+    }
+
+    // A node placed beside the last one (the + next to a handle) can land
+    // past the edge of the view: once it is measured, fit the graph so the
+    // new node is in sight. A node already in view leaves the view alone.
+    function revealNode(id: string) {
+        requestAnimationFrame(() =>
+            requestAnimationFrame(() => {
+                const node = getNodes().find((n) => n.id === id);
+                if (!node || !container) return;
+                const rect = container.getBoundingClientRect();
+                const topLeft = flowToScreenPosition(node.position);
+                const bottomRight = flowToScreenPosition({
+                    x: node.position.x + (node.measured?.width ?? 240),
+                    y: node.position.y + (node.measured?.height ?? 100),
+                });
+                const margin = 24;
+                const inView =
+                    topLeft.x >= rect.left + margin &&
+                    topLeft.y >= rect.top + margin &&
+                    bottomRight.x <= rect.right - margin &&
+                    bottomRight.y <= rect.bottom - margin;
+                if (!inView) {
+                    fitView({ padding: 0.15, maxZoom: 1.1, duration: 400 });
+                }
+            }),
+        );
     }
 
     function onDrop(event: DragEvent) {
@@ -400,14 +468,15 @@
         };
     });
 
+    // Filament's icon button (fi-icon-btn), sized like the panel's own.
     const toolButtonClass =
-        "rounded-lg p-2 text-gray-600 transition hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-gray-600 dark:text-gray-400 dark:hover:text-primary-400 dark:disabled:hover:text-gray-400";
+        "flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 focus-visible:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent aria-pressed:bg-gray-100 aria-pressed:text-primary-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200 dark:aria-pressed:bg-white/10 dark:aria-pressed:text-primary-400";
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
     class="fi-flow-canvas-root relative w-full resize-y overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-950 dark:ring-white/10"
-    style="height: {minHeight}; min-height: {minHeight};"
+    style="height: {fillHeight ?? minHeight}; min-height: {minHeight};"
     bind:this={container}
     bind:clientWidth
     bind:clientHeight
@@ -430,10 +499,12 @@
             onselectioncontextmenu={({ event, nodes: selected }) => onContextMenu(event as MouseEvent, selected[0]?.id ?? "canvas", selected.length ? "node" : "canvas")}
             onpanecontextmenu={({ event }) => onContextMenu(event as MouseEvent, "canvas", "canvas")}
             onpaneclick={closeOverlays}
+            proOptions={{ hideAttribution: true }}
         >
-            <Controls showLock={false} />
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
-            <MiniMap pannable zoomable width={160} height={100} />
+            {#if showMinimap}
+                <MiniMap pannable zoomable width={160} height={100} />
+            {/if}
         </SvelteFlow>
 
         {#if menu}
@@ -464,11 +535,12 @@
                 <button
                     type="button"
                     onclick={() => openSidebar("triggers")}
-                    class="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-primary-500"
+                    class="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500 dark:bg-primary-500 dark:hover:bg-primary-400"
                 >
-                    <Plus size={14} />
+                    <Plus size={16} />
                     {t("add_trigger")}
                 </button>
+                <p class="mt-4 text-[11px] text-gray-400 dark:text-gray-500">{t("empty_hint")}</p>
             </div>
         </div>
     {/if}
@@ -481,13 +553,33 @@
         onClose={closeNodeSidebar}
     />
 
-    <div class="absolute top-4 right-4 z-10 flex items-center gap-2">
-        <div class="flex items-center rounded-xl bg-white p-1 shadow-lg ring-1 ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">
+    <div class="fi-flow-toolbar absolute top-3 right-3 z-10 flex items-center gap-2">
+        <div class="flex items-center gap-0.5 rounded-lg bg-white p-1 shadow-sm ring-1 ring-gray-950/10 dark:bg-gray-900 dark:ring-white/10">
             <button type="button" class={toolButtonClass} onclick={undo} disabled={!canUndo} title="{t('undo')} (⌘Z)" aria-label={t("undo")}>
                 <Undo2 size={18} />
             </button>
             <button type="button" class={toolButtonClass} onclick={redo} disabled={!canRedo} title="{t('redo')} (⇧⌘Z)" aria-label={t("redo")}>
                 <Redo2 size={18} />
+            </button>
+            <span class="mx-0.5 h-5 w-px bg-gray-200 dark:bg-white/10" aria-hidden="true"></span>
+            <button type="button" class={toolButtonClass} onclick={() => zoomOut({ duration: 200 })} title={t("zoom_out")} aria-label={t("zoom_out")}>
+                <ZoomOut size={18} />
+            </button>
+            <button type="button" class={toolButtonClass} onclick={() => zoomIn({ duration: 200 })} title={t("zoom_in")} aria-label={t("zoom_in")}>
+                <ZoomIn size={18} />
+            </button>
+            <button type="button" class="fi-flow-fit-view {toolButtonClass}" onclick={fitAll} title={t("fit_view")} aria-label={t("fit_view")}>
+                <Maximize size={18} />
+            </button>
+            <button
+                type="button"
+                class={toolButtonClass}
+                onclick={() => (minimapChoice = !showMinimap)}
+                aria-pressed={showMinimap}
+                title={t("minimap")}
+                aria-label={t("minimap")}
+            >
+                <Map size={18} />
             </button>
         </div>
         <button
@@ -496,11 +588,12 @@
                 closeMenu();
                 openSidebar();
             }}
-            class="group rounded-xl bg-white p-3 text-gray-600 shadow-lg ring-1 ring-gray-950/10 transition-all hover:text-primary-600 hover:ring-primary-500 dark:bg-gray-800 dark:text-gray-400 dark:ring-white/10 dark:hover:text-primary-400 dark:hover:ring-primary-400"
+            class="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500 focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 dark:bg-primary-500 dark:hover:bg-primary-400"
             title={t("add_node")}
             aria-label={t("add_node")}
         >
-            <Plus size={20} class="transition-transform group-hover:scale-110" />
+            <Plus size={18} />
+            <span class="hidden sm:inline">{t("add_node")}</span>
         </button>
     </div>
 </div>

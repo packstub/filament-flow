@@ -22,6 +22,7 @@
         availableNodes = {},
         labels = {},
         minHeight = "600px",
+        fillViewport = false,
         problems: initialProblems = {},
         outputs: initialOutputs = {},
         updateState,
@@ -40,6 +41,7 @@
 
     let updateTimeout: ReturnType<typeof setTimeout> | undefined;
     let pending: (() => void) | null = null;
+    let opened = false;
 
     // Push the graph back to Livewire, debounced so dragging a node does not
     // fire a request per pixel.
@@ -57,6 +59,15 @@
                 edges: JSON.parse(JSON.stringify(currentEdges)),
             });
         };
+
+        // The graph as it opens goes out at once: the page takes it as the
+        // saved state, so a change in the first moments still counts as one.
+        if (!opened) {
+            opened = true;
+            pending();
+            return;
+        }
+
         updateTimeout = setTimeout(pending, 400);
 
         return () => clearTimeout(updateTimeout);
@@ -108,6 +119,6 @@
 
 <SvelteFlowProvider>
     <div class="flex h-full w-full overflow-hidden">
-        <FlowCanvas bind:nodes bind:edges {nodeTypes} {availableNodes} {minHeight} />
+        <FlowCanvas bind:nodes bind:edges {nodeTypes} {availableNodes} {minHeight} {fillViewport} />
     </div>
 </SvelteFlowProvider>

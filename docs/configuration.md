@@ -356,10 +356,11 @@ use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
 FlowBuilder::make('definition')
     ->hiddenLabel()
     ->minHeight(600)        // pixels, or a CSS length such as '70vh'
+    ->fillViewport()        // optional: stretch to the bottom of the window
     ->columnSpanFull()
 ```
 
-`minHeight()` is the height the canvas opens with (600 px by default); the user can drag its bottom-right corner to make it taller for the current page.
+`minHeight()` is the height the canvas opens with (600 px by default); the user can drag its bottom-right corner to make it taller for the current page. `fillViewport()` stretches the canvas from where it starts on the page to the bottom of the window and follows window resizes, with `minHeight()` as the floor; the workflow edit page uses it with `minHeight('32rem')`.
 
 The field's state is the `{nodes, edges}` structure described in [Building workflows](building-workflows.md#how-a-definition-is-stored); the model attribute should be cast to `array`. The field validates the definition before it is saved — a trigger must exist, every other node must be connected, required settings must be filled — when the form has an `is_active` field that is on. `->withoutValidation()` skips those checks.
 

@@ -9,13 +9,13 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ReplicateAction;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Component;
-use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
@@ -25,6 +25,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
@@ -99,39 +100,54 @@ class WorkflowResource extends Resource
         return 'name';
     }
 
+    /**
+     * The editor: the canvas, filling the page. Name, description, Active
+     * and the run settings live in the edit page's Settings modal
+     * (detailsSchema()); is_active stays in the form as a hidden field
+     * because the canvas checks the definition of an active workflow.
+     */
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make()
-                ->schema([
-                    Grid::make(['default' => 1, 'lg' => 12])->schema([
-                        TextInput::make('name')
-                            ->label(__('packstub-flow::flow.fields.name'))
-                            ->required()
-                            ->maxLength(120)
-                            ->columnSpan(['lg' => 4]),
-                        TextInput::make('description')
-                            ->label(__('packstub-flow::flow.fields.description'))
-                            ->maxLength(255)
-                            ->columnSpan(['lg' => 5]),
-                        Toggle::make('is_active')
-                            ->label(__('packstub-flow::flow.fields.is_active'))
-                            ->helperText(__('packstub-flow::flow.fields.is_active_help'))
-                            ->inline(false)
-                            ->columnSpan(['lg' => 3]),
-                    ]),
-                ])
+            Hidden::make('is_active'),
+            FlowBuilder::make('definition')
+                ->hiddenLabel()
+                ->minHeight('32rem')
+                ->fillViewport()
+                ->columnSpanFull(),
+        ]);
+    }
+
+    /**
+     * Name, description, Active and the run settings: the create form and
+     * the edit page's Settings modal.
+     *
+     * @return array<int, Component>
+     */
+    public static function detailsSchema(bool $withActive = true): array
+    {
+        return [
+            TextInput::make('name')
+                ->label(__('packstub-flow::flow.fields.name'))
+                ->required()
+                ->maxLength(120)
+                ->autofocus(),
+            TextInput::make('description')
+                ->label(__('packstub-flow::flow.fields.description'))
+                ->maxLength(255),
+            Toggle::make('is_active')
+                ->label(__('packstub-flow::flow.fields.is_active'))
+                ->helperText(__('packstub-flow::flow.fields.is_active_help'))
+                ->visible($withActive)
                 ->columnSpanFull(),
             Section::make(__('packstub-flow::flow.fields.settings'))
                 ->description(__('packstub-flow::flow.fields.settings_help'))
+                ->collapsible()
                 ->collapsed()
-                ->columns(['default' => 1, 'lg' => 3])
+                ->compact()
                 ->schema(static::settingsSchema())
                 ->columnSpanFull(),
-            FlowBuilder::make('definition')
-                ->hiddenLabel()
-                ->columnSpanFull(),
-        ]);
+        ];
     }
 
     public static function table(Table $table): Table
@@ -140,14 +156,16 @@ class WorkflowResource extends Resource
             ->columns([
                 TextColumn::make('name')
                     ->label(__('packstub-flow::flow.fields.name'))
-                    ->description(fn (Workflow $record): ?string => $record->description)
+                    ->description(fn (Workflow $record): ?string => $record->description ? Str::limit($record->description, 90) : null)
+                    ->tooltip(fn (Workflow $record): ?string => strlen((string) $record->description) > 90 ? $record->description : null)
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('triggers.type')
                     ->label(__('packstub-flow::flow.fields.triggers'))
                     ->badge()
                     ->color('gray')
-                    ->formatStateUsing(fn (string $state): string => app(NodeRegistry::class)->trigger($state)?->getName() ?? class_basename($state)),
+                    ->formatStateUsing(fn (string $state): string => app(NodeRegistry::class)->trigger($state)?->getName() ?? class_basename($state))
+                    ->toggleable(),
                 IconColumn::make('is_active')
                     ->label(__('packstub-flow::flow.fields.is_active'))
                     ->boolean(),
@@ -210,8 +228,8 @@ class WorkflowResource extends Resource
     }
 
     /**
-     * The per-workflow settings shown under the name: retention and the
-     * failure limit. Override to add your own columns.
+     * The per-workflow run settings in the Settings modal: retention and
+     * the failure limit. Override to add your own columns.
      *
      * @return array<int, Component>
      */

@@ -13,6 +13,7 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\FlowPlugin;
 use Packstub\Flow\Models\WorkflowWait;
@@ -109,7 +110,9 @@ class Approvals extends Page implements HasTable
             ->columns([
                 TextColumn::make('meta.title')
                     ->label(__('packstub-flow::flow.approvals.request'))
-                    ->description(fn (WorkflowWait $record): ?string => $record->meta['body'] ?? null)
+                    ->description(fn (WorkflowWait $record): ?string => isset($record->meta['body']) ? Str::limit((string) $record->meta['body'], 120) : null)
+                    ->tooltip(fn (WorkflowWait $record): ?string => strlen((string) ($record->meta['body'] ?? '')) > 120 ? $record->meta['body'] : null)
+                    ->grow()
                     ->wrap()
                     ->searchable(query: fn (Builder $query, string $search): Builder => $query->where('meta->title', 'like', "%{$search}%")),
                 TextColumn::make('workflow.name')
@@ -155,11 +158,12 @@ class Approvals extends Page implements HasTable
             ])
             ->recordActions([
                 $this->decisionAction('approve', 'approved')->color('success')->icon('heroicon-o-check'),
-                $this->decisionAction('reject', 'rejected')->color('danger')->icon('heroicon-o-x-mark'),
+                $this->decisionAction('reject', 'rejected')->color('danger')->icon('heroicon-o-x-mark')->outlined(),
                 Action::make('cancel')
                     ->label(__('packstub-flow::flow.approvals.cancel'))
                     ->icon('heroicon-o-no-symbol')
                     ->color('gray')
+                    ->link()
                     ->requiresConfirmation()
                     ->visible(fn (WorkflowWait $record): bool => $manages && $record->isPending())
                     ->action(function (WorkflowWait $record): void {

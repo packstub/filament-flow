@@ -54,11 +54,37 @@ class ListWorkflows extends ListRecords
     }
 
     /**
-     * The blank-canvas starter, in sentence case like the others.
+     * The blank-canvas starter: a name and a description in a modal, like
+     * the template and import starters, then the full-page editor.
      */
     public static function createAction(): CreateAction
     {
-        return CreateAction::make()->label(__('packstub-flow::flow.actions.new'));
+        return CreateAction::make()
+            ->label(__('packstub-flow::flow.actions.new'))
+            ->modalHeading(__('packstub-flow::flow.actions.new'))
+            ->modalDescription(__('packstub-flow::flow.actions.new_description'))
+            ->modalWidth(Width::Large)
+            ->createAnother(false)
+            ->schema(WorkflowResource::detailsSchema(withActive: false))
+            ->mutateDataUsing(fn (array $data): array => [...$data, ...static::tenantAttributes()])
+            ->before(function (CreateAction $action): void {
+                $limit = static::workflowLimit();
+
+                if ($limit !== null && static::workflowCount() >= $limit) {
+                    Notification::make()->title(__('packstub-flow::flow.actions.limit_reached', ['limit' => $limit]))->danger()->send();
+                    $action->halt();
+                }
+            })
+            ->successRedirectUrl(fn (Workflow $record): string => WorkflowResource::getUrl('edit', ['record' => $record]));
+    }
+
+    /**
+     * The create page still answers its URL, but the button opens the modal:
+     * Filament would otherwise link every CreateAction to the page.
+     */
+    public function getDefaultActionUrl(Action $action): ?string
+    {
+        return $action instanceof CreateAction ? null : parent::getDefaultActionUrl($action);
     }
 
     /**

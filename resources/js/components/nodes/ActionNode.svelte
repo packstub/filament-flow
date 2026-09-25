@@ -40,14 +40,14 @@
             <div class="absolute -right-1.5 top-[60px] flex flex-col gap-3">
                 {#each outputs as output (output.id)}
                     <div class="relative flex h-3 items-center justify-end">
-                        <span class="mr-2 text-[8px] font-black uppercase {category === 'ai' ? 'text-teal-700 dark:text-teal-300' : 'text-blue-700 dark:text-blue-300'}">{output.label}</span>
+                        <span class="mr-2 text-[9px] font-medium text-gray-500 dark:text-gray-400">{output.label}</span>
                         <FlowHandle type="source" position={Position.Right} id={output.id} nodeId={id} class="!h-3 !w-3 !border-2 !border-white {category === 'ai' ? '!bg-teal-500' : '!bg-blue-500'} dark:!border-gray-800" />
                     </div>
                 {/each}
                 {#if hasErrorHandle}
                     <div class="relative flex h-3 items-center justify-end">
-                        <span class="mr-2 text-[8px] font-black uppercase text-rose-600 dark:text-rose-400">{t("error")}</span>
-                        <FlowHandle type="source" position={Position.Right} id="error" nodeId={id} class="!h-3 !w-3 !border-2 !border-white !bg-rose-500 dark:!border-gray-800" />
+                        <span class="mr-2 text-[9px] font-medium text-danger-600 dark:text-danger-400">{t("error")}</span>
+                        <FlowHandle type="source" position={Position.Right} id="error" nodeId={id} class="!h-3 !w-3 !border-2 !border-white !bg-danger-500 dark:!border-gray-800" />
                     </div>
                 {/if}
             </div>

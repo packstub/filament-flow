@@ -2,6 +2,31 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
+## Unreleased
+
+Upgrading: nothing to do — no migration, nothing removed or renamed. The canvas bundle was rebuilt (`resources/dist`); run `php artisan filament:assets`. A resource that extends `WorkflowResource` and overrides `form()` keeps its own layout; `WorkflowResource::detailsSchema()` is the new home of name, description, Active and the run settings.
+
+### Changed
+
+- **Full-page workflow editor** ([#33](https://github.com/packstub/filament-flow/issues/33)): the canvas fills the edit page, with the workflow's name as the heading, its last save under it, and **Canvas**, **Runs** and **Versions** as tabs. An **Active** switch next to the name turns the workflow on or off in one click (saving the canvas with it, and staying off with the nodes marked when the checks fail). Name, description, **Active** and the run settings move to a **Settings** modal in the more-actions menu, whose **Save** stores them with the canvas and keeps the workflow inactive (with the nodes marked) when it cannot be switched on; **Export** and **Delete** sit in the same menu. The header keeps **Test**, **Run now** and **Save changes**, which shows only while the canvas has unsaved changes (the header says **Saved** otherwise); on a phone, Test and Run now become icons and Save moves to a bar at the bottom that comes up with the first change, with **Discard** next to it. **New workflow** asks for a name and a description only and opens the editor.
+
+- **Panel-native canvas chrome**: the nodes carry a tinted header with a coloured icon and a sentence-case label instead of a solid block in capitals; the handle labels (True / False, a Decide option, Next, Error) follow. The undo / redo buttons, zoom in / out, **Fit to view** and a **Minimap** switch sit in one toolbar in the top-right corner of the canvas, styled like Filament's icon buttons, next to a labelled **Add node** button; Svelte Flow's own controls in the bottom-left corner and its attribution are gone. The minimap shows by itself once a workflow has more than twelve nodes. The components sidebar and its search box match the panel's inputs. Coming back to the **Canvas** tab fits the graph to the view again, and the empty canvas mentions the right-click menu and **Cmd / Ctrl + D**.
+- **New workflow** opens a modal on the Workflows page (name and description, like the template and import starters) and lands in the editor; the create page still answers its URL.
+- The editor's subheading names the user who last saved (from the panel's user model, when the stored email matches one) and the version, and stays out of the way on a phone. The **Canvas**, **Runs** and **Versions** tabs sit at the left edge of the content, and the Runs and Versions tables no longer repeat the tab's name as a heading. **Compare** is the label of the versions' diff action; the current version says so under its badge.
+- Tables: the Workflows list keeps the description to one line (the rest in a tooltip) and lets **Triggers** be hidden; the error column of the Runs tab and page is shorter, with the full message in a tooltip; on **Approvals** the request takes the room and its body is trimmed, **Reject** is outlined and **Cancel** a link; **Secrets** shows the key with its `{{ secrets.key }}` placeholder underneath, copied on click. The payload and output blocks of a run's details use the panel's grey code style instead of black.
+
+### Added
+
+- `FlowBuilder::fillViewport()`: the canvas runs from where it starts on the page to the bottom of the window, following resizes; `minHeight()` stays the floor.
+- `WorkflowResource::detailsSchema()`: the fields of the Settings modal and the create form.
+
+### Fixed
+
+- **Cmd / Ctrl + D** on the canvas of a saved workflow duplicated the selection and also opened the delete-workflow confirmation (Filament's Delete action binds the same keys); Delete no longer has a shortcut on the edit page.
+- The right-click menu no longer scrolls the page when it focuses its first item.
+- The run details (the Runs tab, the Runs page and a test result) lost their layout in a panel without a custom theme: the plugin's stylesheet now also carries the utilities its Blade views use, and the danger / warning / success / info colours.
+- A node added with the **+** next to a handle past the edge of the view no longer lands out of sight: the canvas fits the graph to show it.
+
 ## 1.5.0 — 2026-09-21
 
 Upgrading: nothing to do — no migration, nothing removed or renamed. The **Decide** action appears once `TYPESAFE_API_KEY` is set; installs without a key see no change. The new `jev` config block is read with its defaults, so a published config file needs no edit for it; if yours lists the built-in `actions`, add `Nodes\Actions\Decide::class` there (or register it on the plugin) to offer the node. The canvas bundle was rebuilt (`resources/dist`).

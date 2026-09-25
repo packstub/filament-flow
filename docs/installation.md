@@ -87,11 +87,11 @@ Details in [Queue & scheduling](queue-and-scheduling.md).
 
 ## 5. Try it
 
-1. Open **Workflows** in the panel navigation and click **New workflow**. Give it a name, and note the **Active** toggle — inactive workflows never run.
+1. Open **Workflows** in the panel navigation and click **New workflow**. Give it a name in the modal and **Create**: the workflow opens in the full-page editor, inactive (inactive workflows never run).
 2. On the canvas, click **Add a trigger** and pick **Manual**.
 3. Click the plus next to the trigger's output handle and pick **Write to log**. Open its settings (gear icon or double-click), type a message, and **Apply**.
-4. Save the workflow, switch **Active** on, and press **Run now** in the page header.
-5. Open the **Runs** tab below the canvas: the run shows as Succeeded with two steps, and your message is in `storage/logs/laravel.log`.
+4. Flip the **Active** switch next to the workflow's name on, then press **Run now**.
+5. Open the **Runs** tab at the top of the page: the run shows as Succeeded with two steps, and your message is in `storage/logs/laravel.log`.
 
 ![The Workflows table](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/workflows-list.png)
 

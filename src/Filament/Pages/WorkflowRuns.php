@@ -148,7 +148,8 @@ class WorkflowRuns extends Page implements HasTable
                     ->numeric(),
                 TextColumn::make('error')
                     ->label(__('packstub-flow::flow.runs.error'))
-                    ->limit(60)
+                    ->limit(40)
+                    ->tooltip(fn (WorkflowRun $record): ?string => strlen((string) $record->error) > 40 ? $record->error : null)
                     ->color('danger')
                     ->placeholder('—')
                     ->toggleable(),
