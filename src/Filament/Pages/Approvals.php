@@ -7,6 +7,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -108,19 +109,21 @@ class Approvals extends Page implements HasTable
                 : static::pendingForCurrentUser()->with(['workflow', 'run']))
             ->defaultSort('created_at', 'desc')
             ->columns([
+                // The request takes the room: its title, the body under it,
+                // and the record it is about; the workflow, the deadline and
+                // the decider ride along under the other columns, so the
+                // row reads in three glances instead of seven.
                 TextColumn::make('meta.title')
                     ->label(__('packstub-flow::flow.approvals.request'))
-                    ->description(fn (WorkflowWait $record): ?string => isset($record->meta['body']) ? Str::limit((string) $record->meta['body'], 120) : null)
-                    ->tooltip(fn (WorkflowWait $record): ?string => strlen((string) ($record->meta['body'] ?? '')) > 120 ? $record->meta['body'] : null)
+                    ->weight(FontWeight::Medium)
+                    ->description(fn (WorkflowWait $record): ?string => isset($record->meta['body']) ? Str::limit((string) $record->meta['body'], 160) : null)
+                    ->tooltip(fn (WorkflowWait $record): ?string => strlen((string) ($record->meta['body'] ?? '')) > 160 ? $record->meta['body'] : null)
                     ->grow()
                     ->wrap()
                     ->searchable(query: fn (Builder $query, string $search): Builder => $query->where('meta->title', 'like', "%{$search}%")),
                 TextColumn::make('workflow.name')
                     ->label(__('packstub-flow::flow.resource.label'))
-                    ->toggleable(),
-                TextColumn::make('meta.subject')
-                    ->label(__('packstub-flow::flow.runs.subject'))
-                    ->placeholder('—')
+                    ->description(fn (WorkflowWait $record): ?string => $record->meta['subject'] ?? null)
                     ->toggleable(),
                 TextColumn::make('status')
                     ->label(__('packstub-flow::flow.runs.status_label'))
@@ -131,20 +134,26 @@ class Approvals extends Page implements HasTable
                         'rejected' => 'danger',
                         WorkflowWait::PENDING => 'warning',
                         default => 'gray',
-                    }),
+                    })
+                    ->description(fn (WorkflowWait $record): ?string => filled($record->resolved_by) ? __('packstub-flow::flow.approvals.by', ['by' => $record->resolved_by]) : null),
                 TextColumn::make('created_at')
                     ->label(__('packstub-flow::flow.approvals.requested'))
                     ->since()
+                    ->description(fn (WorkflowWait $record): ?string => $record->isPending() && $record->expires_at ? __('packstub-flow::flow.approvals.expires_in', ['when' => $record->expires_at->diffForHumans()]) : null)
                     ->sortable(),
+                TextColumn::make('meta.subject')
+                    ->label(__('packstub-flow::flow.runs.subject'))
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('expires_at')
                     ->label(__('packstub-flow::flow.approvals.expires'))
                     ->since()
                     ->placeholder('—')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('resolved_by')
                     ->label(__('packstub-flow::flow.approvals.decided_by'))
                     ->placeholder('—')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -163,7 +172,8 @@ class Approvals extends Page implements HasTable
                     ->label(__('packstub-flow::flow.approvals.cancel'))
                     ->icon('heroicon-o-no-symbol')
                     ->color('gray')
-                    ->link()
+                    ->iconButton()
+                    ->tooltip(__('packstub-flow::flow.approvals.cancel'))
                     ->requiresConfirmation()
                     ->visible(fn (WorkflowWait $record): bool => $manages && $record->isPending())
                     ->action(function (WorkflowWait $record): void {

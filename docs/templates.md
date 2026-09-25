@@ -6,7 +6,7 @@ A workflow is data, so it can travel: start one from a template, describe it in 
 
 ![The template picker on the Workflows page](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/templates.png)
 
-**New from template**, in the more-actions menu (⋯) beside **New workflow** on the Workflows page, lists ready-made workflows by area. The area is written before each name while more than one is offered; an install that switched the built-in templates off and ships a single category of its own sees plain names. Pick one, give it a name, and it opens on the canvas with a red badge on every node that needs a choice from you — the record type of a trigger, the agents of a round-robin assignment — and a note in the node's description; the workflow cannot be switched on until they are filled, exactly like any other incomplete draft (see [Building workflows](building-workflows.md#saving)).
+**New from template**, in the more-actions menu (⋯) beside **New workflow** on the Workflows page, shows the ready-made workflows as cards: the area, the name, what the workflow does and its steps in the order they sit on the canvas, coloured like the nodes (trigger, condition, action, AI). While more than one area is offered, a row of filters above the cards narrows them to one. Pick a card, give the workflow a name (the template's is the default), and it opens on the canvas with a red badge on every node that needs a choice from you — the record type of a trigger, the agents of a round-robin assignment — and a note in the node's description; the workflow cannot be switched on until they are filled, exactly like any other incomplete draft (see [Building workflows](building-workflows.md#saving)).
 
 Built in:
 

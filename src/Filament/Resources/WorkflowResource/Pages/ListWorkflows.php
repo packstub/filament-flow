@@ -6,7 +6,6 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -18,6 +17,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
+use Packstub\Flow\Filament\Forms\Components\TemplatePicker;
 use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\FlowPlugin;
 use Packstub\Flow\Models\Workflow;
@@ -185,8 +185,8 @@ class ListWorkflows extends ListRecords
     }
 
     /**
-     * Pick one of the templates (built-in, config, plugin) and create an
-     * inactive workflow from it.
+     * Pick one of the templates (built-in, config, plugin) from a grid of
+     * cards and create an inactive workflow from it.
      */
     public static function templateAction(): Action
     {
@@ -198,37 +198,19 @@ class ListWorkflows extends ListRecords
             ->modalHeading(__('packstub-flow::flow.templates.heading'))
             ->modalDescription(__('packstub-flow::flow.templates.description'))
             ->modalSubmitActionLabel(__('packstub-flow::flow.templates.submit'))
-            ->modalWidth(Width::Large)
-            ->schema(function (): array {
-                $options = [];
-                $descriptions = [];
-
-                $byCategory = Templates::byCategory();
-                // The category prefix only helps to tell groups apart — a
-                // picker with a single group reads better without it.
-                $prefixCategory = count($byCategory) > 1;
-
-                foreach ($byCategory as $category => $templates) {
-                    foreach ($templates as $key => $template) {
-                        $options[$key] = ($prefixCategory ? $category.' — ' : '').$template['name'];
-                        $descriptions[$key] = (string) ($template['description'] ?? '');
-                    }
-                }
-
-                return [
-                    Radio::make('template')
-                        ->label(__('packstub-flow::flow.templates.template'))
-                        ->options($options)
-                        ->descriptions($descriptions)
-                        ->required()
-                        ->live(),
-                    TextInput::make('name')
-                        ->label(__('packstub-flow::flow.templates.name'))
-                        ->default(fn (Get $get): ?string => Templates::find((string) $get('template'))['name'] ?? null)
-                        ->placeholder(fn (Get $get): ?string => Templates::find((string) $get('template'))['name'] ?? null)
-                        ->maxLength(120),
-                ];
-            })
+            ->modalWidth(Width::ThreeExtraLarge)
+            ->schema(fn (): array => [
+                TemplatePicker::make('template')
+                    ->hiddenLabel()
+                    ->templates(fn (): array => Templates::all())
+                    ->required()
+                    ->live(),
+                TextInput::make('name')
+                    ->label(__('packstub-flow::flow.templates.name'))
+                    ->default(fn (Get $get): ?string => Templates::find((string) $get('template'))['name'] ?? null)
+                    ->placeholder(fn (Get $get): ?string => Templates::find((string) $get('template'))['name'] ?? null)
+                    ->maxLength(120),
+            ])
             ->action(function (array $data, Action $action): void {
                 $attributes = static::tenantAttributes();
 

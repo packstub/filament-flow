@@ -133,9 +133,14 @@ it('decides from the signed link and the Approvals page', function (): void {
 
     expect(Approvals::getNavigationBadge())->toBe('1');
 
+    // The request takes the room: title, body and record; the deadline sits under the request date.
     Livewire::test(Approvals::class)
         ->assertOk()
         ->assertCanSeeTableRecords([$second])
+        ->assertSee((string) $second->meta['title'])
+        ->assertTableColumnVisible('workflow.name')
+        ->tap(fn ($component) => expect($component->instance()->getTable()->getColumn('expires_at')->isToggledHiddenByDefault())->toBeTrue()
+            ->and($component->instance()->getTable()->getColumn('resolved_by')->isToggledHiddenByDefault())->toBeTrue())
         ->callAction(TestAction::make('approve')->table($second), ['comment' => 'ok'])
         ->assertHasNoActionErrors()
         ->assertNotified();
