@@ -117,7 +117,7 @@ Steps are stored one row per step in the `flow_workflow_steps` table (`WorkflowS
 
 ## Versions
 
-Every save that changes the definition stores a snapshot in the **Versions** tab of the workflow — the version number, who saved it, when, the node count and a summary of what changed compared to the previous one (nodes added, removed, changed; connections added or removed). Moving nodes around is not a change. **Changes** opens the summary in a modal; **Restore** puts an older definition back on the canvas as a new version, so nothing is ever lost. Each run pins the version it started from (`version_id`, the *Version* column of the Runs tab). Older versions are pruned beyond `versions.keep` (50) per workflow.
+Every save that changes the definition stores a snapshot in the **Versions** tab of the workflow — the version number, who saved it, when, the node count and a summary of what changed compared to the previous one (nodes added, removed, changed; connections added or removed). Moving nodes around is not a change. The current version is marked; **Compare** opens the summary in a modal; **Restore** puts an older definition back on the canvas as a new version, so nothing is ever lost. Each run pins the version it started from (`version_id`, the *Version* column of the Runs tab). Older versions are pruned beyond `versions.keep` (50) per workflow.
 
 ## Audit trail
 
