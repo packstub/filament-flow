@@ -5,8 +5,17 @@
  * the panel theme, including dark mode.
  */
 @import "tailwindcss/theme" theme(reference);
-@import "tailwindcss/utilities" source(none);
 @source "../js";
+
+/*
+ * Utilities only apply inside the builder. Unscoped (and unlayered) they beat
+ * every layered rule of the host theme on every panel page — a
+ * `dark:text-gray-300` next to `text-gray-700` anywhere in the panel lost to
+ * this file's `.text-gray-700`.
+ */
+.fi-flow-builder {
+    @tailwind utilities source(none);
+}
 
 @custom-variant dark (&:where(.dark, .dark *));
 
