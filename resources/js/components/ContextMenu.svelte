@@ -61,7 +61,7 @@
     }
 
     $effect(() => {
-        items()[0]?.focus();
+        items()[0]?.focus({ preventScroll: true });
     });
 
     function onKeyDown(event: KeyboardEvent) {

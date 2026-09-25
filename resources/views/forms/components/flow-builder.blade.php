@@ -5,6 +5,7 @@
             nodes: @js($getAvailableNodes()),
             labels: @js($getTranslations()),
             minHeight: @js($getMinHeight()),
+            fillViewport: @js($fillsViewport()),
             problems: @js($getInitialProblems()),
             outputs: @js((object) $getNodeOutputs()),
         })"

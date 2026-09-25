@@ -59,7 +59,7 @@ php artisan packstub-flow:prune
 php artisan packstub-flow:prune --days=7
 ```
 
-Deletes **finished** runs (Succeeded or Failed) that started more than the given number of days ago — `prune_runs_after_days` from the config (30) when `--days` is omitted. A workflow with its own **Keep runs for (days)** setting (in the *Run settings* section of its form) uses that value instead. Waiting runs are kept. Schedule it as you would any cleanup:
+Deletes **finished** runs (Succeeded or Failed) that started more than the given number of days ago — `prune_runs_after_days` from the config (30) when `--days` is omitted. A workflow with its own **Keep runs for (days)** setting (in the *Run settings* of its **Settings** modal) uses that value instead. Waiting runs are kept. Schedule it as you would any cleanup:
 
 ```php
 Schedule::command('packstub-flow:prune')->daily();
@@ -71,7 +71,7 @@ Starts every active workflow whose **Schedule** trigger is due at the current mi
 
 ## Retention and failure limits
 
-The *Run settings* section of a workflow's form holds two per-workflow limits:
+The *Run settings* in a workflow's **Settings** modal hold two per-workflow limits:
 
 | Setting | |
 | --- | --- |
@@ -117,7 +117,7 @@ Steps are stored one row per step in the `flow_workflow_steps` table (`WorkflowS
 
 ## Versions
 
-Every save that changes the definition stores a snapshot in the **Versions** tab of the workflow — the version number, who saved it, when, the node count and a summary of what changed compared to the previous one (nodes added, removed, changed; connections added or removed). Moving nodes around is not a change. **Changes** opens the summary in a modal; **Restore** puts an older definition back on the canvas as a new version, so nothing is ever lost. Each run pins the version it started from (`version_id`, the *Version* column of the Runs tab). Older versions are pruned beyond `versions.keep` (50) per workflow.
+Every save that changes the definition stores a snapshot in the **Versions** tab of the workflow — the version number, who saved it, when, the node count and a summary of what changed compared to the previous one (nodes added, removed, changed; connections added or removed). Moving nodes around is not a change. The current version is marked; **Compare** opens the summary in a modal; **Restore** puts an older definition back on the canvas as a new version, so nothing is ever lost. Each run pins the version it started from (`version_id`, the *Version* column of the Runs tab). Older versions are pruned beyond `versions.keep` (50) per workflow.
 
 ## Audit trail
 

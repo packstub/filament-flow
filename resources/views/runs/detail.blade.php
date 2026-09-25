@@ -10,6 +10,7 @@
         'waiting' => 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300',
     ];
 @endphp
+<div class="fi-flow">
 @if (! $run)
     <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('packstub-flow::flow.runs.not_found') }}</p>
 @else
@@ -92,7 +93,7 @@
                         @if (! empty($step['output']))
                             <details class="mt-1">
                                 <summary class="cursor-pointer text-xs text-gray-500 dark:text-gray-400">{{ $status === 'simulated' ? __('packstub-flow::flow.runs.would_use') : __('packstub-flow::flow.runs.output') }}</summary>
-                                <pre class="mt-1 max-h-48 overflow-auto rounded-lg bg-gray-950 p-2 font-mono text-xs text-gray-100 dark:bg-black/40">{{ json_encode($step['output'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+                                <pre class="mt-1 max-h-48 overflow-auto rounded-lg bg-gray-50 p-2 font-mono text-xs text-gray-800 ring-1 ring-gray-950/5 dark:bg-white/5 dark:text-gray-200 dark:ring-white/10">{{ json_encode($step['output'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
                             </details>
                         @endif
                     </div>
@@ -107,8 +108,9 @@
     @if ($context !== [])
         <div>
             <h3 class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('packstub-flow::flow.runs.context') }}</h3>
-            <pre class="max-h-64 overflow-auto rounded-lg bg-gray-950 p-3 font-mono text-xs text-gray-100 dark:bg-black/40">{{ json_encode($context, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+            <pre class="max-h-64 overflow-auto rounded-lg bg-gray-50 p-3 font-mono text-xs text-gray-800 ring-1 ring-gray-950/5 dark:bg-white/5 dark:text-gray-200 dark:ring-white/10">{{ json_encode($context, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
         </div>
     @endif
 </div>
 @endif
+</div>

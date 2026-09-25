@@ -6,7 +6,6 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -18,6 +17,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
+use Packstub\Flow\Filament\Forms\Components\TemplatePicker;
 use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\FlowPlugin;
 use Packstub\Flow\Models\Workflow;
@@ -54,11 +54,37 @@ class ListWorkflows extends ListRecords
     }
 
     /**
-     * The blank-canvas starter, in sentence case like the others.
+     * The blank-canvas starter: a name and a description in a modal, like
+     * the template and import starters, then the full-page editor.
      */
     public static function createAction(): CreateAction
     {
-        return CreateAction::make()->label(__('packstub-flow::flow.actions.new'));
+        return CreateAction::make()
+            ->label(__('packstub-flow::flow.actions.new'))
+            ->modalHeading(__('packstub-flow::flow.actions.new'))
+            ->modalDescription(__('packstub-flow::flow.actions.new_description'))
+            ->modalWidth(Width::Large)
+            ->createAnother(false)
+            ->schema(WorkflowResource::detailsSchema(withActive: false))
+            ->mutateDataUsing(fn (array $data): array => [...$data, ...static::tenantAttributes()])
+            ->before(function (CreateAction $action): void {
+                $limit = static::workflowLimit();
+
+                if ($limit !== null && static::workflowCount() >= $limit) {
+                    Notification::make()->title(__('packstub-flow::flow.actions.limit_reached', ['limit' => $limit]))->danger()->send();
+                    $action->halt();
+                }
+            })
+            ->successRedirectUrl(fn (Workflow $record): string => WorkflowResource::getUrl('edit', ['record' => $record]));
+    }
+
+    /**
+     * The create page still answers its URL, but the button opens the modal:
+     * Filament would otherwise link every CreateAction to the page.
+     */
+    public function getDefaultActionUrl(Action $action): ?string
+    {
+        return $action instanceof CreateAction ? null : parent::getDefaultActionUrl($action);
     }
 
     /**
@@ -159,8 +185,8 @@ class ListWorkflows extends ListRecords
     }
 
     /**
-     * Pick one of the templates (built-in, config, plugin) and create an
-     * inactive workflow from it.
+     * Pick one of the templates (built-in, config, plugin) from a grid of
+     * cards and create an inactive workflow from it.
      */
     public static function templateAction(): Action
     {
@@ -172,37 +198,19 @@ class ListWorkflows extends ListRecords
             ->modalHeading(__('packstub-flow::flow.templates.heading'))
             ->modalDescription(__('packstub-flow::flow.templates.description'))
             ->modalSubmitActionLabel(__('packstub-flow::flow.templates.submit'))
-            ->modalWidth(Width::Large)
-            ->schema(function (): array {
-                $options = [];
-                $descriptions = [];
-
-                $byCategory = Templates::byCategory();
-                // The category prefix only helps to tell groups apart — a
-                // picker with a single group reads better without it.
-                $prefixCategory = count($byCategory) > 1;
-
-                foreach ($byCategory as $category => $templates) {
-                    foreach ($templates as $key => $template) {
-                        $options[$key] = ($prefixCategory ? $category.' — ' : '').$template['name'];
-                        $descriptions[$key] = (string) ($template['description'] ?? '');
-                    }
-                }
-
-                return [
-                    Radio::make('template')
-                        ->label(__('packstub-flow::flow.templates.template'))
-                        ->options($options)
-                        ->descriptions($descriptions)
-                        ->required()
-                        ->live(),
-                    TextInput::make('name')
-                        ->label(__('packstub-flow::flow.templates.name'))
-                        ->default(fn (Get $get): ?string => Templates::find((string) $get('template'))['name'] ?? null)
-                        ->placeholder(fn (Get $get): ?string => Templates::find((string) $get('template'))['name'] ?? null)
-                        ->maxLength(120),
-                ];
-            })
+            ->modalWidth(Width::ThreeExtraLarge)
+            ->schema(fn (): array => [
+                TemplatePicker::make('template')
+                    ->hiddenLabel()
+                    ->templates(fn (): array => Templates::all())
+                    ->required()
+                    ->live(),
+                TextInput::make('name')
+                    ->label(__('packstub-flow::flow.templates.name'))
+                    ->default(fn (Get $get): ?string => Templates::find((string) $get('template'))['name'] ?? null)
+                    ->placeholder(fn (Get $get): ?string => Templates::find((string) $get('template'))['name'] ?? null)
+                    ->maxLength(120),
+            ])
             ->action(function (array $data, Action $action): void {
                 $attributes = static::tenantAttributes();
 

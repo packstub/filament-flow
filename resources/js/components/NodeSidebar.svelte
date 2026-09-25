@@ -83,10 +83,10 @@
     <div
         in:fly={{ x: 20, duration: 200 }}
         out:fly={{ x: 20, duration: 200 }}
-        class="fi-flow-sidebar absolute top-2 right-2 bottom-2 z-40 flex w-80 flex-col overflow-hidden rounded-2xl bg-white p-0 shadow-2xl ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
+        class="fi-flow-sidebar absolute top-2 right-2 bottom-2 z-40 flex w-80 flex-col overflow-hidden rounded-xl bg-white p-0 shadow-lg ring-1 ring-gray-950/10 dark:bg-gray-900 dark:ring-white/10"
     >
-        <div class="sticky top-0 z-10 border-b border-gray-100 p-5 dark:border-gray-800">
-            <div class="mb-4 flex items-center justify-between">
+        <div class="sticky top-0 z-10 border-b border-gray-200 p-4 dark:border-white/10">
+            <div class="mb-3 flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     {#if selectedCategory && !searchQuery}
                         <button
@@ -98,7 +98,7 @@
                             <ChevronLeft size={16} />
                         </button>
                     {/if}
-                    <h3 class="text-xs font-semibold tracking-widest text-gray-400 uppercase dark:text-gray-500">
+                    <h3 class="text-sm font-semibold text-gray-950 dark:text-white">
                         {#if searchQuery}
                             {t("search_results")}
                         {:else if selectedCategory}
@@ -123,13 +123,13 @@
                     type="text"
                     placeholder={t("search")}
                     bind:value={searchQuery}
-                    class="w-full rounded-lg border-none bg-white py-2 pr-3 pl-9 text-sm text-gray-900 ring-1 ring-gray-950/10 transition-all focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10"
+                    class="w-full rounded-lg border-none bg-white py-1.5 pr-3 pl-9 text-sm text-gray-950 shadow-sm ring-1 ring-gray-950/10 transition duration-75 placeholder:text-gray-400 focus:ring-2 focus:ring-primary-600 dark:bg-white/5 dark:text-white dark:ring-white/20 dark:placeholder:text-gray-500 dark:focus:ring-primary-500"
                 />
-                <Search size={16} class="absolute top-2.5 left-3 text-gray-400 dark:text-gray-500" />
+                <Search size={16} class="pointer-events-none absolute top-2 left-3 text-gray-400 dark:text-gray-500" />
             </div>
         </div>
 
-        <div class="relative flex-grow overflow-y-auto p-5">
+        <div class="relative flex-grow overflow-y-auto p-4">
             {#if searchQuery || selectedCategory}
                 <div in:fly={{ x: 20, duration: 300, delay: 150 }} out:fly={{ x: 20, duration: 200 }} class="flex flex-col gap-3">
                     {#each filteredNodes as node (node.data.identifier)}

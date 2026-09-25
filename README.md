@@ -75,7 +75,7 @@ Full walkthrough: [Installation](https://packstub.dev/docs/filament-flow/install
 
 ## The builder
 
-A workflow is a graph: one or more trigger nodes, followed by actions and conditions connected by edges. Draw it on the canvas — add nodes with the **+** button, the right-click menu or the plus on an unconnected output handle, drag handles together to connect them, and use a condition's **True** and **False** outputs to branch.
+A workflow is a graph: one or more trigger nodes, followed by actions and conditions connected by edges. Draw it on the canvas — add nodes with the **Add node** button, the right-click menu or the plus on an unconnected output handle, drag handles together to connect them, and use a condition's **True** and **False** outputs to branch.
 
 ![A finished workflow on the canvas](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas.png)
 

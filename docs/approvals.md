@@ -27,7 +27,7 @@ Outputs: **Approved**, **Rejected**, **Timed out**. After the decision the nodes
 
 ![The Approvals page with a pending request](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/approvals.png)
 
-- **The Approvals page** (next to Workflows in the navigation, with a badge counting the pending requests for the signed-in user) lists the requests the user may decide, with Approve / Reject buttons and an optional comment. Users who may manage workflows see every request and can **cancel** one, which continues the run along **Timed out**.
+- **The Approvals page** (next to Workflows in the navigation, with a badge counting the pending requests for the signed-in user) lists the requests the user may decide: the title and details of each, the workflow and the record it is about, its status and when it was requested and expires, with **Approve** / **Reject** buttons and an optional comment. The record, the deadline and who decided are also columns of their own, hidden until toggled on. Users who may manage workflows see every request and can **cancel** one (the ⊘ button), which continues the run along **Timed out**.
 - **The notification buttons and email links** are signed URLs (`flow/approvals/{wait}/{outcome}`, valid for `approvals.link_lifetime_hours`, 72 by default) that need a signed-in user who is one of the approvers; they decide and redirect to the Approvals page. A request that was already decided shows a warning and changes nothing.
 - **From code**: `Flow::resolveWait($wait, 'approved', ['comment' => '...'], 'who@example.com')` returns `true` once — the first decision wins.
 

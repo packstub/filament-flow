@@ -6,6 +6,7 @@ use Livewire\Livewire;
 use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
+use Packstub\Flow\Filament\Forms\Components\TemplatePicker;
 use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\EditWorkflow;
 use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\ListWorkflows;
 use Packstub\Flow\FlowPlugin;
@@ -105,7 +106,7 @@ it('offers custom templates from the config and the plugin, and only usable ones
     rmdir($dir);
 });
 
-it('drops the category prefix from the picker when only one category is offered', function (): void {
+it('offers the templates as cards with their steps, and the categories as a filter when there is more than one', function (): void {
     $this->actingAs(createUser());
 
     $dir = sys_get_temp_dir().'/flow-templates-'.Str::random(6);
@@ -113,19 +114,33 @@ it('drops the category prefix from the picker when only one category is offered'
     file_put_contents($dir.'/custom-log.json', json_encode(['name' => 'Custom log', 'category' => 'Ops', 'definition' => ['nodes' => [triggerNode('t', Manual::class), actionNode('a', WriteLog::class, ['message' => 'hi'])], 'edges' => [edge('t', 'a')]]]));
     config()->set('packstub-flow.templates', [$dir]);
 
-    $pickerOptions = function (): array {
+    $picker = function (): TemplatePicker {
         $page = Livewire::test(ListWorkflows::class)->mountAction('template')->instance();
 
-        return $page->getSchema($page->getMountedActionSchemaName())->getComponent('template')->getOptions();
+        return $page->getSchema($page->getMountedActionSchemaName())->getComponent('template');
     };
 
-    // Several categories: the prefix tells them apart.
-    expect($pickerOptions()['custom-log'])->toBe('Ops — Custom log');
+    // Several categories: the cards carry theirs, and the filter lists them.
+    expect($picker()->getOptions()['custom-log'])->toBe('Custom log')
+        ->and($picker()->getCategories())->toContain('Ops', 'Finance', 'Sales');
 
-    // One category left: the prefix would only repeat itself on every line.
+    $cards = collect($picker()->getCards())->keyBy('key');
+
+    expect($cards['custom-log']['category'])->toBe('Ops')
+        ->and(array_column($cards['custom-log']['steps'], 'label'))->toBe(['t', 'a'])
+        ->and(array_column($cards['custom-log']['steps'], 'theme'))->toBe(['trigger', 'action'])
+        ->and(array_column($cards['welcome-series']['steps'], 'label'))->toBe(['User registered', 'Welcome email', 'Wait 2 days', 'Follow-up tip']);
+
+    // The rendered field: the filter, a card per template, its steps.
+    $html = $picker()->toEmbeddedHtml();
+
+    expect($html)->toContain('fi-flow-template-picker', 'Custom log', 'Welcome email', __('packstub-flow::flow.templates.all'), 'value="welcome-series"');
+
+    // One category left: no filter to show.
     Templates::withoutBuiltIn();
 
-    expect($pickerOptions())->toBe(['custom-log' => 'Custom log']);
+    expect($picker()->getOptions())->toBe(['custom-log' => 'Custom log'])
+        ->and($picker()->getCategories())->toBe(['Ops']);
 
     array_map('unlink', glob($dir.'/*.json') ?: []);
     rmdir($dir);

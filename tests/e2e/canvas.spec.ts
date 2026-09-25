@@ -3,13 +3,42 @@ import { existsSync } from "node:fs";
 
 // Signed in once for the run by auth.setup.ts.
 
+// New workflow asks for a name in a modal, then opens the full-page editor.
+async function newWorkflow(page: import("@playwright/test").Page, name: string) {
+    await page.goto("/admin/workflows");
+    await page.locator(".fi-header").getByRole("button", { name: "New workflow" }).click();
+    const modal = page.locator(".fi-modal-window").filter({ hasText: "New workflow" });
+    await modal.getByRole("textbox", { name: /^Name/ }).fill(name);
+    await modal.getByRole("button", { name: "Create", exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit$/);
+    await expect(page.locator(".fi-flow-canvas .svelte-flow")).toBeVisible();
+}
+
+// Save from the header, then open the page again so the canvas loads from
+// the saved definition. Once stored, Save changes turns back into Saved.
+async function saveAndReload(page: import("@playwright/test").Page) {
+    const header = page.locator(".fi-header");
+    await header.getByRole("button", { name: "Save changes" }).click();
+    await expect(header.getByRole("button", { name: "Saved", exact: true })).toBeVisible();
+    await page.reload();
+}
+
+// Settings sits in the header's more-actions menu.
+async function openSettings(page: import("@playwright/test").Page) {
+    await page.locator(".fi-header .fi-dropdown-trigger").click();
+    await page.locator(".fi-dropdown-panel").getByRole("button", { name: "Settings" }).click();
+}
+
 // Add a trigger, connect an action to it, save — the path every user takes.
 test("builds a workflow on the canvas and saves it", async ({ page }) => {
-    await page.goto("/admin/workflows/create");
-    await page.getByRole("textbox", { name: /^Name/ }).fill("Smoke test");
+    await newWorkflow(page, "Smoke test");
 
     const canvas = page.locator(".fi-flow-canvas");
-    await expect(canvas.locator(".svelte-flow")).toBeVisible();
+    const header = page.locator(".fi-header");
+
+    // Nothing to save yet: the header says so instead of offering Save.
+    await expect(header.getByRole("button", { name: "Saved", exact: true })).toBeDisabled();
+    await expect(header.getByRole("button", { name: "Save changes" })).toBeHidden();
 
     // The empty state opens the sidebar on the triggers list.
     await canvas.getByRole("button", { name: "Add a trigger" }).click();
@@ -22,15 +51,43 @@ test("builds a workflow on the canvas and saves it", async ({ page }) => {
     await canvas.locator(".fi-flow-sidebar").getByRole("button", { name: /^Write to log/ }).click();
     await expect(canvas.locator(".svelte-flow__node")).toHaveCount(2);
     await expect(canvas.locator(".svelte-flow__edge")).toHaveCount(1);
+    await expect(header.getByRole("button", { name: "Saved", exact: true })).toBeHidden();
 
-    await page.getByRole("button", { name: "Create", exact: true }).click();
-    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit$/);
+    await saveAndReload(page);
     await expect(page.locator(".fi-flow-canvas .svelte-flow__node")).toHaveCount(2);
     await expect(page.locator(".fi-flow-canvas .svelte-flow__edge")).toHaveCount(1);
+
+    // Opened again from the save, and selecting a node changes nothing to save.
+    await page.locator(".fi-flow-canvas .svelte-flow__node").first().click();
+    await expect(header.getByRole("button", { name: "Saved", exact: true })).toBeVisible();
+});
+
+// On a phone, Save moves to a bar at the bottom that shows only while there
+// is something to save.
+test("offers Save in a bottom bar on a phone", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await newWorkflow(page, "Phone");
+
+    const bar = page.locator(".fi-flow-unsaved-bar");
+    await expect(bar).toBeHidden();
+    await expect(page.locator(".fi-header").getByRole("button", { name: "Saved", exact: true })).toBeHidden();
+
+    const canvas = page.locator(".fi-flow-canvas");
+    await canvas.getByRole("button", { name: "Add a trigger" }).click();
+    await canvas.locator(".fi-flow-sidebar").getByRole("button", { name: /^Manual/ }).click();
+    await expect(canvas.locator(".svelte-flow__node")).toHaveCount(1);
+
+    await expect(bar).toBeVisible();
+    await expect(bar).toContainText("Unsaved changes");
+    await bar.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(bar).toBeHidden();
+
+    await page.reload();
+    await expect(page.locator(".fi-flow-canvas .svelte-flow__node")).toHaveCount(1);
 });
 
 test("undoes, redoes, copies and pastes on the canvas", async ({ page }) => {
-    await page.goto("/admin/workflows/create");
+    await newWorkflow(page, "Shortcuts");
 
     const canvas = page.locator(".fi-flow-canvas");
     await canvas.getByRole("button", { name: "Add a trigger" }).click();
@@ -56,15 +113,14 @@ test("undoes, redoes, copies and pastes on the canvas", async ({ page }) => {
     await nodes.last().click({ button: "right" });
     const menu = canvas.getByRole("menu");
     await expect(menu).toBeVisible();
+    await expect(menu.getByRole("menuitem").first()).toBeFocused();
     await page.keyboard.press("End");
     await page.keyboard.press("Enter");
     await expect(nodes).toHaveCount(2);
 });
 
 test("marks the nodes an active workflow cannot be saved with", async ({ page }) => {
-    await page.goto("/admin/workflows/create");
-    await page.getByRole("textbox", { name: /^Name/ }).fill("Incomplete");
-    await page.getByRole("switch", { name: /Active/ }).check();
+    await newWorkflow(page, "Incomplete");
 
     const canvas = page.locator(".fi-flow-canvas");
     await canvas.getByRole("button", { name: "Add node" }).first().click();
@@ -72,12 +128,16 @@ test("marks the nodes an active workflow cannot be saved with", async ({ page })
     await canvas.locator(".fi-flow-sidebar").getByRole("button", { name: /^Send email/ }).click();
     await expect(canvas.locator(".svelte-flow__node")).toHaveCount(1);
 
-    await page.getByRole("button", { name: "Create", exact: true }).click();
+    // Switching it on in Settings saves with the checks of an active workflow.
+    await openSettings(page);
+    const settings = page.locator(".fi-modal-window").filter({ hasText: "Workflow settings" });
+    await settings.getByRole("switch", { name: /Active/ }).check();
+    await settings.getByRole("button", { name: "Save", exact: true }).click();
 
-    // Not connected and no recipient: the node gets a badge, the form the messages.
+    // Not connected and no recipient: the node gets a badge and the workflow stays off.
     await expect(canvas.locator(".fi-flow-node-problems")).toBeVisible();
-    await expect(page.getByText(/Add at least one trigger/)).toBeVisible();
-    await expect(page).toHaveURL(/\/admin\/workflows\/create$/);
+    await expect(page.getByText("The workflow stays inactive")).toBeVisible();
+    await expect(page.locator(".fi-header")).toContainText("Inactive");
 });
 
 // The rarer starters (a template, an import) sit behind the header's
@@ -149,8 +209,7 @@ test("offers Describe a workflow when the engine is installed", async ({ page })
 test("offers the real Ask AI node in the AI group and dry-runs it", async ({ page }) => {
     test.skip(!existsSync("vendor/packstub/agents"), "packstub/agents is not installed in the workbench");
 
-    await page.goto("/admin/workflows/create");
-    await page.getByRole("textbox", { name: /^Name/ }).fill("Triage with AI");
+    await newWorkflow(page, "Triage with AI");
 
     const canvas = page.locator(".fi-flow-canvas");
     await canvas.getByRole("button", { name: "Add a trigger" }).click();
@@ -168,12 +227,12 @@ test("offers the real Ask AI node in the AI group and dry-runs it", async ({ pag
 
     const askAi = canvas.locator(".svelte-flow__node").filter({ hasText: "Ask AI" });
     await expect(askAi).toHaveCount(1);
-    await expect(askAi.locator(".bg-teal-600")).toBeVisible();
+    await expect(askAi.locator('[data-theme="ai"]')).toBeVisible();
     await expect(canvas.locator(".svelte-flow__edge")).toHaveCount(1);
 
     // The settings come from the engine: the model picker lists the platform's entries.
     // The new node can land at the edge of the viewport; bring both nodes into view first.
-    await canvas.locator(".svelte-flow__controls-fitview").click();
+    await canvas.getByRole("button", { name: "Fit to view" }).click();
     await askAi.dblclick();
     const slideOver = page.locator(".fi-modal-window").filter({ hasText: "Ask AI" });
     await slideOver.getByRole("textbox", { name: /^Question/ }).fill("Is order {{ manual }} urgent?");
@@ -183,13 +242,12 @@ test("offers the real Ask AI node in the AI group and dry-runs it", async ({ pag
     await slideOver.getByRole("button", { name: "Apply" }).click();
     await expect(slideOver).toBeHidden();
 
-    await page.getByRole("button", { name: "Create", exact: true }).click();
-    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit$/);
+    await saveAndReload(page);
 
     // Loaded from the saved definition, the node finds its group again by identifier.
     const saved = page.locator(".fi-flow-canvas .svelte-flow__node").filter({ hasText: "Ask AI" });
     await expect(saved).toHaveCount(1);
-    await expect(saved.locator(".bg-teal-600")).toBeVisible();
+    await expect(saved.locator('[data-theme="ai"]')).toBeVisible();
 
     // A test run never asks the model and logs the one it would ask.
     await page.getByRole("button", { name: "Test", exact: true }).click();
@@ -206,8 +264,7 @@ test("offers the real Ask AI node in the AI group and dry-runs it", async ({ pag
 // with a minimum confidence — they are there again after a save, and a test
 // run follows the first one without asking TypeSafe.
 test("draws the branches of a Decide node from its settings", async ({ page }) => {
-    await page.goto("/admin/workflows/create");
-    await page.getByRole("textbox", { name: /^Name/ }).fill("Route tickets");
+    await newWorkflow(page, "Route tickets");
 
     const canvas = page.locator(".fi-flow-canvas");
     await canvas.getByRole("button", { name: "Add a trigger" }).click();
@@ -220,11 +277,11 @@ test("draws the branches of a Decide node from its settings", async ({ page }) =
 
     const decide = canvas.locator(".svelte-flow__node").filter({ hasText: "Decide" });
     await expect(decide).toHaveCount(1);
-    await expect(decide.locator(".bg-teal-600")).toBeVisible();
+    await expect(decide.locator('[data-theme="ai"]')).toBeVisible();
     await expect(decide.locator(".svelte-flow__handle.source")).toHaveCount(2);
     await expect(decide.getByText("Yes", { exact: true })).toBeVisible();
 
-    await canvas.locator(".svelte-flow__controls-fitview").click();
+    await canvas.getByRole("button", { name: "Fit to view" }).click();
     await decide.dblclick();
     const slideOver = page.locator(".fi-modal-window").filter({ hasText: "Decide" });
     await slideOver.getByRole("textbox", { name: /^What to look at/ }).fill("{{ manual }}");
@@ -241,8 +298,7 @@ test("draws the branches of a Decide node from its settings", async ({ page }) =
         await expect(decide.getByText(branch, { exact: true })).toBeVisible();
     }
 
-    await page.getByRole("button", { name: "Create", exact: true }).click();
-    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit$/);
+    await saveAndReload(page);
 
     // Worked out again from the saved settings when the canvas opens.
     const saved = page.locator(".fi-flow-canvas .svelte-flow__node").filter({ hasText: "Decide" });

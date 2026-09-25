@@ -27,46 +27,39 @@
         children?: Snippet;
     } = $props();
 
+    // A tinted header with a coloured icon, like a Filament section: the
+    // colour tells the kind of node apart without shouting.
     const themes = {
         trigger: {
-            border: "border-amber-200/50 dark:border-amber-500/30",
-            header: "bg-amber-500 dark:bg-amber-600",
-            bg: "bg-amber-50/50 dark:bg-amber-900/10",
-            text: "text-amber-900 dark:text-amber-100",
-            icon: Zap,
+            header: "bg-amber-50 dark:bg-amber-500/10",
+            icon: "text-amber-600 dark:text-amber-400",
+            symbol: Zap,
         },
         action: {
-            border: "border-blue-200/50 dark:border-blue-500/30",
-            header: "bg-blue-600 dark:bg-blue-700",
-            bg: "bg-blue-50/50 dark:bg-blue-900/10",
-            text: "text-blue-900 dark:text-blue-100",
-            icon: Rocket,
+            header: "bg-blue-50 dark:bg-blue-500/10",
+            icon: "text-blue-600 dark:text-blue-400",
+            symbol: Rocket,
         },
         condition: {
-            border: "border-purple-200/50 dark:border-purple-500/30",
-            header: "bg-purple-600 dark:bg-purple-700",
-            bg: "bg-purple-50/50 dark:bg-purple-900/10",
-            text: "text-purple-900 dark:text-purple-100",
-            icon: CircleHelp,
+            header: "bg-purple-50 dark:bg-purple-500/10",
+            icon: "text-purple-600 dark:text-purple-400",
+            symbol: CircleHelp,
         },
         ai: {
-            border: "border-teal-200/50 dark:border-teal-500/30",
-            header: "bg-teal-600 dark:bg-teal-700",
-            bg: "bg-teal-50/50 dark:bg-teal-900/10",
-            text: "text-teal-900 dark:text-teal-100",
-            icon: Sparkles,
+            header: "bg-teal-50 dark:bg-teal-500/10",
+            icon: "text-teal-600 dark:text-teal-400",
+            symbol: Sparkles,
         },
         default: {
-            border: "border-gray-200/50 dark:border-gray-700",
-            header: "bg-gray-600 dark:bg-gray-700",
-            bg: "bg-gray-50/50 dark:bg-gray-800/10",
-            text: "text-gray-900 dark:text-gray-100",
-            icon: Box,
+            header: "bg-gray-50 dark:bg-white/5",
+            icon: "text-gray-500 dark:text-gray-400",
+            symbol: Box,
         },
     };
 
     // A node in a group with a look of its own (AI) takes it; otherwise the type's.
-    const theme = $derived((category && themes[category]) || themes[type] || themes.default);
+    const themeKey = $derived(category && themes[category] ? category : themes[type] ? type : "default");
+    const theme = $derived(themes[themeKey]);
     const problems = $derived(problemsFor(id));
 
     function openSettings(event: MouseEvent) {
@@ -85,21 +78,21 @@
     }
 </script>
 
-<div class="fi-flow-node group relative" role="presentation" ondblclick={openSettings}>
+<div class="fi-flow-node group relative" role="presentation" data-theme={themeKey} ondblclick={openSettings}>
     <div
-        class="min-w-[180px] max-w-[240px] overflow-hidden rounded-xl border bg-white shadow-sm ring-1 ring-gray-950/5 transition-all duration-200 dark:bg-gray-900 dark:ring-white/10 {theme.border} {selected
-            ? 'ring-2 ring-primary-500 ring-offset-2 dark:ring-primary-400 dark:ring-offset-gray-950'
+        class="min-w-[180px] max-w-[240px] overflow-hidden rounded-xl bg-white shadow-sm ring-1 transition-shadow duration-200 dark:bg-gray-900 {selected
+            ? 'ring-2 ring-primary-600 dark:ring-primary-500'
             : problems.length
-              ? 'ring-2 ring-rose-500 dark:ring-rose-400'
-              : 'hover:shadow-md dark:hover:shadow-primary-500/10'}"
+              ? 'ring-2 ring-danger-500 dark:ring-danger-400'
+              : 'ring-gray-950/10 hover:shadow-md dark:ring-white/10'}"
     >
-        <div class="{theme.header} flex items-center gap-2 px-3 py-1.5">
-            <span class="text-white"><theme.icon size={12} strokeWidth={2.5} /></span>
-            <span class="flex-1 truncate text-[10px] font-bold tracking-wider text-white uppercase">{data.label || "Node"}</span>
+        <div class="{theme.header} flex items-center gap-2 px-3 py-2">
+            <span class={theme.icon}><theme.symbol size={14} strokeWidth={2} /></span>
+            <span class="flex-1 truncate text-xs font-semibold text-gray-950 dark:text-white">{data.label || "Node"}</span>
             <button
                 onclick={openSettings}
                 type="button"
-                class="rounded p-0.5 text-white/70 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/20 hover:text-white"
+                class="rounded-md p-0.5 text-gray-400 opacity-0 transition-all group-hover:opacity-100 hover:bg-gray-950/5 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300"
                 title={t("settings")}
                 aria-label={t("settings")}
             >
@@ -107,17 +100,17 @@
             </button>
         </div>
 
-        <div class="p-3 {theme.bg}">
+        <div class="px-3 py-2.5">
             {#if data.description}
-                <p class="mb-2 text-[10px] leading-relaxed text-gray-500 italic dark:text-gray-400">{data.description}</p>
+                <p class="text-[11px] leading-snug text-gray-500 dark:text-gray-400">{data.description}</p>
             {/if}
-            <div class="text-xs font-medium {theme.text}">{@render children?.()}</div>
+            <div class="text-xs font-medium text-gray-700 dark:text-gray-300">{@render children?.()}</div>
         </div>
     </div>
 
     {#if problems.length}
         <div
-            class="fi-flow-node-problems absolute -top-2.5 -right-2.5 z-20 flex h-5 min-w-5 items-center justify-center gap-0.5 rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow ring-2 ring-white dark:ring-gray-950"
+            class="fi-flow-node-problems absolute -top-2.5 -right-2.5 z-20 flex h-5 min-w-5 items-center justify-center gap-0.5 rounded-full bg-danger-500 px-1 text-[10px] font-bold text-white shadow ring-2 ring-white dark:ring-gray-950"
             role="img"
             aria-label={t("node_problems")}
             title={problems.join("\n")}
