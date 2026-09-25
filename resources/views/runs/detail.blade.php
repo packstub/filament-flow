@@ -10,6 +10,7 @@
         'waiting' => 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300',
     ];
 @endphp
+<div class="fi-flow">
 @if (! $run)
     <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('packstub-flow::flow.runs.not_found') }}</p>
 @else
@@ -112,3 +113,4 @@
     @endif
 </div>
 @endif
+</div>

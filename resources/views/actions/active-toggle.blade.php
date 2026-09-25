@@ -5,6 +5,7 @@
 @endphp
 
 {{-- Borderless, next to the workflow's name: a switch, then "Active" / "Inactive". --}}
+<span class="fi-flow">
 <button
     type="button"
     role="switch"
@@ -33,3 +34,4 @@
         'text-gray-500 dark:text-gray-400' => ! $active,
     ])>{{ $action->getLabel() }}</span>
 </button>
+</span>

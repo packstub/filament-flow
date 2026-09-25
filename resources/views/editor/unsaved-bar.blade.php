@@ -3,6 +3,7 @@
     the page while the canvas has unsaved changes. Discard reloads the page
     from the last save.
 --}}
+<div class="fi-flow">
 <div
     x-data
     x-show="$store.packstubFlowEditor?.dirty"
@@ -23,4 +24,5 @@
     <x-filament::button type="submit" form-id="form" size="sm">
         {{ __('packstub-flow::flow.editor.save') }}
     </x-filament::button>
+</div>
 </div>

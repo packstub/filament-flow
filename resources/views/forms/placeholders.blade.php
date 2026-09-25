@@ -1,3 +1,4 @@
+<div class="fi-flow">
 <div class="fi-flow-placeholders text-sm">
     <p class="mb-3 text-gray-600 dark:text-gray-400">{{ __('packstub-flow::flow.node_settings.placeholders_intro') }}</p>
     <dl class="grid gap-2">
@@ -8,4 +9,5 @@
             </div>
         @endforeach
     </dl>
+</div>
 </div>

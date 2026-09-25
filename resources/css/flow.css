@@ -6,9 +6,19 @@
  * the panel theme, including dark mode.
  */
 @import "tailwindcss/theme" theme(reference);
-@import "tailwindcss/utilities" source(none);
 @source "../js";
 @source "../views";
+
+/*
+ * Utilities only apply inside the plugin's own markup: the canvas
+ * (.fi-flow-builder) and the Blade views, each wrapped in .fi-flow. Unscoped
+ * (and unlayered) they would beat every layered rule of the host theme on
+ * every panel page — a `dark:text-gray-300` next to `text-gray-700` anywhere
+ * in the panel lost to this file's `.text-gray-700`.
+ */
+:where(.fi-flow, .fi-flow-builder) {
+    @tailwind utilities source(none);
+}
 
 @custom-variant dark (&:where(.dark, .dark *));
 
