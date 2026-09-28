@@ -30,9 +30,10 @@ class DefinitionPreview
 
     /**
      * @param  array<string, mixed>|null  $definition
-     * @return array{width: float, height: float, nodes: array<int, array{id: string, x: float, y: float, height: float, label: string, theme: string, kind: string}>, edges: array<int, array{path: string, label: ?string, x: float, y: float}>}
+     * @param  array<int, string>  $marked  Node ids drawn with a badge, like the canvas marks a node still to fill in.
+     * @return array{width: float, height: float, nodes: array<int, array{id: string, x: float, y: float, height: float, label: string, theme: string, kind: string, marked: bool}>, edges: array<int, array{path: string, label: ?string, x: float, y: float}>}
      */
-    public static function make(?array $definition, ?NodeRegistry $registry = null): array
+    public static function make(?array $definition, ?NodeRegistry $registry = null, array $marked = []): array
     {
         $registry ??= app(NodeRegistry::class);
         $nodes = array_values(array_filter((array) ($definition['nodes'] ?? []), fn ($node): bool => is_array($node) && isset($node['id'])));
@@ -76,6 +77,7 @@ class DefinitionPreview
                 'label' => Str::limit((string) ($node['data']['label'] ?? $registered?->getName() ?? ''), 26),
                 'theme' => $theme,
                 'kind' => __('packstub-flow::flow.preview.'.$theme),
+                'marked' => in_array((string) $node['id'], $marked, true),
             ];
         }
 

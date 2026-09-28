@@ -78,3 +78,14 @@ it('blocks saving an active workflow with an incomplete canvas', function (): vo
         ->call('save')
         ->assertHasNoFormErrors();
 });
+
+it('lists the required settings each node leaves blank', function (): void {
+    $definition = ['nodes' => [
+        triggerNode('t', Manual::class),
+        actionNode('mail', SendEmail::class, ['recipient' => 'ops@example.com']),
+        actionNode('done', SendEmail::class, ['recipient' => 'a@example.com', 'subject' => 's', 'body' => 'b']),
+    ], 'edges' => []];
+
+    expect(DefinitionValidator::missingSettingsByNode($definition))->toBe(['mail' => ['Subject', 'Message']])
+        ->and(DefinitionValidator::missingSettingsByNode(null))->toBe([]);
+});

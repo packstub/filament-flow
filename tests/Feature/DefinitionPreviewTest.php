@@ -50,6 +50,12 @@ it('lays a definition out where its nodes sit, coloured by kind, with the branch
         ->and($slot(1))->toEqualWithDelta($nodes['c']['y'] + DefinitionPreview::BAND + $body / 3, 0.1)
         ->and($slot(2))->toEqualWithDelta($nodes['c']['y'] + DefinitionPreview::BAND + $body * 2 / 3, 0.1);
 
+    // Nodes can be marked, as the canvas marks the ones still to fill in.
+    $marked = DefinitionPreview::make(['nodes' => [placed(triggerNode('t', Manual::class), 0, 0, 'T'), placed(actionNode('a', WriteLog::class), 300, 0, 'A')], 'edges' => []], marked: ['a']);
+
+    expect(array_column($marked['nodes'], 'marked', 'id'))->toBe(['t' => false, 'a' => true])
+        ->and(view('packstub-flow::components.definition-preview', ['preview' => $marked])->render())->toContain('fill-danger-500');
+
     expect(DefinitionPreview::make(['nodes' => [], 'edges' => []]))->toBe(['width' => 0, 'height' => 0, 'nodes' => [], 'edges' => []])
         ->and(DefinitionPreview::make(null)['nodes'])->toBe([]);
 });

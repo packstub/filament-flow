@@ -18,6 +18,7 @@ use Packstub\Flow\Models\WorkflowRun;
 use Packstub\Flow\Nodes\Actions\HttpRequest;
 use Packstub\Flow\Nodes\Actions\SendEmail;
 use Packstub\Flow\Nodes\Triggers\Manual;
+use Packstub\Flow\Support\Templates;
 use Packstub\Flow\Tests\Fixtures\SetStatusAction;
 
 beforeEach(function (): void {
@@ -90,6 +91,7 @@ it('creates an inactive workflow from its name and opens the full-page editor', 
 it('offers the ways to start as cards and shows the fields of the picked one', function (): void {
     $page = Livewire::test(CreateWorkflow::class)
         ->assertSee(['How do you want to start?', 'Blank canvas', 'Template', 'Import'])
+        ->assertFormFieldExists('start', fn ($field): bool => $field->getBadges() === ['template' => (string) count(Templates::all())] && ! $field->isMarkedAsRequired())
         ->assertDontSee('Details')
         ->assertFormSet(['start' => 'blank'])
         ->assertFormFieldExists('name', fn ($field): bool => $field->isRequired())
@@ -97,8 +99,10 @@ it('offers the ways to start as cards and shows the fields of the picked one', f
         ->assertFormFieldHidden('json')
         ->assertSee('Create workflow');
 
+    // Picking Template picks the first template too, so its preview shows from the start.
     $page->fillForm(['start' => 'template'])
         ->assertFormFieldVisible('template')
+        ->assertFormSet(['template' => 'approval'])
         ->assertFormFieldExists('name', fn ($field): bool => ! $field->isRequired())
         ->fillForm(['template' => 'dunning'])
         ->assertSeeHtml('placeholder="Dunning: unpaid invoice reminders"');
@@ -110,6 +114,7 @@ it('offers the ways to start as cards and shows the fields of the picked one', f
 
     // `?start=` and `?template=` pick the way to start when the page opens; an unknown one is ignored.
     Livewire::withQueryParams(['start' => 'import'])->test(CreateWorkflow::class)->assertFormSet(['start' => 'import']);
+    Livewire::withQueryParams(['start' => 'template'])->test(CreateWorkflow::class)->assertFormSet(['start' => 'template', 'template' => 'approval']);
     Livewire::withQueryParams(['template' => 'welcome-series'])->test(CreateWorkflow::class)->assertFormSet(['start' => 'template', 'template' => 'welcome-series']);
     Livewire::withQueryParams(['start' => 'nope', 'template' => 'nope'])->test(CreateWorkflow::class)->assertFormSet(['start' => 'blank', 'template' => null]);
 

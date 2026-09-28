@@ -358,10 +358,12 @@ ListWorkflows::starterActions();
 ChoiceCards::make('plan')
     ->options(['basic' => 'Basic', 'pro' => 'Pro'])
     ->descriptions(['basic' => 'For one team.', 'pro' => 'For the whole company.'])
-    ->icons(['basic' => 'heroicon-o-user', 'pro' => 'heroicon-o-user-group']);
+    ->icons(['basic' => 'heroicon-o-user', 'pro' => 'heroicon-o-user-group'])
+    ->badges(['pro' => 'New'])        // a short badge beside the label
+    ->accents(['pro' => 'teal']);     // amber, blue, purple or teal, like the canvas nodes
 ```
 
-`Packstub\Flow\Support\DefinitionPreview::make($workflow->definition)` lays a definition out for a static diagram — the nodes where they sit on the canvas, coloured by kind, and the edges between them — and the `packstub-flow::components.definition-preview` view draws it as an SVG. Pass it `preview`, and optionally `compact` (no text, for a thumbnail), `class` and `style`; include it inside a `.fi-flow` wrapper so its styles apply:
+`Packstub\Flow\Support\DefinitionPreview::make($workflow->definition)` lays a definition out for a static diagram — the nodes where they sit on the canvas, coloured by kind, and the edges between them; its `marked` argument takes node ids to badge, such as `array_keys(DefinitionValidator::missingSettingsByNode($definition))` — and the `packstub-flow::components.definition-preview` view draws it as an SVG. Pass it `preview`, and optionally `compact` (no text, for a thumbnail), `class` and `style`; include it inside a `.fi-flow` wrapper so its styles apply:
 
 ```blade
 <div class="fi-flow">

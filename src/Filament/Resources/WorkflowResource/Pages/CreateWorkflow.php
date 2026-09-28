@@ -14,6 +14,7 @@ use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Illuminate\Contracts\Support\Htmlable;
@@ -81,9 +82,19 @@ class CreateWorkflow extends CreateRecord
                         ->options(fn (): array => array_map(fn (array $start): string => $start['label'], static::starts()))
                         ->descriptions(fn (): array => array_map(fn (array $start): string => $start['description'], static::starts()))
                         ->icons(fn (): array => array_map(fn (array $start): string => $start['icon'], static::starts()))
+                        ->badges(fn (): array => array_map(fn (array $start): ?string => $start['badge'] ?? null, static::starts()))
+                        ->accents([self::DESCRIBE => 'teal'])
                         ->default(self::BLANK)
                         ->required()
-                        ->live(),
+                        // It always has a value: no asterisk.
+                        ->markAsRequired(false)
+                        ->live()
+                        // A template is always picked, so its preview shows from the start.
+                        ->afterStateUpdated(function (Get $get, Set $set, ?string $state): void {
+                            if ($state === self::TEMPLATE && blank($get('template'))) {
+                                $set('template', array_key_first(Templates::all()));
+                            }
+                        }),
                     ...$this->startSchema(),
                 ]),
         ]);
@@ -167,13 +178,13 @@ class CreateWorkflow extends CreateRecord
      * The ways to start offered here: a template when one is usable, a
      * description when packstub/agents is installed.
      *
-     * @return array<string, array{label: string, description: string, icon: string}>
+     * @return array<string, array{label: string, description: string, icon: string, badge?: string}>
      */
     public static function starts(): array
     {
         return array_filter([
             self::BLANK => ['label' => __('packstub-flow::flow.create.blank'), 'description' => __('packstub-flow::flow.create.blank_description'), 'icon' => 'heroicon-o-squares-plus'],
-            self::TEMPLATE => Templates::all() === [] ? null : ['label' => __('packstub-flow::flow.create.template'), 'description' => __('packstub-flow::flow.create.template_description'), 'icon' => 'heroicon-o-rectangle-stack'],
+            self::TEMPLATE => ($count = count(Templates::all())) === 0 ? null : ['label' => __('packstub-flow::flow.create.template'), 'description' => __('packstub-flow::flow.create.template_description'), 'icon' => 'heroicon-o-rectangle-stack', 'badge' => (string) $count],
             self::DESCRIBE => WorkflowGenerator::isAvailable() ? ['label' => __('packstub-flow::flow.create.describe'), 'description' => __('packstub-flow::flow.create.describe_description'), 'icon' => 'heroicon-o-sparkles'] : null,
             self::IMPORT => ['label' => __('packstub-flow::flow.create.import'), 'description' => __('packstub-flow::flow.create.import_description'), 'icon' => 'heroicon-o-arrow-up-tray'],
         ]);
@@ -192,6 +203,10 @@ class CreateWorkflow extends CreateRecord
 
         if (is_string($start) && array_key_exists($start, static::starts())) {
             $this->data['start'] = $start;
+        }
+
+        if (($this->data['start'] ?? null) === self::TEMPLATE) {
+            $this->data['template'] = array_key_first(Templates::all());
         }
 
         $template = request()->query('template');

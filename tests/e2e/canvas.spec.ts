@@ -152,12 +152,16 @@ async function startFrom(page: import("@playwright/test").Page, way: string) {
 test("starts a workflow from a template", async ({ page }) => {
     await startFrom(page, "Template");
 
-    // Each card draws its workflow; the picked one is previewed large, and full screen on demand.
-    await expect(page.locator(".fi-flow-template-card svg").first()).toBeVisible();
+    // The first template is picked, so a preview shows from the start: its diagram, and what it leaves for you.
+    const preview = page.locator(".fi-flow-template-preview:visible");
+    await expect(preview).toContainText("Approval before a record goes live");
+    await expect(preview).toContainText("You will fill in");
+
+    // Picking another row swaps the preview; the name takes the template's as its placeholder.
     await page.getByRole("radio", { name: /Welcome series/ }).check();
-    const preview = page.locator(".fi-flow-template-preview").filter({ hasText: "Preview: Welcome series" });
-    await expect(preview).toBeVisible();
+    await expect(preview).toContainText("Welcome series");
     await expect(preview.getByRole("img", { name: /Diagram of the workflow/ })).toContainText("Welcome email");
+    await expect(preview).toContainText("Nothing left to fill in");
     await expect(page.getByRole("textbox", { name: /^Name/ })).toHaveAttribute("placeholder", "Welcome series");
 
     await preview.getByRole("button", { name: "Full screen" }).click();
@@ -166,9 +170,9 @@ test("starts a workflow from a template", async ({ page }) => {
     await page.keyboard.press("Escape");
     await expect(full).toBeHidden();
 
-    // The area filter narrows the cards.
+    // The area filter narrows the list.
     await page.getByRole("button", { name: "Finance", exact: true }).click();
-    await expect(page.locator(".fi-flow-template-card:visible")).toHaveCount(1);
+    await expect(page.locator(".fi-flow-template-row:visible")).toHaveCount(1);
     await page.getByRole("button", { name: "All", exact: true }).click();
 
     await page.getByRole("button", { name: "Create workflow" }).click();
@@ -178,6 +182,19 @@ test("starts a workflow from a template", async ({ page }) => {
     await expect(page.locator(".fi-flow-canvas .svelte-flow__node")).toHaveCount(4);
     await expect(page.locator(".fi-flow-canvas .svelte-flow__edge")).toHaveCount(3);
     await expect(page.locator(".fi-flow-node-problems")).toHaveCount(0);
+});
+
+// On a phone the list sits above the preview and shows every built-in template without a scroll of its own.
+test("lists every template above the preview on a phone", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/admin/workflows/create?start=template");
+
+    const list = page.locator(".fi-flow-template-picker [role=radiogroup]");
+    // Five templates, six with packstub/agents (Ticket triage with AI).
+    expect(await list.locator(".fi-flow-template-row").count()).toBeGreaterThanOrEqual(5);
+    expect(await list.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
+    const preview = page.locator(".fi-flow-template-preview:visible");
+    expect((await preview.boundingBox())!.y).toBeGreaterThan((await list.boundingBox())!.y);
 });
 
 // A draft with a choice left to the person opens with the validator's

@@ -88,7 +88,7 @@ use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
 FlowBuilder::make('definition')->minHeight('70vh')
 ```
 
-Not sure where to start? **New workflow** opens one page with every way in: a **Blank canvas**; a **Template** — a welcome series, a high-value order alert, dunning reminders, an SLA escalation and an approval flow, each card with a small diagram of the workflow and a full-screen preview, ready to adapt; with `packstub/agents` installed, **Describe it** turns a sentence ("when an order over $500 comes in, post to Slack and flag it for review") into a draft built from your own triggers, conditions and actions; or **Import** a workflow exported from another panel as a JSON file (**Export** is on the edit page). Everything but the blank canvas opens inactive with the nodes still to fill in marked.
+Not sure where to start? **New workflow** opens one page with every way in: a **Blank canvas**; a **Template** — a welcome series, a high-value order alert, dunning reminders, an SLA escalation and an approval flow, each previewed as a diagram with what it leaves for you to fill in, ready to adapt; with `packstub/agents` installed, **Describe it** turns a sentence ("when an order over $500 comes in, post to Slack and flag it for review") into a draft built from your own triggers, conditions and actions; or **Import** a workflow exported from another panel as a JSON file (**Export** is on the edit page). Everything but the blank canvas opens inactive with the nodes still to fill in marked.
 
 ![The template picker on the create page](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/templates.png)
 

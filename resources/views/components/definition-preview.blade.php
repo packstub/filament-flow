@@ -45,6 +45,10 @@
                     <text x="26" y="16.5" font-size="11" font-weight="500" class="fill-gray-600 dark:fill-gray-300">{{ $node['kind'] }}</text>
                     <text x="14" y="{{ $node['height'] / 2 + 17 }}" font-size="14" font-weight="600" class="fill-gray-950 dark:fill-white">{{ $node['label'] }}</text>
                 @endif
+
+                @if ($node['marked'])
+                    <circle cx="{{ $w - 2 }}" cy="2" r="{{ $compact ? 10 : 7 }}" class="fill-danger-500 stroke-white dark:stroke-gray-900" stroke-width="2" />
+                @endif
             </g>
         @endforeach
 

@@ -140,8 +140,21 @@ it('offers the templates as cards with their steps, and the categories as a filt
     // The rendered field: the filter, a card per template with its diagram, the steps for screen readers, and a preview of each.
     $html = $picker()->toEmbeddedHtml();
 
-    expect($html)->toContain('fi-flow-template-picker', 'Custom log', 'Welcome email', __('packstub-flow::flow.templates.all'), 'value="welcome-series"', '<svg', 'Preview: Custom log', 'Diagram of the workflow, 2 steps')
+    expect($html)->toContain('fi-flow-template-picker', 'Custom log', __('packstub-flow::flow.templates.all'), 'value="welcome-series"', '<svg', 'Preview: Custom log', 'Diagram of the workflow, 2 steps', 'User registered, Welcome email')
+        ->and(substr_count($html, 'fi-flow-template-row'))->toBe(count($cards))
         ->and(substr_count($html, 'fi-flow-template-preview'))->toBe(count($cards));
+
+    // The preview says what a template leaves for you, and marks those nodes on its diagram.
+    expect($cards['high-value-order-alert']['todo'])->toBe([['node' => 'Order created', 'setting' => 'Record type'], ['node' => 'Notify the panel', 'setting' => 'Recipients']])
+        ->and(collect($cards['high-value-order-alert']['preview']['nodes'])->where('marked', true)->pluck('id')->all())->toBe(['trigger-created', 'action-notify'])
+        ->and($cards['welcome-series']['todo'])->toBe([])
+        ->and($html)->toContain('You will fill in', 'in “Order created”', 'Nothing left to fill in');
+
+    // The search looks in the name, the area, the description and the steps; it shows from TemplatePicker::SEARCH_FROM templates on.
+    expect($cards['welcome-series']['search'])->toContain('welcome series', 'onboarding', 'follow-up tip')
+        ->and($picker()->isSearchable())->toBe(count($cards) >= TemplatePicker::SEARCH_FROM)
+        ->and($picker()->searchable()->toEmbeddedHtml())->toContain('Search templates')
+        ->and($picker()->searchable(false)->toEmbeddedHtml())->not->toContain('Search templates');
 
     // One category left: no filter to show.
     Templates::withoutBuiltIn();
@@ -198,7 +211,7 @@ it('exports, imports and starts from a template in the panel', function (): void
         ->and($created->triggerNodes())->toHaveCount(1);
 
     Livewire::test(CreateWorkflow::class)
-        ->fillForm(['start' => 'template'])
+        ->fillForm(['start' => 'template', 'template' => null])
         ->call('create')
         ->assertHasFormErrors(['template' => 'required']);
 
