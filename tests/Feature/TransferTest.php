@@ -1,5 +1,6 @@
 <?php
 
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -7,6 +8,7 @@ use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Filament\Forms\Components\FlowBuilder;
 use Packstub\Flow\Filament\Forms\Components\TemplatePicker;
+use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\CreateWorkflow;
 use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\EditWorkflow;
 use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\ListWorkflows;
 use Packstub\Flow\FlowPlugin;
@@ -115,9 +117,9 @@ it('offers the templates as cards with their steps, and the categories as a filt
     config()->set('packstub-flow.templates', [$dir]);
 
     $picker = function (): TemplatePicker {
-        $page = Livewire::test(ListWorkflows::class)->mountAction('template')->instance();
+        $page = Livewire::test(CreateWorkflow::class)->fillForm(['start' => 'template'])->instance();
 
-        return $page->getSchema($page->getMountedActionSchemaName())->getComponent('template');
+        return $page->getSchema('form')->getComponent('template');
     };
 
     // Several categories: the cards carry theirs, and the filter lists them.
@@ -131,10 +133,15 @@ it('offers the templates as cards with their steps, and the categories as a filt
         ->and(array_column($cards['custom-log']['steps'], 'theme'))->toBe(['trigger', 'action'])
         ->and(array_column($cards['welcome-series']['steps'], 'label'))->toBe(['User registered', 'Welcome email', 'Wait 2 days', 'Follow-up tip']);
 
-    // The rendered field: the filter, a card per template, its steps.
+    // Each card carries its diagram: the nodes where they sit, the edge between them.
+    expect($cards['custom-log']['preview']['nodes'])->toHaveCount(2)
+        ->and($cards['custom-log']['preview']['edges'])->toHaveCount(1);
+
+    // The rendered field: the filter, a card per template with its diagram, the steps for screen readers, and a preview of each.
     $html = $picker()->toEmbeddedHtml();
 
-    expect($html)->toContain('fi-flow-template-picker', 'Custom log', 'Welcome email', __('packstub-flow::flow.templates.all'), 'value="welcome-series"');
+    expect($html)->toContain('fi-flow-template-picker', 'Custom log', 'Welcome email', __('packstub-flow::flow.templates.all'), 'value="welcome-series"', '<svg', 'Preview: Custom log', 'Diagram of the workflow, 2 steps')
+        ->and(substr_count($html, 'fi-flow-template-preview'))->toBe(count($cards));
 
     // One category left: no filter to show.
     Templates::withoutBuiltIn();
@@ -155,36 +162,56 @@ it('exports, imports and starts from a template in the panel', function (): void
         ->callAction('export')
         ->assertFileDownloaded('panel-export.flow.json');
 
-    Livewire::test(ListWorkflows::class)
-        ->callAction('import', data: ['json' => WorkflowTransfer::toJson($workflow)])
-        ->assertHasNoActionErrors()
-        ->assertNotified()
+    Livewire::test(CreateWorkflow::class)
+        ->fillForm(['start' => 'import', 'json' => WorkflowTransfer::toJson($workflow)])
+        ->call('create')
+        ->assertHasNoFormErrors()
+        ->assertNotified('"Panel export" imported. Review it, then switch it on.')
         ->assertRedirect();
 
     expect(Workflow::query()->where('name', 'Panel export')->count())->toBe(2);
 
-    Livewire::test(ListWorkflows::class)
-        ->callAction('import', data: ['json' => '{"nodes": []}'])
-        ->assertNotified('The export has no nodes.');
+    Livewire::test(CreateWorkflow::class)
+        ->fillForm(['start' => 'import', 'json' => '{"nodes": []}'])
+        ->call('create')
+        ->assertNotified('The export has no nodes.')
+        ->assertNoRedirect();
 
-    Livewire::test(ListWorkflows::class)
-        ->callAction('template', data: ['template' => 'approval', 'name' => 'Sign-off'])
-        ->assertHasNoActionErrors()
+    Livewire::test(CreateWorkflow::class)
+        ->fillForm(['start' => 'import'])
+        ->call('create')
+        ->assertHasFormErrors(['json' => 'required_without']);
+
+    // The name and description given on the page win over the document's; empty ones keep it.
+    Livewire::test(CreateWorkflow::class)
+        ->fillForm(['start' => 'template', 'template' => 'approval', 'name' => 'Sign-off', 'description' => 'Ours', 'prune_after_days' => 7])
+        ->call('create')
+        ->assertHasNoFormErrors()
         ->assertRedirect();
 
     $created = Workflow::query()->where('name', 'Sign-off')->first();
 
     expect($created)->not->toBeNull()
+        ->and($created->description)->toBe('Ours')
+        ->and($created->prune_after_days)->toBe(7)
         ->and($created->is_active)->toBeFalse()
         ->and($created->triggerNodes())->toHaveCount(1);
+
+    Livewire::test(CreateWorkflow::class)
+        ->fillForm(['start' => 'template'])
+        ->call('create')
+        ->assertHasFormErrors(['template' => 'required']);
+
+    expect(Workflow::query()->count())->toBe(3);
 });
 
 it('opens a workflow created from a template or an import for review, with the nodes still to fill in marked', function (): void {
     $this->actingAs(createUser());
 
     // The template's choices left to the person: the record type of the trigger, the recipients of the notification.
-    Livewire::test(ListWorkflows::class)
-        ->callAction('template', data: ['template' => 'high-value-order-alert'])
+    Livewire::test(CreateWorkflow::class)
+        ->fillForm(['start' => 'template', 'template' => 'high-value-order-alert'])
+        ->call('create')
         ->assertRedirect(ListWorkflows::reviewUrl($template = Workflow::query()->where('name', 'High-value order alert')->firstOrFail()));
 
     expect(ListWorkflows::reviewUrl($template))->toEndWith('/edit?'.FlowBuilder::REVIEW_QUERY.'=1');
@@ -208,8 +235,9 @@ it('opens a workflow created from a template or an import for review, with the n
     // An import opens the same way.
     $source = createWorkflow([triggerNode('t', Manual::class), actionNode('a', SetStatusAction::class, ['status' => 'x'])], [edge('t', 'a')], ['name' => 'Copied']);
 
-    Livewire::test(ListWorkflows::class)
-        ->callAction('import', data: ['json' => WorkflowTransfer::toJson($source)])
+    Livewire::test(CreateWorkflow::class)
+        ->fillForm(['start' => 'import', 'json' => WorkflowTransfer::toJson($source)])
+        ->call('create')
         ->assertRedirect(ListWorkflows::reviewUrl(Workflow::query()->where('name', 'Copied')->latest('id')->firstOrFail()));
 });
 
@@ -221,9 +249,10 @@ it('attaches imported and templated workflows to the panel tenant', function ():
     Filament::setCurrentPanel(Filament::getPanel('app'));
     Filament::setTenant($team, true);
 
-    Livewire::test(ListWorkflows::class)
-        ->callAction('template', data: ['template' => 'welcome-series'])
-        ->assertHasNoActionErrors();
+    Livewire::test(CreateWorkflow::class)
+        ->fillForm(['start' => 'template', 'template' => 'welcome-series'])
+        ->call('create')
+        ->assertHasNoFormErrors();
 
     $workflow = Workflow::query()->where('name', 'Welcome series')->first();
 
@@ -234,16 +263,20 @@ it('attaches imported and templated workflows to the panel tenant', function ():
     Filament::setCurrentPanel(Filament::getPanel('admin'));
 });
 
-it('hides the template action when no template is usable', function (): void {
+it('offers no template to start from when none is usable', function (): void {
     $this->actingAs(createUser());
     Templates::withoutBuiltIn();
 
-    Livewire::test(ListWorkflows::class)->assertActionHidden('template');
+    Livewire::test(ListWorkflows::class)->assertActionHidden(TestAction::make('template')->table());
+
+    expect(CreateWorkflow::starts())->not->toHaveKey('template');
 
     FlowPlugin::get()->templates([['key' => 'x', 'name' => 'X', 'definition' => ['nodes' => [triggerNode('t', Manual::class)], 'edges' => []]]]);
     FlowPlugin::get()->register(Filament::getPanel('admin'));
 
-    Livewire::test(ListWorkflows::class)->assertActionVisible('template');
+    Livewire::test(ListWorkflows::class)->assertActionVisible(TestAction::make('template')->table());
+
+    expect(CreateWorkflow::starts())->toHaveKey('template');
 });
 
 it('seeds from a template file with the model helper', function (): void {

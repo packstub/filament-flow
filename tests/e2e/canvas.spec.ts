@@ -3,13 +3,15 @@ import { existsSync } from "node:fs";
 
 // Signed in once for the run by auth.setup.ts.
 
-// New workflow asks for a name in a modal, then opens the full-page editor.
+// New workflow opens the create page with Blank canvas picked; a name is
+// all it needs, then the full-page editor opens.
 async function newWorkflow(page: import("@playwright/test").Page, name: string) {
     await page.goto("/admin/workflows");
-    await page.locator(".fi-header").getByRole("button", { name: "New workflow" }).click();
-    const modal = page.locator(".fi-modal-window").filter({ hasText: "New workflow" });
-    await modal.getByRole("textbox", { name: /^Name/ }).fill(name);
-    await modal.getByRole("button", { name: "Create", exact: true }).click();
+    await page.locator(".fi-header").getByRole("link", { name: "New workflow" }).click();
+    await expect(page).toHaveURL(/\/admin\/workflows\/create$/);
+    await expect(page.getByRole("radio", { name: /^Blank canvas/ })).toBeChecked();
+    await page.getByRole("textbox", { name: /^Name/ }).fill(name);
+    await page.getByRole("button", { name: "Create workflow" }).click();
     await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit$/);
     await expect(page.locator(".fi-flow-canvas .svelte-flow")).toBeVisible();
 }
@@ -140,18 +142,35 @@ test("marks the nodes an active workflow cannot be saved with", async ({ page })
     await expect(page.locator(".fi-header")).toContainText("Inactive");
 });
 
-// The rarer starters (a template, an import) sit behind the header's
-// more-actions menu, beside New workflow.
-async function openStarter(page: import("@playwright/test").Page, name: string) {
-    await page.locator(".fi-header .fi-dropdown-trigger button").click();
-    await page.getByRole("button", { name }).click();
+// Every way to start sits on the create page: picking one shows its fields.
+async function startFrom(page: import("@playwright/test").Page, way: string) {
+    await page.goto("/admin/workflows/create");
+    await page.locator(".fi-flow-choice-card").filter({ hasText: way }).click();
+    await expect(page.getByRole("radio", { name: new RegExp(`^${way}`) })).toBeChecked();
 }
 
 test("starts a workflow from a template", async ({ page }) => {
-    await page.goto("/admin/workflows");
-    await openStarter(page, "New from template");
+    await startFrom(page, "Template");
 
+    // Each card draws its workflow; the picked one is previewed large, and full screen on demand.
+    await expect(page.locator(".fi-flow-template-card svg").first()).toBeVisible();
     await page.getByRole("radio", { name: /Welcome series/ }).check();
+    const preview = page.locator(".fi-flow-template-preview").filter({ hasText: "Preview: Welcome series" });
+    await expect(preview).toBeVisible();
+    await expect(preview.getByRole("img", { name: /Diagram of the workflow/ })).toContainText("Welcome email");
+    await expect(page.getByRole("textbox", { name: /^Name/ })).toHaveAttribute("placeholder", "Welcome series");
+
+    await preview.getByRole("button", { name: "Full screen" }).click();
+    const full = page.getByRole("dialog", { name: "Preview: Welcome series" });
+    await expect(full).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(full).toBeHidden();
+
+    // The area filter narrows the cards.
+    await page.getByRole("button", { name: "Finance", exact: true }).click();
+    await expect(page.locator(".fi-flow-template-card:visible")).toHaveCount(1);
+    await page.getByRole("button", { name: "All", exact: true }).click();
+
     await page.getByRole("button", { name: "Create workflow" }).click();
 
     // Opened for review: nothing to fill in here, so no badge.
@@ -164,9 +183,9 @@ test("starts a workflow from a template", async ({ page }) => {
 // A draft with a choice left to the person opens with the validator's
 // badge on that node, as after a refused save; editing the node clears it.
 test("marks the nodes still to fill in when a template opens for review", async ({ page }) => {
-    await page.goto("/admin/workflows");
-    await openStarter(page, "New from template");
-    await page.getByRole("radio", { name: /High-value order alert/ }).check();
+    // A link can pick the template: ?template=<key>.
+    await page.goto("/admin/workflows/create?template=high-value-order-alert");
+    await expect(page.getByRole("radio", { name: /High-value order alert/ })).toBeChecked();
     await page.getByRole("button", { name: "Create workflow" }).click();
 
     // The trigger's record type and the notification's recipients are the template's choices left to the person.
@@ -186,20 +205,39 @@ test("marks the nodes still to fill in when a template opens for review", async 
     await expect(page.locator(".fi-flow-node-problems")).toHaveCount(1);
 });
 
-// "Describe a workflow" is offered by the workbench once packstub/agents is
-// installed: the modal takes a sentence and a model from the engine's
-// picker. The draft itself would ask a real provider, so it is not sent.
-test("offers Describe a workflow when the engine is installed", async ({ page }) => {
+// "Describe it" is offered by the workbench once packstub/agents is
+// installed: a sentence and a model from the engine's picker. The draft
+// itself would ask a real provider, so it is not sent.
+test("offers Describe it when the engine is installed", async ({ page }) => {
     test.skip(!existsSync("vendor/packstub/agents"), "packstub/agents is not installed in the workbench");
 
-    await page.goto("/admin/workflows");
-    await page.getByRole("button", { name: "Describe a workflow" }).click();
+    await startFrom(page, "Describe it");
 
-    const modal = page.locator(".fi-modal-window").filter({ hasText: "Describe the workflow you want" });
-    await expect(modal).toBeVisible();
-    await expect(modal.getByRole("textbox", { name: /^What should the workflow do/ })).toBeVisible();
-    await expect(modal.getByRole("combobox", { name: /^Model/ }).locator("option", { hasText: /Claude/ }).first()).toBeAttached();
-    await expect(modal.getByRole("button", { name: "Draft workflow" })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: /^What should the workflow do/ })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: /^Model/ }).locator("option", { hasText: /Claude/ }).first()).toBeAttached();
+    await expect(page.getByRole("textbox", { name: /^Name/ })).toHaveAttribute("placeholder", "The model suggests one");
+    await expect(page.getByRole("button", { name: "Draft workflow" })).toBeVisible();
+});
+
+// Import takes a file or pasted JSON; the name comes from the export unless one is given.
+test("imports a workflow from pasted JSON", async ({ page }) => {
+    await startFrom(page, "Import");
+
+    const json = JSON.stringify({
+        format: "packstub-flow/1",
+        name: "Pasted in",
+        definition: {
+            nodes: [{ id: "t", type: "trigger", position: { x: 0, y: 0 }, data: { identifier: "Packstub\\Flow\\Nodes\\Triggers\\Manual", label: "Manual", config: {} } }],
+            edges: [],
+        },
+    });
+    await page.getByRole("textbox", { name: /paste the JSON/ }).fill(json);
+    await expect(page.getByRole("textbox", { name: /^Name/ })).toHaveAttribute("placeholder", "The name in the export");
+    await page.getByRole("button", { name: "Import", exact: true }).click();
+
+    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit\?review=1$/);
+    await expect(page.locator(".fi-flow-heading")).toContainText("Pasted in");
+    await expect(page.locator(".fi-flow-canvas .svelte-flow__node")).toHaveCount(1);
 });
 
 // The real Ask AI node, offered by the workbench once packstub/agents is

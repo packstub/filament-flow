@@ -1,5 +1,6 @@
 <?php
 
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Process;
 use Laravel\Ai\StructuredAnonymousAgent;
@@ -11,6 +12,7 @@ use Packstub\Agents\Support\Context\LaravelContext;
 use Packstub\Flow\Engine\Runner;
 use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Facades\Flow;
+use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\CreateWorkflow;
 use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\ListWorkflows;
 use Packstub\Flow\Models\Secret;
 use Packstub\Flow\Models\Workflow;
@@ -317,9 +319,10 @@ it('drafts inside the panel\'s tenant and attaches the workflow to it', function
     Secret::create(['key' => 'team_hook', 'value' => 'x', 'tenant_type' => $team->getMorphClass(), 'tenant_id' => $team->getKey()]);
     FakeEngine::answer(orderAlertAnswer());
 
-    Livewire::test(ListWorkflows::class)
-        ->callAction('describe', data: ['description' => 'Alert on big orders'])
-        ->assertHasNoActionErrors()
+    Livewire::test(CreateWorkflow::class)
+        ->fillForm(['start' => 'describe', 'prompt' => 'Alert on big orders'])
+        ->call('create')
+        ->assertHasNoFormErrors()
         ->assertNotified()
         ->assertRedirect();
 
@@ -337,7 +340,7 @@ it('drafts inside the panel\'s tenant and attaches the workflow to it', function
     Filament::setCurrentPanel(Filament::getPanel('admin'));
 });
 
-it('offers Describe a workflow on the Workflows page and opens the draft with the nodes to fill in marked', function (): void {
+it('offers Describe it on the create page and opens the draft with the nodes to fill in marked', function (): void {
     $this->actingAs(createUser());
     FakeEngine::answer([
         'name' => 'Ticket triage',
@@ -349,16 +352,25 @@ it('offers Describe a workflow on the Workflows page and opens the draft with th
         'edges' => [['from' => 'trigger-1', 'output' => 'output', 'to' => 'action-1']],
     ]);
 
+    expect(CreateWorkflow::starts())->toHaveKey('describe');
+
     Livewire::test(ListWorkflows::class)
-        ->assertActionVisible('describe')
-        ->callAction('describe', data: ['description' => ''])
-        ->assertHasActionErrors(['description' => 'required']);
+        ->assertActionVisible(TestAction::make('describe')->table())
+        ->assertActionHasUrl(TestAction::make('describe')->table(), CreateWorkflow::startUrl('describe'));
+
+    Livewire::test(CreateWorkflow::class)
+        ->fillForm(['start' => 'describe', 'prompt' => ''])
+        ->assertSee('Draft workflow')
+        ->assertSeeHtml('placeholder="The model suggests one"')
+        ->call('create')
+        ->assertHasFormErrors(['prompt' => 'required']);
 
     expect(FakeEngine::lastPrompt())->toBeNull();
 
-    $page = Livewire::test(ListWorkflows::class)
-        ->callAction('describe', data: ['description' => 'When a ticket comes in, tell support in Slack', 'model' => 'fast'])
-        ->assertHasNoActionErrors()
+    $page = Livewire::test(CreateWorkflow::class)
+        ->fillForm(['start' => 'describe', 'prompt' => 'When a ticket comes in, tell support in Slack', 'ai_model' => 'fast'])
+        ->call('create')
+        ->assertHasNoFormErrors()
         ->assertNotified('"Ticket triage" drafted. Fill in the marked nodes, then switch it on.');
 
     $workflow = Workflow::query()->where('name', 'Ticket triage')->first();

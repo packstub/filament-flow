@@ -134,3 +134,16 @@ body.fi-flow-editor .fi-page-content .fi-tabs:not(.fi-contained) {
         display: none !important;
     }
 }
+
+/*
+ * Template cards and their preview: a dotted ground like the canvas under
+ * the workflow's diagram.
+ */
+.fi-flow-dots {
+    background-image: radial-gradient(circle, var(--gray-300) 1px, transparent 1.2px);
+    background-size: 16px 16px;
+}
+
+.dark .fi-flow-dots {
+    background-image: radial-gradient(circle, rgb(255 255 255 / 0.08) 1px, transparent 1.2px);
+}
