@@ -178,9 +178,8 @@ return [
     ],
 
     'create' => [
-        'subheading' => 'Pick how to start, give it a name, and it opens on the canvas — inactive until you switch it on.',
+        'subheading' => 'Name it, pick how to start, and it opens on the canvas — inactive until you switch it on.',
         'start' => 'How do you want to start?',
-        'details' => 'Details',
         'blank' => 'Blank canvas',
         'blank_description' => 'Draw the workflow yourself, node by node.',
         'template' => 'Template',

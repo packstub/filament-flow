@@ -32,10 +32,10 @@ use Packstub\Flow\Support\WorkflowGenerator;
 use Packstub\Flow\Support\WorkflowTransfer;
 
 /**
- * Every way to start a workflow on one page: how it starts (a blank
- * canvas, a template, a description for a model, an export), the fields
- * of that way right under it, then the name, description and run
- * settings. The workflow is created inactive and opens in the editor.
+ * Every way to start a workflow on one card: the name, description and
+ * run settings, then how it starts (a blank canvas, a template, a
+ * description for a model, an export) with the fields of that way right
+ * under it. The workflow is created inactive and opens in the editor.
  * `?start=template&template=<key>` opens the page with a choice made.
  */
 class CreateWorkflow extends CreateRecord
@@ -73,10 +73,11 @@ class CreateWorkflow extends CreateRecord
     public function form(Schema $schema): Schema
     {
         return $schema->columns(1)->components([
-            Section::make(__('packstub-flow::flow.create.start'))
+            Section::make()
                 ->schema([
+                    ...$this->detailsSchema(),
                     ChoiceCards::make('start')
-                        ->hiddenLabel()
+                        ->label(__('packstub-flow::flow.create.start'))
                         ->options(fn (): array => array_map(fn (array $start): string => $start['label'], static::starts()))
                         ->descriptions(fn (): array => array_map(fn (array $start): string => $start['description'], static::starts()))
                         ->icons(fn (): array => array_map(fn (array $start): string => $start['icon'], static::starts()))
@@ -85,8 +86,6 @@ class CreateWorkflow extends CreateRecord
                         ->live(),
                     ...$this->startSchema(),
                 ]),
-            Section::make(__('packstub-flow::flow.create.details'))
-                ->schema($this->detailsSchema()),
         ]);
     }
 

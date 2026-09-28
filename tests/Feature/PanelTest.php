@@ -89,7 +89,8 @@ it('creates an inactive workflow from its name and opens the full-page editor', 
 
 it('offers the ways to start as cards and shows the fields of the picked one', function (): void {
     $page = Livewire::test(CreateWorkflow::class)
-        ->assertSee(['How do you want to start?', 'Blank canvas', 'Template', 'Import', 'Details'])
+        ->assertSee(['How do you want to start?', 'Blank canvas', 'Template', 'Import'])
+        ->assertDontSee('Details')
         ->assertFormSet(['start' => 'blank'])
         ->assertFormFieldExists('name', fn ($field): bool => $field->isRequired())
         ->assertFormFieldHidden('template')
