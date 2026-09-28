@@ -2,7 +2,7 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
-## Unreleased
+## 1.6.1 — 2026-09-28
 
 Upgrading: nothing to do — no migration, nothing removed or renamed. The stylesheet was rebuilt (`resources/dist`); run `php artisan filament:assets`.
 
