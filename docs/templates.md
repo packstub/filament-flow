@@ -4,9 +4,13 @@ A workflow is data, so it can travel: start one from a template, describe it in 
 
 ## Templates
 
-![The template picker on the Workflows page](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/templates.png)
+![The template picker on the create page](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/templates.png)
 
-**New from template**, in the more-actions menu (⋯) beside **New workflow** on the Workflows page, shows the ready-made workflows as cards: the area, the name, what the workflow does and its steps in the order they sit on the canvas, coloured like the nodes (trigger, condition, action, AI). While more than one area is offered, a row of filters above the cards narrows them to one. Pick a card, give the workflow a name (the template's is the default), and it opens on the canvas with a red badge on every node that needs a choice from you — the record type of a trigger, the agents of a round-robin assignment — and a note in the node's description; the workflow cannot be switched on until they are filled, exactly like any other incomplete draft (see [Building workflows](building-workflows.md#saving)).
+Every workflow starts from **New workflow** on the Workflows page. It opens the create page, which asks **How do you want to start?**: **Blank canvas**, **Template**, **Describe it** (with `packstub/agents` installed) or **Import**. The page is one card: the name, the description and the collapsed *Run settings* on top, then the ways to start; pick one and only its fields show below it. The name is required only for a blank canvas: for the other ways its placeholder shows the name the workflow will get, and whatever you fill in wins over the template's or the document's. While the Workflows table is empty, it offers each way to start as its own button, opening the create page with that one picked.
+
+**Template** lists the ready-made workflows beside a preview of the picked one (the first is picked for you). Each row gives the name, the area, the number of steps and a dot per step coloured like the nodes (trigger, condition, action, AI); while more than one area is offered, filters above the list narrow it to one, and from eight templates on a search box looks in the names, areas, descriptions and steps. The preview draws the workflow from its definition, every node where it sits on the canvas, with its description underneath and **You will fill in**: the settings the template leaves for you and the node each sits on, marked with a red dot on the diagram too. **Full screen** gives the diagram the whole window. **Create workflow** opens it on the canvas with a red badge on every node that needs a choice from you — the record type of a trigger, the agents of a round-robin assignment — and a note in the node's description; the workflow cannot be switched on until they are filled, exactly like any other incomplete draft (see [Building workflows](building-workflows.md#saving)).
+
+To link straight to a template — from a dashboard, an onboarding checklist, your own docs — add `?template=<key>` to the create page's URL (the built-in keys are `welcome-series`, `high-value-order-alert`, `dunning`, `sla-escalation`, `ticket-triage` and `approval`), or build it with `CreateWorkflow::startUrl('template', 'dunning')` (`/admin/workflows/create?start=template&template=dunning`). `?start=blank`, `template`, `describe` or `import` picks the way to start the same way.
 
 Built in:
 
@@ -44,7 +48,7 @@ The quickest way to write one: build the workflow on the canvas, **Export** it, 
 
 ## Describe a workflow
 
-**Describe a workflow** on the Workflows page turns a sentence into a draft: type what should happen and when — "when an order over $500 comes in, post to Slack and flag it for review" — pick a model (the workspace default is fine), and a few seconds later the workflow opens on the canvas, inactive, with red badges on the nodes that still need a choice from you: the record type of a trigger, a webhook URL, a threshold the sentence did not give. Hover a badge for the message; the node's description says what the model left for you.
+**Describe it**, on the create page behind **New workflow**, turns a sentence into a draft: type what should happen and when under **What should the workflow do?** — "when an order over $500 comes in, post to Slack and flag it for review" — pick a model (the workspace default is fine), press **Draft workflow**, and a few seconds later the workflow opens on the canvas, inactive, with red badges on the nodes that still need a choice from you: the record type of a trigger, a webhook URL, a threshold the sentence did not give. Hover a badge for the message; the node's description says what the model left for you.
 
 The draft is built only from what this panel has. The model gets the registered triggers, conditions and actions with their settings — the same forms the settings slide-over shows, as data (`Packstub\Flow\Support\NodeCatalog`) — plus the record types of the record triggers with their attributes (hidden ones left out, the allowed values of an enum cast listed) and the names of your [secrets](secrets.md), so a condition checks `total`, an update sets `status` to one of its values, and a Slack action comes back as `{{ secrets.slack_webhook }}`, not a made-up URL. One built-in template goes along as an example of a good answer. Its answer is a graph in a fixed shape (nodes with settings as text, edges by output) that becomes an [export document](#the-export-format) and goes through the same import as a file: a node the install does not have is refused, webhook triggers get a fresh token, and the workflow is owned by the current tenant in a panel with [tenancy](tenancy.md).
 
@@ -90,7 +94,7 @@ An export carries what is needed to rebuild the workflow somewhere else and noth
 
 ## Import
 
-**Import**, in the more-actions menu (⋯) on the Workflows page, takes an export file or its pasted JSON, creates the workflow inactive (owned by the current tenant in a panel with [tenancy](tenancy.md)), and opens it with the nodes still to fill in marked. A document is refused with a message when it is not JSON, has no nodes, or uses a trigger, action or condition that is not registered in this install.
+**Import**, on the create page behind **New workflow**, takes an export file or its pasted JSON, creates the workflow inactive (owned by the current tenant in a panel with [tenancy](tenancy.md)), and opens it with the nodes still to fill in marked. A document is refused with a message when it is not JSON, has no nodes, or uses a trigger, action or condition that is not registered in this install.
 
 From code, for seeders, tests and deployments:
 

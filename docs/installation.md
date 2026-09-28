@@ -87,7 +87,7 @@ Details in [Queue & scheduling](queue-and-scheduling.md).
 
 ## 5. Try it
 
-1. Open **Workflows** in the panel navigation and click **New workflow**. Give it a name in the modal and **Create**: the workflow opens in the full-page editor, inactive (inactive workflows never run).
+1. Open **Workflows** in the panel navigation and click **New workflow**. Give the workflow a name, keep **Blank canvas** picked and press **Create workflow**: it opens in the full-page editor, inactive (inactive workflows never run).
 2. On the canvas, click **Add a trigger** and pick **Manual**.
 3. Click the plus next to the trigger's output handle and pick **Write to log**. Open its settings (gear icon or double-click), type a message, and **Apply**.
 4. Flip the **Active** switch next to the workflow's name on, then press **Run now**.

@@ -1,7 +1,6 @@
 <?php
 
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Actions\Testing\TestAction;
 use Filament\Schemas\Schema;
 use Livewire\Livewire;
@@ -19,6 +18,7 @@ use Packstub\Flow\Models\WorkflowRun;
 use Packstub\Flow\Nodes\Actions\HttpRequest;
 use Packstub\Flow\Nodes\Actions\SendEmail;
 use Packstub\Flow\Nodes\Triggers\Manual;
+use Packstub\Flow\Support\Templates;
 use Packstub\Flow\Tests\Fixtures\SetStatusAction;
 
 beforeEach(function (): void {
@@ -40,23 +40,22 @@ it('lists workflows in the panel navigation and table', function (): void {
         ->and(WorkflowResource::getUrl())->toBe(url('/admin/workflows'));
 });
 
-it('keeps the header to a blank canvas and the model-drafted way, the other starters behind the menu beside them', function (): void {
-    [$describe, $create, $menu] = Livewire::test(ListWorkflows::class)->instance()->getCachedHeaderActions();
+it('keeps the header to one New workflow button, every way to start on the create page', function (): void {
+    [$create] = $actions = Livewire::test(ListWorkflows::class)->instance()->getCachedHeaderActions();
 
-    expect($menu)->toBeInstanceOf(ActionGroup::class)
-        ->and(array_keys($menu->getFlatActions()))->toBe(['template', 'import'])
-        ->and($menu->getFlatActions()['template']->getIcon())->toBe('heroicon-o-rectangle-stack')
-        ->and($describe->getName())->toBe('describe')
-        ->and($describe->getIcon())->toBe('heroicon-o-sparkles')
+    expect($actions)->toHaveCount(1)
         ->and($create->getName())->toBe('create')
-        ->and($create->getLabel())->toBe('New workflow');
+        ->and($create->getLabel())->toBe('New workflow')
+        ->and($create->getUrl())->toBe(WorkflowResource::getUrl('create'));
 
-    // Every starter is offered where the rows will be, on a first visit.
+    // Every starter is offered where the rows will be, on a first visit, as a link to the page with it picked.
     Livewire::test(ListWorkflows::class)
         ->assertSee('No workflows yet')
         ->assertActionVisible(TestAction::make('create')->table())
         ->assertActionVisible(TestAction::make('template')->table())
         ->assertActionVisible(TestAction::make('import')->table())
+        ->assertActionHasUrl(TestAction::make('template')->table(), CreateWorkflow::startUrl('template'))
+        ->assertActionHasUrl(TestAction::make('import')->table(), CreateWorkflow::startUrl('import'))
         ->assertSee('New workflow')
         ->assertDontSee('New Workflow');
 });
@@ -89,21 +88,37 @@ it('creates an inactive workflow from its name and opens the full-page editor', 
     Livewire::test(CreateWorkflow::class)->fillForm(['name' => ''])->call('create')->assertHasFormErrors(['name' => 'required']);
 });
 
-it('creates a workflow from the modal on the list and opens the editor', function (): void {
-    Livewire::test(ListWorkflows::class)
-        ->callAction('create', ['name' => 'From the modal', 'description' => 'Two fields'])
-        ->assertHasNoActionErrors()
-        ->assertRedirect(WorkflowResource::getUrl('edit', ['record' => Workflow::query()->where('name', 'From the modal')->first()]));
+it('offers the ways to start as cards and shows the fields of the picked one', function (): void {
+    $page = Livewire::test(CreateWorkflow::class)
+        ->assertSee(['How do you want to start?', 'Blank canvas', 'Template', 'Import'])
+        ->assertFormFieldExists('start', fn ($field): bool => $field->getBadges() === ['template' => (string) count(Templates::all())] && ! $field->isMarkedAsRequired())
+        ->assertDontSee('Details')
+        ->assertFormSet(['start' => 'blank'])
+        ->assertFormFieldExists('name', fn ($field): bool => $field->isRequired())
+        ->assertFormFieldHidden('template')
+        ->assertFormFieldHidden('json')
+        ->assertSee('Create workflow');
 
-    $workflow = Workflow::query()->where('name', 'From the modal')->first();
+    // Picking Template picks the first template too, so its preview shows from the start.
+    $page->fillForm(['start' => 'template'])
+        ->assertFormFieldVisible('template')
+        ->assertFormSet(['template' => 'approval'])
+        ->assertFormFieldExists('name', fn ($field): bool => ! $field->isRequired())
+        ->fillForm(['template' => 'dunning'])
+        ->assertSeeHtml('placeholder="Dunning: unpaid invoice reminders"');
 
-    expect($workflow->description)->toBe('Two fields')
-        ->and($workflow->is_active)->toBeFalse()
-        ->and($workflow->nodes())->toBe([]);
+    $page->fillForm(['start' => 'import'])
+        ->assertFormFieldVisible('json')
+        ->assertFormFieldHidden('template')
+        ->assertSeeHtml('placeholder="The name in the export"');
 
-    Livewire::test(ListWorkflows::class)
-        ->callAction('create', ['name' => ''])
-        ->assertHasActionErrors(['name' => 'required']);
+    // `?start=` and `?template=` pick the way to start when the page opens; an unknown one is ignored.
+    Livewire::withQueryParams(['start' => 'import'])->test(CreateWorkflow::class)->assertFormSet(['start' => 'import']);
+    Livewire::withQueryParams(['start' => 'template'])->test(CreateWorkflow::class)->assertFormSet(['start' => 'template', 'template' => 'approval']);
+    Livewire::withQueryParams(['template' => 'welcome-series'])->test(CreateWorkflow::class)->assertFormSet(['start' => 'template', 'template' => 'welcome-series']);
+    Livewire::withQueryParams(['start' => 'nope', 'template' => 'nope'])->test(CreateWorkflow::class)->assertFormSet(['start' => 'blank', 'template' => null]);
+
+    expect(CreateWorkflow::startUrl('template', 'dunning'))->toBe(url('/admin/workflows/create?start=template&template=dunning'));
 });
 
 it('edits a workflow and can run it from the header', function (): void {

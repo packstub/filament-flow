@@ -55,7 +55,7 @@ Every change to the graph — a node added, moved, edited, connected or removed 
 
 ## Saving
 
-**New workflow** asks for a name and a description in a modal, creates the workflow inactive and opens it in the editor. **Save changes** in the header (or **Cmd / Ctrl + S**) stores the canvas. It shows while the canvas has changes to save; otherwise the header says **Saved**. On a phone, **Save** moves to a bar at the bottom of the screen that comes up with the first change, next to **Discard** (which reloads the last save).
+**New workflow** on the Workflows page opens the create page: give the workflow a name (and a description, if you like), keep **Blank canvas** picked under **How do you want to start?**, and **Create workflow** creates it inactive and opens it in the editor. The same page starts a workflow from a [template, a description or an export](templates.md). **Save changes** in the header (or **Cmd / Ctrl + S**) stores the canvas. It shows while the canvas has changes to save; otherwise the header says **Saved**. On a phone, **Save** moves to a bar at the bottom of the screen that comes up with the first change, next to **Discard** (which reloads the last save).
 
 The **Active** switch next to the workflow's name turns the workflow on or off in one click. Like **Save changes**, it stores the canvas as it is, so switching on runs the checks below: when they fail, the switch stays off, a notification says so and the nodes concerned are marked.
 

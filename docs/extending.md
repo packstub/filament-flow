@@ -338,4 +338,40 @@ Flow::resolveTenantUsing(fn (array $payload) => $payload['model']?->team);
 
 `Flow::run()` returns `null` when the workflow is inactive, has no trigger node, or the run was queued; otherwise the finished `WorkflowRun`.
 
+## Pieces for your own pages
+
+The create page is built from parts you can reuse:
+
+```php
+use Packstub\Flow\Filament\Forms\Components\ChoiceCards;
+use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\CreateWorkflow;
+use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\ListWorkflows;
+
+// A link to the create page with a way to start (and a template) picked
+CreateWorkflow::startUrl('template', 'dunning'); // /admin/workflows/create?start=template&template=dunning
+CreateWorkflow::starts();                          // the ways offered in this install
+
+// The starters of the empty Workflows table, as link actions for your own page
+ListWorkflows::starterActions();
+
+// A radio drawn as cards with an icon, the label and its description
+ChoiceCards::make('plan')
+    ->options(['basic' => 'Basic', 'pro' => 'Pro'])
+    ->descriptions(['basic' => 'For one team.', 'pro' => 'For the whole company.'])
+    ->icons(['basic' => 'heroicon-o-user', 'pro' => 'heroicon-o-user-group'])
+    ->badges(['pro' => 'New'])        // a short badge beside the label
+    ->accents(['pro' => 'teal']);     // amber, blue, purple or teal, like the canvas nodes
+```
+
+`Packstub\Flow\Support\DefinitionPreview::make($workflow->definition)` lays a definition out for a static diagram — the nodes where they sit on the canvas, coloured by kind, and the edges between them; its `marked` argument takes node ids to badge, such as `array_keys(DefinitionValidator::missingSettingsByNode($definition))` — and the `packstub-flow::components.definition-preview` view draws it as an SVG. Pass it `preview`, and optionally `compact` (no text, for a thumbnail), `class` and `style`; include it inside a `.fi-flow` wrapper so its styles apply:
+
+```blade
+<div class="fi-flow">
+    @include('packstub-flow::components.definition-preview', [
+        'preview' => \Packstub\Flow\Support\DefinitionPreview::make($workflow->definition),
+        'class' => 'h-40 w-full',
+    ])
+</div>
+```
+
 Next: [Configuration](configuration.md).

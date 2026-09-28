@@ -78,6 +78,27 @@ class DefinitionValidator
     }
 
     /**
+     * The required settings each node leaves blank, by node id (nodes with
+     * none left out): what a template or a draft still needs from you.
+     *
+     * @param  array{nodes?: array<int, array<string, mixed>>, edges?: array<int, array<string, mixed>>}|null  $definition
+     * @return array<string, array<int, string>>
+     */
+    public static function missingSettingsByNode(?array $definition): array
+    {
+        $registry = app(NodeRegistry::class);
+        $missing = [];
+
+        foreach ((array) ($definition['nodes'] ?? []) as $node) {
+            if (isset($node['id']) && ($settings = self::missingSettings($node, $registry)) !== []) {
+                $missing[(string) $node['id']] = $settings;
+            }
+        }
+
+        return $missing;
+    }
+
+    /**
      * Required fields of the node's settings form that are blank.
      *
      * @param  array<string, mixed>  $node
