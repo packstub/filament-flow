@@ -164,16 +164,27 @@ test("starts a workflow from a template", async ({ page }) => {
     await expect(preview).toContainText("Nothing left to fill in");
     await expect(page.getByRole("textbox", { name: /^Name/ })).toHaveAttribute("placeholder", "Welcome series");
 
+    // Full screen covers the window from its first frame, without scrolling the page under it.
+    await page.evaluate(() => window.scrollTo(0, 300));
+    const scrolled = await page.evaluate(() => window.scrollY);
     await preview.getByRole("button", { name: "Full screen" }).click();
     const full = page.getByRole("dialog", { name: "Preview: Welcome series" });
     await expect(full).toBeVisible();
+    expect((await full.boundingBox())!.y).toBe(0);
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrolled);
     await page.keyboard.press("Escape");
     await expect(full).toBeHidden();
 
-    // The area filter narrows the list.
+    // The area filter narrows the list; All, pressed from the start, brings every row back.
+    const rows = page.locator(".fi-flow-template-row:visible");
+    const all = page.getByRole("button", { name: "All", exact: true });
+    const total = await rows.count();
+    await expect(all).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: "Finance", exact: true }).click();
-    await expect(page.locator(".fi-flow-template-row:visible")).toHaveCount(1);
-    await page.getByRole("button", { name: "All", exact: true }).click();
+    await expect(rows).toHaveCount(1);
+    await all.click();
+    await expect(rows).toHaveCount(total);
+    await expect(all).toHaveAttribute("aria-pressed", "true");
 
     await page.getByRole("button", { name: "Create workflow" }).click();
 

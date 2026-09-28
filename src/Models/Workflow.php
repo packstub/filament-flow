@@ -2,6 +2,7 @@
 
 namespace Packstub\Flow\Models;
 
+use Carbon\CarbonInterface;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +30,8 @@ use Throwable;
  * @property string|null $updated_by
  * @property string|null $tenant_type
  * @property string|null $tenant_id
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 class Workflow extends Model
 {
