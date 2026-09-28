@@ -20,6 +20,7 @@ return [
         'updated_by' => 'Last saved by',
         'created_by' => 'Created by',
         'last_saved_by' => 'Last saved by :by :at',
+        'just_now' => 'just now',
         'last_saved_version' => 'Last saved by :by :at · v:version',
         'settings' => 'Run settings',
         'settings_help' => 'Retention and failure limits for this workflow.',

@@ -14,12 +14,12 @@
 <div
     {{ $extraAttributes->class(['fi-flow fi-flow-template-picker']) }}
     x-data="{
-        category: null,
+        category: '',
         query: '',
         selected: @js($state),
         cards: @js(collect($cards)->map(fn (array $card): array => ['key' => $card['key'], 'category' => $card['category'], 'search' => $card['search']])->all()),
         matches(card) {
-            return (this.category === null || this.category === card.category)
+            return (this.category === '' || this.category === card.category)
                 && this.query.toLowerCase().trim().split(/\s+/).every((word) => card.search.includes(word))
         },
         shows(key) {
@@ -49,9 +49,9 @@
                         @endif
 
                         @if ($hasFilter)
-                            {{-- The categories as a filter; a row of another category stays out of the way but keeps its state. --}}
+                            {{-- The categories as a filter; a row of another category stays out of the way but keeps its state. All is '' (a null key would become '' anyway). --}}
                             <div class="flex flex-wrap gap-1.5" role="group" aria-label="{{ __('packstub-flow::flow.templates.categories') }}">
-                                @foreach ([null => __('packstub-flow::flow.templates.all'), ...array_combine($categories, $categories)] as $value => $label)
+                                @foreach (['' => __('packstub-flow::flow.templates.all'), ...array_combine($categories, $categories)] as $value => $label)
                                     <button
                                         type="button"
                                         x-on:click="category = @js($value)"
@@ -171,18 +171,18 @@
                             @endif
                         </div>
 
-                        {{-- Teleported to the body, so it wraps itself in .fi-flow for its utilities. --}}
+                        {{-- Teleported to the body, so it wraps itself in .fi-flow for its utilities. The wrapper stays bare:
+                             x-transition sets a transform, and a transformed ancestor would pin the fixed dialog to the end of
+                             the page (and the focus trap would scroll there) until the transition ends. --}}
                         <template x-teleport="body">
-                            <div
-                                x-show="full"
-                                x-cloak
-                                x-transition.opacity
-                                x-on:keydown.escape.window="full = false"
-                                x-trap.noscroll="full"
-                                class="fi-flow"
-                                style="display: none"
-                            >
+                            <div class="fi-flow">
                                 <div
+                                    x-show="full"
+                                    x-cloak
+                                    x-transition.opacity
+                                    x-on:keydown.escape.window="full = false"
+                                    x-trap.noscroll="full"
+                                    style="display: none"
                                     role="dialog"
                                     aria-modal="true"
                                     aria-label="{{ __('packstub-flow::flow.templates.preview', ['name' => $card['name']]) }}"

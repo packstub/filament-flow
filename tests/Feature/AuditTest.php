@@ -75,9 +75,15 @@ it('records who created and last saved a workflow', function (): void {
 
     // The subheading shows the user's name for the stored email, and the version.
     Livewire::test(EditWorkflow::class, ['record' => $workflow->getKey()])
-        ->assertSee('Last saved by User 2')
+        ->assertSee('Last saved by User 2 just now')
         ->assertSee('v2')
         ->assertDontSee('tom@example.com');
+
+    // Past the first minute, the time since the save.
+    $this->travel(5)->minutes();
+
+    Livewire::test(EditWorkflow::class, ['record' => $workflow->getKey()])
+        ->assertSee('Last saved by User 2 5 minutes ago');
 
     $workflow->update(['updated_by' => 'seeder']);
 

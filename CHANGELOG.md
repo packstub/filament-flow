@@ -2,6 +2,16 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
+## Unreleased
+
+Upgrading: nothing to do — no migration, nothing removed or renamed. The stylesheet was rebuilt (`resources/dist`); run `php artisan filament:assets`.
+
+### Fixed
+
+- The template list's **All** filter emptied the list after an area was picked, and was not shown as pressed when the page opened.
+- **Full screen** on a template preview no longer jumps the page as it opens: the overlay covers the window from its first frame.
+- The editor's subheading says "Last saved by … just now" in the first minute after a save instead of "0 seconds ago".
+
 ## 1.6.0 — 2026-09-28
 
 Upgrading: nothing to do — no migration, nothing removed or renamed. The canvas bundle was rebuilt (`resources/dist`); run `php artisan filament:assets`. A resource that extends `WorkflowResource` and overrides `form()` keeps its own layout; `WorkflowResource::detailsSchema()` is the new home of name, description, Active and the run settings.

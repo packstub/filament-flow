@@ -76,7 +76,12 @@ class EditWorkflow extends EditRecord
 
         $replace = [
             'by' => static::actorName($workflow->updated_by),
-            'at' => $workflow->updated_at?->diffForHumans() ?? '',
+            // "0 seconds ago" right after a save reads oddly: under a minute is "just now".
+            'at' => match (true) {
+                $workflow->updated_at === null => '',
+                $workflow->updated_at->gt(now()->subMinute()) => __('packstub-flow::flow.fields.just_now'),
+                default => $workflow->updated_at->diffForHumans(),
+            },
             'version' => $workflow->latestVersion?->number,
         ];
 
