@@ -2,7 +2,7 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
-## Unreleased
+## 1.6.0 — 2026-09-28
 
 Upgrading: nothing to do — no migration, nothing removed or renamed. The canvas bundle was rebuilt (`resources/dist`); run `php artisan filament:assets`. A resource that extends `WorkflowResource` and overrides `form()` keeps its own layout; `WorkflowResource::detailsSchema()` is the new home of name, description, Active and the run settings.
 
