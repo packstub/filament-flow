@@ -2,6 +2,14 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
+## Unreleased
+
+### Fixed
+
+- A condition's **True** and **False** sit on the card again: on a condition without a description, False hung below it. The labels are rows of the card now, each handle beside its label.
+- A test run's **Would use** shows a secret as `••••••` instead of an empty value, so a step that reads `{{ secrets.* }}` no longer looks unconfigured. The secret itself still never reaches the run log.
+- Switching a workflow on in the editor no longer shifts its header: **Run now** stays in the bar, disabled with a hint while the workflow is off, instead of appearing on activation (which pushed the Active switch onto a second line and left a stray icon button).
+
 ## 1.6.1 — 2026-09-28
 
 Upgrading: nothing to do — no migration, nothing removed or renamed. The stylesheet was rebuilt (`resources/dist`); run `php artisan filament:assets`.

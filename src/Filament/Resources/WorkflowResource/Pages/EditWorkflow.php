@@ -131,7 +131,18 @@ class EditWorkflow extends EditRecord
     {
         return [
             static::testAction()->labeledFrom('sm'),
-            WorkflowResource::runNowAction()->labeledFrom('sm'),
+            // Always in the bar, disabled until it can run: showing it only
+            // once the workflow is switched on made Livewire morph the header
+            // (a stray icon button, the Active switch wrapping to a new line).
+            WorkflowResource::runNowAction()
+                ->labeledFrom('sm')
+                ->visible()
+                ->disabled(fn (Workflow $record): bool => ! $record->is_active || $record->triggerNodes() === [])
+                ->tooltip(fn (Workflow $record): ?string => match (true) {
+                    $record->triggerNodes() === [] => __('packstub-flow::flow.actions.run_no_trigger'),
+                    ! $record->is_active => __('packstub-flow::flow.actions.run_inactive'),
+                    default => null,
+                }),
             // One of the two shows, following the canvas's unsaved changes
             // (the packstubFlowEditor Alpine store); on a phone the bar at
             // the bottom of the page (getFooter()) takes their place.
