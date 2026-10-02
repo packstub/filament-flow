@@ -8,23 +8,19 @@ Visual workflow automations for Filament panels: triggers, conditions and action
 - Packagist: [packstub/filament-flow](https://packagist.org/packages/packstub/filament-flow)
 - Support: [GitHub issues](https://github.com/packstub/filament-flow/issues)
 
-## What you get
+## Features
 
-| Feature | What it means for you |
-| --- | --- |
-| **Visual builder** | A Workflows resource with a drag-and-drop canvas. Add triggers, conditions and actions from a sidebar, connect them, branch on true / false, and edit each node's settings in a slide-over built from Filament form components. |
-| **Triggers** | Record created / updated / deleted (via the `HasWorkflows` trait, with "changed from / to" and dedup windows), a date on a record ("3 days before due_at"), spatie model-state transitions, user registered, any Laravel event, cron schedules (with catch-up), webhooks, a manual **Run now** or a **Run workflow** action on any resource, and calls from other workflows. |
-| **Conditions** | Record attribute (including "changed from / to"), compare values (placeholders on both sides), multiple conditions (AND / OR) and time of day, with twenty operators. |
-| **Actions** | Send email, Filament database notification, Slack, Discord, Teams, Telegram, SMS / WhatsApp (Twilio), HTTP request, create / update record, assign owner, add tag, transition state, find records + for each, wait, ask for approval, wait for signal, call workflow, write to log. Per-node retries, continue-on-error or an error branch; an on-failure workflow. |
-| **AI** | **Ask AI** gets named fields back from a language model (with `packstub/agents`); **Decide** branches on a typed decision from [Jev](decide.md), TypeSafe's System One model — yes / no, one of your options, a score — with a Not sure branch for the close calls. |
-| **Placeholders** | `{{ model.name }}`, `{{ webhook.order.id }}`, `{{ event.carrier }}`, `{{ original.status }}`, `{{ changes.status }}`, `{{ model.url }}`, `{{ secrets.api_key }}` — resolved from the payload in every text field. |
-| **Secrets** | An encrypted store for tokens and webhook URLs, resolved only inside actions and masked in run logs; per tenant when you need it. |
-| **Multi-tenancy** | In a panel with tenancy each team manages its own workflows, secrets, runs and approvals; global workflows run for everyone; a plan limit hook caps workflows per tenant. |
-| **Versions** | Every change to a workflow is kept, with who saved it and what changed; compare and restore from the panel; runs pin the version they ran. |
-| **Templates, import & export** | Start from a ready-made workflow (welcome series, order alert, dunning, SLA escalation, approval) or your own, or describe the workflow in a sentence and let a model draft it from your nodes (with `packstub/agents`); export a workflow as JSON and import it elsewhere, in the panel or from a seeder. |
-| **Runs** | Every run is stored with status, trigger, record, payload summary, a step log (one row per step) and the error, shown in a Runs tab and on a cross-workflow Runs page with stats; a **Test** button for dry runs; `packstub-flow:run` and `packstub-flow:prune` commands; `WorkflowStarted` / `WorkflowCompleted` / `WorkflowFailed` / `WorkflowDeactivated` events. |
-| **Queue & scheduling** | Inline or queued runs, Wait steps served by delayed jobs, and a `packstub-flow:cron` command registered with the scheduler for you. |
-| **Extensible** | Subclass `Trigger`, `Action` or `Condition`, give it a form schema, and register it on the plugin, in the config or with `Flow::register()`. |
+- **[Visual builder](building-workflows.md)**: a drag-and-drop canvas in a Filament resource, each node's settings in a slide-over.
+- **[Triggers](triggers.md)**: record changes, dates on a record, schedules, webhooks, any Laravel event, or a button on any resource.
+- **[Conditions](conditions.md)**: branch on a record attribute, any two values or the time of day, with twenty operators.
+- **[Actions](actions.md)**: emails, notifications, Slack, Teams, SMS, HTTP calls, record updates, loops and waits, with retries.
+- **[AI steps](decide.md)**: Ask AI for named fields to branch on, or Decide for a typed answer with a Not sure branch.
+- **[Placeholders and secrets](placeholders.md)**: `{{ model.name }}` in any text, API tokens encrypted and masked in run logs.
+- **[Approvals and signals](approvals.md)**: pause a run until a person decides or your code calls `Flow::signal()`.
+- **[Templates, import and export](templates.md)**: start from a template or a sentence, move workflows between panels as JSON.
+- **[Runs and versions](runs.md)**: inline or queued, a step-by-step log of every run, dry-run tests, every change kept to restore.
+- **[Multi-tenant](tenancy.md)**: each team keeps its own workflows, secrets, runs and approvals, with a plan limit hook.
+- **[Extensible](extending.md)**: your own triggers, actions and conditions, registered on the plugin or with `Flow::register()`.
 
 ## Guides
 

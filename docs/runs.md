@@ -37,7 +37,7 @@ Runs can be deleted in bulk from the tab.
 
 ## Run now
 
-**Run now** is available in the Workflows table and in the header of the edit page for every active workflow that has at least one trigger node. It starts the workflow from its first trigger with the payload `['manual' => true]` and shows a notification with the result — the status, or the error message when the run failed. When runs are queued, the notification says the run was queued and the result appears in the Runs tab.
+**Run now** is available in the Workflows table and in the header of the edit page for every active workflow that has at least one trigger node; on the edit page it stays in the header, disabled with a hint, while the workflow is off or has no trigger. It starts the workflow from its first trigger with the payload `['manual' => true]` and shows a notification with the result — the status, or the error message when the run failed. When runs are queued, the notification says the run was queued and the result appears in the Runs tab.
 
 Because there is no record in that payload, nodes that need one (a **Record attribute** condition, **Update record**) fail on such a run. It is the quickest way to try schedules, webhooks, notifications, Slack messages and logging.
 
