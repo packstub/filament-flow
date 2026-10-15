@@ -136,6 +136,8 @@ return [
         'run_description' => 'The workflow starts from its first trigger with a minimal payload. Steps that need a record (record conditions, "Update record") will fail; use it to try schedules, webhooks and notifications.',
         'run_queued' => 'The run was queued.',
         'run_finished' => 'Run finished: :status',
+        'run_inactive' => 'Switch the workflow on to run it.',
+        'run_no_trigger' => 'Add a trigger to run it.',
         'copy_of' => ':name (copy)',
         'limit_reached' => 'The limit of :limit workflows has been reached.',
     ],

@@ -268,6 +268,34 @@ test("imports a workflow from pasted JSON", async ({ page }) => {
     await expect(page.locator(".fi-flow-canvas .svelte-flow__node")).toHaveCount(1);
 });
 
+// A condition with no description is a short card: True and False still
+// sit on it, each handle beside its label, not below the card.
+test("keeps a condition's True and False on its card", async ({ page }) => {
+    await startFrom(page, "Import");
+
+    const json = JSON.stringify({
+        format: "packstub-flow/1",
+        name: "Short condition",
+        definition: {
+            nodes: [{ id: "c", type: "condition", position: { x: 0, y: 0 }, data: { identifier: "Packstub\\Flow\\Nodes\\Conditions\\CompareValues", label: "Over 500?", config: {} } }],
+            edges: [],
+        },
+    });
+    await page.getByRole("textbox", { name: /paste the JSON/ }).fill(json);
+    await page.getByRole("button", { name: "Import", exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/workflows\/[^/]+\/edit\?review=1$/);
+
+    const condition = page.locator(".fi-flow-canvas .svelte-flow__node").filter({ hasText: "Over 500?" });
+    const card = (await condition.locator(".fi-flow-node > div").first().boundingBox())!;
+    for (const branch of ["true", "false"]) {
+        const handle = (await condition.locator(`.svelte-flow__handle[data-handleid="${branch}"]`).boundingBox())!;
+        const label = (await condition.locator(".fi-flow-branches span").nth(branch === "true" ? 0 : 1).boundingBox())!;
+        const middle = handle.y + handle.height / 2;
+        expect(middle).toBeLessThan(card.y + card.height);
+        expect(Math.abs(middle - (label.y + label.height / 2))).toBeLessThan(2);
+    }
+});
+
 // The real Ask AI node, offered by the workbench once packstub/agents is
 // installed (composer require packstub/agents --dev; CI's canvas job does):
 // its own AI group in the sidebar, the teal look on the canvas, the settings

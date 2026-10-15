@@ -17,22 +17,17 @@ Visual workflow automations for your Filament panel: draw triggers, conditions a
 
 ## Features
 
-- **[Visual builder](#the-builder)** — a drag-and-drop canvas inside a Filament resource: add nodes from a sidebar, connect them, branch on true / false, and edit each node's settings in a slide-over built from Filament form components.
-- **[Triggers](#triggers)** — record created / updated / deleted (only when chosen attributes change, from one value to another, once per record, or not more than once every N days), spatie model-state transitions, user registered, any Laravel event, a cron schedule with its own timezone and catch-up, a signed webhook, a manual run, a **Run workflow** action on any resource, or a call from another workflow.
-- **[Conditions](#conditions)** — compare a record attribute (including "changed from / to") or any two values with twenty operators, combine several rules with AND / OR, or check the time of day.
-- **[Actions](#actions)** — send an email, a Filament database notification, a Slack, Discord, Teams or Telegram message, an SMS or WhatsApp message through Twilio, call an HTTP endpoint and use its response in later nodes, ask an AI model for named fields to branch on (with `packstub/agents` installed), create or update records, assign an owner, add tags, transition a state, find records and loop over them, wait for a duration or until a date, ask for approval or wait for a signal from your code, call another workflow, or write to the log. Every action has retries, a continue-on-error switch and an optional error branch; a workflow can name an on-failure workflow.
-- **[Placeholders](#placeholders)** — `{{ model.name }}`, `{{ webhook.order.id }}`, `{{ last.body.id }}`, `{{ model.url }}` and friends, with filters such as `| date:Y-m-d`, `| upper` and `| default:none`, resolved from the run's payload wherever you type text.
-- **[Secrets](#secrets)** — an encrypted store for API tokens and webhook URLs, used as `{{ secrets.slack_webhook }}` in actions only and masked in run logs; per tenant when you need it.
-- **[Approvals & signals](#approvals--signals)** — an **Ask for approval** step pauses the run until a person decides from a notification, an email link or the Approvals page, with Approved / Rejected / Timed out outputs; **Wait for signal** pauses it until your code calls `Flow::signal()`. Waits are database rows, so they survive deploys and queue restarts.
-- **[Multi-tenant](#multi-tenancy)** — in a panel with tenancy each team manages its own workflows, secrets, runs and approvals, global workflows run for every tenant, and a `maxWorkflows()` hook plugs plan limits in.
-- **[Templates, import & export](https://packstub.dev/docs/filament-flow/templates)** — start from a ready-made workflow (welcome series, high-value order alert, dunning, SLA escalation, approval) or your own, or **describe the workflow in a sentence** and let a model draft it from the nodes of your panel (with `packstub/agents` installed); export any workflow as a JSON file, and import it in another panel or from a seeder with `Workflow::import()`.
-- **[Versioned](https://packstub.dev/docs/filament-flow/runs#versions)** — every change to a workflow is kept with who saved it and a summary of what changed; compare and restore from the Versions tab; runs pin the version they ran.
-- **[Run history](#runs)** — every run is stored with its status, trigger, record, payload summary, a step-by-step log with timings and outputs, and any error, browsable from a Runs tab and a cross-workflow Runs page with stats; **Test** (dry run), **Run now** and **Run again** buttons; jump from a failed step to its node on the canvas; per-workflow retention and a "deactivate after N consecutive failures" guard.
-- **[Queue & scheduling](#queue--scheduling)** — run workflows inline or on your queue (dispatched after your transaction commits), pause them for minutes or days with a Wait step, and start them from cron expressions with one scheduler entry.
-- **[Webhooks](#webhooks)** — a tokenised, optionally HMAC-signed POST endpoint per workflow that answers `202 Accepted` and exposes the request body to your nodes.
-- **[Safe by default](https://packstub.dev/docs/filament-flow/runs#safety-guards)** — outgoing requests cannot reach private networks unless you allow it, record updates respect mass-assignment rules, credential headers never reach the run log, hidden model attributes never reach a template, and the Workflows resource can sit behind a policy, a Gate ability or a callback.
-- **[Extensible](#extending)** — write your own trigger, action or condition class with a Filament form schema and register it on the plugin, in the config, or with `Flow::register()`.
-- **[Dark mode ready and translatable](https://packstub.dev/docs/filament-flow/configuration#translations-and-views)** — the canvas follows Filament's theme, and every string, node name and description lives in a language file.
+- **[Visual builder](#the-builder)**: a drag-and-drop canvas in a Filament resource, each node's settings in a slide-over.
+- **[Triggers](#triggers)**: record changes, dates on a record, schedules, webhooks, any Laravel event, or a button on any resource.
+- **[Conditions](#conditions)**: branch on a record attribute, any two values or the time of day, with twenty operators.
+- **[Actions](#actions)**: emails, notifications, Slack, Teams, SMS, HTTP calls, record updates, loops, waits and AI, with retries.
+- **[Placeholders](#placeholders) and [secrets](#secrets)**: `{{ model.name }}` in any text a node sends, API tokens encrypted and masked in run logs.
+- **[Approvals and signals](#approvals--signals)**: pause a run until a person decides or your code calls `Flow::signal()`.
+- **[Templates, import and export](https://packstub.dev/docs/filament-flow/templates)**: start from a template or a sentence, move workflows between panels as JSON.
+- **[Runs and versions](#runs)**: inline or queued, a step-by-step log of every run, dry-run tests, every change kept to restore.
+- **[Multi-tenant](#multi-tenancy)**: each team keeps its own workflows, secrets, runs and approvals, with a plan limit hook.
+- **[Extensible](#extending)**: your own triggers, actions and conditions, registered on the plugin or with `Flow::register()`.
+- **Dark mode and translations**: the canvas follows Filament's theme, and every string lives in a language file.
 
 ## Compatibility
 
@@ -164,6 +159,8 @@ Actions do the work. Each one's settings are a small Filament form; text fields 
 | Call workflow | Runs another workflow with the current payload |
 | Write to log | Writes a line to the application log at the chosen level |
 
+Every action has an *Error handling* section: retry, continue, or follow an **Error** branch with `{{ error.message }}`. A workflow can also name an on-failure workflow.
+
 **Find records** and **For each** give a workflow a loop: query records, run a branch once per item with `{{ item.* }}`, then continue from **Done**.
 
 ![A Find records node feeding a For each loop with its Each item and Done outputs](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/canvas-loop.png)
@@ -224,6 +221,8 @@ Open a run to see each step in order.
 **Test** on the edit page performs a dry run — conditions evaluated, side effects simulated and logged as "would run". **Run now** (in the table and on the edit page) starts an active workflow from its first trigger, and `packstub-flow:run` does the same from the console. The **Runs** page lists every run across workflows with stats and a jump to the failing node on the canvas. `packstub-flow:prune` deletes finished runs older than the configured retention (or the workflow's own). A workflow can switch itself off after N consecutive failures, notify your admins, and hand failures to an on-failure workflow.
 
 ![The Runs page with its stats and filters](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/runs-page.png)
+
+Every save is kept as a version with who saved it and a summary of what changed; the **Versions** tab compares and restores them, and a run pins the version it ran. Outgoing requests cannot reach private networks unless you allow it, record updates respect mass-assignment rules, webhook credential headers are dropped before a run is stored, and hidden model attributes never reach a template.
 
 ```bash
 php artisan packstub-flow:run "Welcome sequence" --payload='{"answer": 42}'

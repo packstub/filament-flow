@@ -162,6 +162,19 @@ it('hides the run action for inactive workflows', function (): void {
     Livewire::test(ListWorkflows::class)->assertActionHidden(TestAction::make('run')->table($workflow));
 });
 
+it('keeps Run now in the editor, disabled until the workflow is switched on', function (): void {
+    $workflow = manualWorkflow(attributes: ['is_active' => false]);
+
+    Livewire::test(EditWorkflow::class, ['record' => $workflow->id])
+        ->assertActionVisible('run')
+        ->assertActionDisabled('run')
+        ->callAction('active')
+        ->assertActionVisible('run')
+        ->assertActionEnabled('run');
+
+    expect($workflow->fresh()->is_active)->toBeTrue();
+});
+
 it('shows runs with their steps in the relation manager', function (): void {
     $workflow = manualWorkflow(['status' => 'boom']);
     $run = Flow::run($workflow, ['answer' => 42]);
