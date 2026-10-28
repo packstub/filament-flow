@@ -2,7 +2,9 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
-## Unreleased
+## 1.6.2 — 2026-10-28
+
+Upgrading: nothing to do — no migration, nothing removed or renamed. The canvas bundle was rebuilt (`resources/dist`); run `php artisan filament:assets`.
 
 ### Fixed
 
