@@ -734,8 +734,10 @@ class Runner
      */
     protected function preview(Action $action, array $config, array $payload): array
     {
+        // Secrets resolve so a set one reads as masked (record() masks it)
+        // instead of an empty string that looks like a missing setting.
         try {
-            return $action->preview($config, $payload);
+            return Placeholders::allowSecrets(fn () => $action->preview($config, $payload));
         } catch (Throwable $exception) {
             return ['error' => $exception->getMessage()];
         }

@@ -7,12 +7,15 @@ use Packstub\Flow\Enums\RunStatus;
 use Packstub\Flow\Events\WorkflowStarted;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Filament\Resources\WorkflowResource\Pages\EditWorkflow;
+use Packstub\Flow\Models\Secret;
 use Packstub\Flow\Models\WorkflowRun;
 use Packstub\Flow\Nodes\Actions\FindRecords;
 use Packstub\Flow\Nodes\Actions\RequestApproval;
 use Packstub\Flow\Nodes\Actions\SendEmail;
+use Packstub\Flow\Nodes\Actions\SendSlackMessage;
 use Packstub\Flow\Nodes\Actions\Wait;
 use Packstub\Flow\Nodes\Conditions\RecordAttribute;
+use Packstub\Flow\Nodes\Triggers\Manual;
 use Packstub\Flow\Nodes\Triggers\RecordUpdated;
 use Packstub\Flow\Tests\Fixtures\EchoAction;
 use Packstub\Flow\Tests\Fixtures\Order;
@@ -50,6 +53,25 @@ it('simulates side effects, evaluates conditions and runs read-only actions', fu
 
     Mail::assertNothingSent();
     Event::assertNotDispatched(WorkflowStarted::class);
+});
+
+it('shows a secret as masked in what a simulated step would use, never its value', function (): void {
+    Secret::query()->create(['key' => 'slack_sales', 'value' => 'https://hooks.slack.com/services/T0/B0/secret']);
+
+    $workflow = createWorkflow([
+        triggerNode('t', Manual::class),
+        actionNode('slack', SendSlackMessage::class, ['webhook_url' => '{{ secrets.slack_sales }}', 'message' => 'Hi {{ secrets.missing }}']),
+    ], [edge('t', 'slack')]);
+
+    $run = Flow::test($workflow);
+    $output = collect($run->steps)->firstWhere('node_id', 'slack')['output'];
+
+    expect($output['webhook_url'])->toBe('••••••')
+        ->and($output['message'])->toBe('Hi ');
+
+    $this->view('packstub-flow::runs.detail', ['run' => $run, 'canvasUrl' => null])
+        ->assertSee('"webhook_url": "••••••"')
+        ->assertDontSee('hooks.slack.com');
 });
 
 it('does not count test runs for once-per-record or failure limits', function (): void {
