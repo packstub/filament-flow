@@ -13,6 +13,7 @@ All notable changes to `packstub/filament-flow` are documented here.
 ### Changed
 
 - **Docs**: a shorter Features list in the README and on the docs index, one line per area; the README's Actions and Runs sections now cover error handling, versions and the safety defaults.
+- **Dev**: the canvas bundle rebuilt on the current Svelte, Vite and vitest; PHPStan on Larastan 3.13 skips the model-property check on the three actions that fill the model a workflow names at runtime; the workbench caches to files so Filament 5.11's notifications reach the browser smoke test, whose locators follow Filament 5.11's dropdown items and searchable selects.
 
 ## 1.6.1 — 2026-09-28
 

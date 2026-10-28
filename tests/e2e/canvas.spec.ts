@@ -28,7 +28,8 @@ async function saveAndReload(page: import("@playwright/test").Page) {
 // Settings sits in the header's more-actions menu.
 async function openSettings(page: import("@playwright/test").Page) {
     await page.locator(".fi-header .fi-dropdown-trigger").click();
-    await page.locator(".fi-dropdown-panel").getByRole("button", { name: "Settings" }).click();
+    // A menu item since Filament 5.11, a button before: match the text.
+    await page.locator(".fi-dropdown-panel").getByText("Settings", { exact: true }).click();
 }
 
 // Add a trigger, connect an action to it, save — the path every user takes.
@@ -225,7 +226,8 @@ test("marks the nodes still to fill in when a template opens for review", async 
     // Choosing the record type in the trigger's settings clears its badge.
     await trigger.dblclick();
     const slideOver = page.locator(".fi-modal-window").filter({ hasText: "Record type" });
-    await slideOver.getByRole("combobox", { name: /^Record type/ }).click();
+    // A searchable select: a button that opens a listbox (Filament 5.11+).
+    await slideOver.getByRole("button", { name: /^Record type/ }).click();
     await page.getByRole("option", { name: "Order", exact: true }).click();
     await slideOver.getByRole("button", { name: "Apply" }).click();
     await expect(slideOver).toBeHidden();
