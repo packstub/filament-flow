@@ -6,7 +6,9 @@ env:
   - APP_KEY="base64:2fl+Ktv6fZ7c7ZQfF1Zt6Q0Wd9jz5bJ6rKq8nX0m3Yk="
   - APP_URL="http://127.0.0.1:8787"
   - DB_CONNECTION=sqlite
-  - CACHE_STORE=array
+  # Filament publishes notifications through the cache between the request that sends one and the
+  # request that shows it (5.11+), so the store has to outlive a request: file, not array.
+  - CACHE_STORE=file
   - SESSION_DRIVER=file
   - QUEUE_CONNECTION=sync
   - MAIL_MAILER=array

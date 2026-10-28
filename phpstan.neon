@@ -16,3 +16,12 @@ parameters:
         -
             identifier: trait.unused
             path: src/Concerns/HasWorkflows.php
+        # Create record, Update record and Assign owner fill the model the workflow names at runtime
+        # with the attributes typed on the node: there is no model class to check the keys against.
+        -
+            message: '#expects array<model property of Illuminate\\Database\\Eloquent\\Model, mixed>#'
+            identifier: argument.type
+            paths:
+                - src/Nodes/Actions/AssignOwner.php
+                - src/Nodes/Actions/CreateRecord.php
+                - src/Nodes/Actions/UpdateRecord.php
