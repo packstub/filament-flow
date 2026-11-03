@@ -15,6 +15,8 @@
 
 Visual workflow automations for your Filament panel: draw triggers, conditions and actions on a canvas, and let the runner — or your queue — do the rest.
 
+![Building a workflow on the Filament Flow canvas: a Send notification step added after Log order from the node picker, a node dragged with its edges following, then the new step's settings](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/flow.gif)
+
 ## Features
 
 - **[Visual builder](#the-builder)**: a drag-and-drop canvas in a Filament resource, each node's settings in a slide-over.

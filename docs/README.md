@@ -8,6 +8,8 @@ Visual workflow automations for Filament panels: triggers, conditions and action
 - Packagist: [packstub/filament-flow](https://packagist.org/packages/packstub/filament-flow)
 - Support: [GitHub issues](https://github.com/packstub/filament-flow/issues)
 
+![Building a workflow on the Filament Flow canvas: a Send notification step added after Log order from the node picker, a node dragged with its edges following, then the new step's settings](https://raw.githubusercontent.com/packstub/art/main/filament-flow/docs/flow.gif)
+
 ## Features
 
 - **[Visual builder](building-workflows.md)**: a drag-and-drop canvas in a Filament resource, each node's settings in a slide-over.
