@@ -2,6 +2,10 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
+## Unreleased
+
+- `composer.json`'s homepage points at the package's page on packstub.dev
+
 ## 1.6.2 — 2026-10-28
 
 Three small fixes in the editor. Run `php artisan filament:assets` after updating.
