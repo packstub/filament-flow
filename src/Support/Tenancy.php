@@ -52,7 +52,9 @@ class Tenancy
 
         if ($model instanceof Model && $relationship !== '' && method_exists($model, $relationship)) {
             try {
-                $tenant = $model->{$relationship};
+                // What $model->{$relationship} reads. Eloquent throws a LogicException here when the method
+                // is not a relationship, and a strict model throws on a lazy load.
+                $tenant = $model->getAttribute($relationship);
 
                 if ($tenant instanceof Model) {
                     return $tenant;

@@ -1,6 +1,7 @@
 <?php
 
 use Filament\Facades\Filament;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Packstub\Flow\Enums\RunStatus;
@@ -79,6 +80,25 @@ it('resolves the tenant with a custom resolver or Filament\'s current tenant', f
     // The Ticket is not an Order: no match, but the tenant fallback was used for the lookup.
     expect(Tenancy::resolve(['model' => new Ticket]))->toBeNull()
         ->and(Tenancy::resolve(['model' => createOrder(['team_id' => $acme->id])])->is($acme))->toBeTrue();
+});
+
+it('falls through to Filament\'s tenant when the configured name is a method that is not a relationship', function (): void {
+    $acme = team('Acme');
+    $record = new class extends Model
+    {
+        public function team(): string
+        {
+            return 'support';
+        }
+    };
+
+    expect(fn () => $record->getAttribute('team'))->toThrow(LogicException::class)
+        ->and(Tenancy::resolve(['model' => $record]))->toBeNull();
+
+    $this->actingAs(createUser(['team_id' => $acme->id]));
+    Filament::setTenant($acme);
+    expect(Tenancy::resolve(['model' => $record])?->is($acme))->toBeTrue();
+    Filament::setTenant(null);
 });
 
 it('lets a tenant\'s secret shadow the global one during its runs', function (): void {
