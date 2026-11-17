@@ -4,6 +4,7 @@ All notable changes to `packstub/filament-flow` are documented here.
 
 ## Unreleased
 
+- The canvas bundle is rebuilt with the current build tooling (Tailwind CSS 4.3.4, Svelte Flow 1.7.1). Run `php artisan filament:assets` after updating.
 - `composer.json`'s homepage points at the package's page on packstub.dev
 
 ## 1.6.2 — 2026-10-28
