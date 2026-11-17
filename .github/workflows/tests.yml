@@ -182,3 +182,21 @@ jobs:
           name: playwright-report
           path: test-results
           retention-days: 7
+
+  # The one check the main branch requires (Settings → Rules): green only when every job above is.
+  # A new job goes in `needs`, so the required name stays the same when the matrix changes.
+  tests-passed:
+    name: Tests passed
+    if: always()
+    needs: [tests, mysql, static-analysis, canvas]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fail unless every job succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for result in $RESULTS; do
+            [ "$result" = "success" ] || exit 1
+          done
