@@ -286,6 +286,29 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Record actions
+    |--------------------------------------------------------------------------
+    |
+    | The models "Find records", "Create record" and "Update record" may read
+    | and write. Leave null to allow the models offered to the record
+    | triggers (above); list them to allow exactly those. A workflow that
+    | names any other model is refused when it is saved or imported, and
+    | again when it runs. In a run that belongs to a tenant these actions
+    | only see and write that tenant's records (see docs/security.md).
+    |
+    | force_fill lets "Bypass mass-assignment protection" write attributes
+    | outside $fillable, in workflows without a tenant only. Turn it on only
+    | when everyone who can edit workflows may change any column.
+    |
+    */
+
+    'records' => [
+        'models' => null,
+        'force_fill' => (bool) env('PACKSTUB_FLOW_FORCE_FILL', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Nodes
     |--------------------------------------------------------------------------
     |

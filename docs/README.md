@@ -42,6 +42,7 @@ Visual workflow automations for Filament panels: triggers, conditions and action
 | [Runs](runs.md) | Statuses, the step log, Run now, console commands, retention, failure limits, events and the safety guards |
 | [Queue & scheduling](queue-and-scheduling.md) | Sync versus queued runs, Wait steps, the cron command and scheduler registration |
 | [Extending](extending.md) | Writing and registering your own triggers, actions and conditions; dispatching from code |
+| [Security](security.md) | Who may build workflows, the models the record actions may use, mass assignment, and how record actions stay inside a tenant |
 | [Configuration](configuration.md) | Every config key, the fluent `FlowPlugin` API, custom models, tables, navigation and webhooks |
 | [Testing](testing.md) | Testing workflows in your application with Pest or PHPUnit |
 

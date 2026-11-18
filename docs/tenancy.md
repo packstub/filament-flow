@@ -38,6 +38,10 @@ Flow::resolveTenantUsing(function (array $payload): ?Team {
 
 `Flow::run()` and the **Run now** / **Run workflow** buttons start a workflow regardless of tenant checks. The run stores the tenant it ran for (`tenant_type` / `tenant_id` on the run; the workflow's own tenant, or the payload's tenant for a global workflow), and the payload carries it as `{{ tenant.name }}`.
 
+## Records per tenant
+
+In a tenant's run, **Find records**, **Create record** and **Update record** only see and write that tenant's records, through the model's relationship to the tenant (`tenancy.relationship`, or the one named after the tenant model). A model without one cannot be used by a tenant's workflow until you add it or scope it with `Flow::scopeRecordsUsing()`. Details in [Security](security.md#tenants).
+
 ## Secrets per tenant
 
 A tenant's secret with the same key as a global one shadows it while that tenant's workflows run — one global `slack_webhook`, overridden by the tenants that have their own. The Secrets page in a tenant panel manages the tenant's secrets; global ones are managed from a panel without tenancy or in code.

@@ -5,6 +5,7 @@ namespace Packstub\Flow;
 use Closure;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Packstub\Flow\Filament\Pages\Approvals;
@@ -12,6 +13,7 @@ use Packstub\Flow\Filament\Pages\WorkflowRuns;
 use Packstub\Flow\Filament\Resources\SecretResource;
 use Packstub\Flow\Filament\Resources\WorkflowResource;
 use Packstub\Flow\Support\ModelFinder;
+use Packstub\Flow\Support\RecordGuard;
 use Packstub\Flow\Support\Templates;
 use Packstub\Flow\Support\Tenancy;
 
@@ -33,6 +35,9 @@ class FlowPlugin implements Plugin
 
     /** @var array<int, class-string<Model>> */
     protected array $models = [];
+
+    /** @var array<int, class-string<Model>> */
+    protected array $recordModels = [];
 
     /** @var class-string<WorkflowResource> */
     protected string $resource = WorkflowResource::class;
@@ -155,6 +160,32 @@ class FlowPlugin implements Plugin
     public function models(array $models): static
     {
         $this->models = [...$this->models, ...$models];
+
+        return $this;
+    }
+
+    /**
+     * Models the record actions (Find, Create and Update record) may read
+     * and write, in addition to packstub-flow.records.models. When neither
+     * lists any, they may use the models offered to the record triggers.
+     *
+     * @param  array<int, class-string<Model>>  $models
+     */
+    public function recordModels(array $models): static
+    {
+        $this->recordModels = [...$this->recordModels, ...$models];
+
+        return $this;
+    }
+
+    /**
+     * Scope the record actions to a tenant yourself (see Flow::scopeRecordsUsing()).
+     *
+     * @param  Closure(Builder<Model>, Model): bool  $scope
+     */
+    public function scopeRecordsUsing(Closure $scope): static
+    {
+        RecordGuard::scopeUsing($scope);
 
         return $this;
     }
@@ -339,6 +370,7 @@ class FlowPlugin implements Plugin
             ->forget($this->without);
 
         ModelFinder::register($this->models);
+        RecordGuard::register($this->recordModels);
         Templates::register($this->templates);
         Templates::withoutBuiltIn(! $this->hasBuiltInTemplates);
 

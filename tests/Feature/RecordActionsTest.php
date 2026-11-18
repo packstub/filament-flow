@@ -15,6 +15,8 @@ use Packstub\Flow\Tests\Fixtures\Order;
 use Packstub\Flow\Tests\Fixtures\SetStatusAction;
 
 it('creates a record through a relationship and exposes it', function (): void {
+    config()->set('packstub-flow.records.models', [Order::class, Note::class]);
+
     $workflow = createWorkflow([
         triggerNode('t', Manual::class),
         actionNode('note', CreateRecord::class, ['model_class' => Note::class, 'relation' => 'notes', 'attributes' => ['body' => 'Flagged {{ model.reference }}']]),
@@ -52,6 +54,7 @@ it('creates a standalone record, quietly by default, and can continue with it as
         ->and(SetStatusAction::$calls)->toBe([]);
 
     // Guarded attributes fail without "force".
+    config()->set('packstub-flow.records.models', [Order::class, GuardedOrder::class]);
     $guarded = createWorkflow([
         triggerNode('t', Manual::class),
         actionNode('create', CreateRecord::class, ['model_class' => GuardedOrder::class, 'attributes' => ['reference' => 'X', 'status' => 'paid']]),

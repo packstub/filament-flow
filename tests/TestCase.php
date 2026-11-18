@@ -23,6 +23,7 @@ use Packstub\Flow\FlowServiceProvider;
 use Packstub\Flow\Listeners\DispatchEventTriggers;
 use Packstub\Flow\Support\ModelFinder;
 use Packstub\Flow\Support\Placeholders;
+use Packstub\Flow\Support\RecordGuard;
 use Packstub\Flow\Support\Secrets;
 use Packstub\Flow\Support\Templates;
 use Packstub\Flow\Support\Tenancy;
@@ -51,6 +52,7 @@ abstract class TestCase extends Orchestra
         DispatchEventTriggers::flush();
         Dispatcher::flushCache();
         ModelFinder::flush();
+        RecordGuard::flush();
         Secrets::flush();
         Templates::flush();
         Placeholders::forgetUsedSecrets();

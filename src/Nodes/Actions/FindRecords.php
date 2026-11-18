@@ -13,8 +13,8 @@ use Packstub\Flow\Contracts\ReadOnlyAction;
 use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Nodes\Action;
 use Packstub\Flow\Nodes\Concerns\InterpolatesPlaceholders;
-use Packstub\Flow\Support\ModelFinder;
 use Packstub\Flow\Support\Placeholders;
+use Packstub\Flow\Support\RecordGuard;
 use Throwable;
 
 /**
@@ -47,7 +47,7 @@ class FindRecords extends Action implements ReadOnlyAction
         return [
             Select::make('model_class')
                 ->label(__('packstub-flow::flow.nodes.record.model'))
-                ->options(fn (): array => ModelFinder::options())
+                ->options(fn (): array => RecordGuard::options())
                 ->searchable()
                 ->required(),
             Repeater::make('conditions')
@@ -88,6 +88,13 @@ class FindRecords extends Action implements ReadOnlyAction
         ];
     }
 
+    public function getConfigProblems(array $config, string $label): array
+    {
+        $class = $config['model_class'] ?? null;
+
+        return filled($class) && ! RecordGuard::allows($class) ? [RecordGuard::notAllowedMessage((string) $class, $label)] : [];
+    }
+
     public function getPlaceholders(): array
     {
         return [
@@ -114,13 +121,10 @@ class FindRecords extends Action implements ReadOnlyAction
      */
     public function query(array $config, array $payload): Builder
     {
-        $class = $config['model_class'] ?? null;
+        $class = RecordGuard::assertAllowed($config['model_class'] ?? null, $this->getName());
 
-        if (! is_string($class) || ! is_a($class, Model::class, true)) {
-            throw new WorkflowException('Find records: choose a record type.');
-        }
-
-        $query = $class::query();
+        // Only the run's tenant's records, in a run that has a tenant.
+        $query = RecordGuard::scope($class::query(), $this->getName());
 
         foreach ((array) ($config['conditions'] ?? []) as $condition) {
             if (! is_array($condition) || blank($condition['attribute'] ?? null)) {

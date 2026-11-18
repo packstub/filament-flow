@@ -99,6 +99,19 @@ abstract class Node
         return $this->getOutputs();
     }
 
+    /**
+     * Settings the node refuses before a workflow is saved or imported —
+     * a record type the app does not allow, a reserved name. Each entry is
+     * a message shown on the node. The node checks them again when it runs.
+     *
+     * @param  array<string, mixed>  $config
+     * @return array<int, string>
+     */
+    public function getConfigProblems(array $config, string $label): array
+    {
+        return [];
+    }
+
     public static function make(): static
     {
         return app(static::class);

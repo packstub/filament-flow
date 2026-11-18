@@ -203,6 +203,8 @@ it('applies a timeout and retries to HTTP requests', function (): void {
 });
 
 it('respects mass-assignment protection unless the node bypasses it', function (): void {
+    config()->set('packstub-flow.records.models', [GuardedOrder::class]);
+    config()->set('packstub-flow.records.force_fill', true);
     $order = GuardedOrder::query()->create(['reference' => 'G-1']);
 
     expect(fn () => (new UpdateRecord)->handle(['attributes' => ['status' => 'paid']], ['model' => $order]))

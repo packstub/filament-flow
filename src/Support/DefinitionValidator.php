@@ -48,6 +48,14 @@ class DefinitionValidator
 
             if (! is_string($identifier) || ! $registry->has($identifier)) {
                 $problems[$id][] = __('packstub-flow::flow.validation.unknown_node', ['node' => $label]);
+
+                continue;
+            }
+
+            // Checked for drafts and imports too: what a node may touch does
+            // not depend on the workflow being switched on.
+            foreach ($registry->node($identifier)?->getConfigProblems((array) ($node['data']['config'] ?? []), $label) ?? [] as $problem) {
+                $problems[$id][] = $problem;
             }
         }
 
