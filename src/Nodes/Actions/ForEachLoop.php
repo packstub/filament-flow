@@ -5,6 +5,7 @@ namespace Packstub\Flow\Nodes\Actions;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Contracts\Support\Arrayable;
 use Packstub\Flow\Contracts\Iterates;
+use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Nodes\Action;
 use Packstub\Flow\Nodes\Concerns\InterpolatesPlaceholders;
 use Packstub\Flow\Support\Placeholders;
@@ -17,6 +18,13 @@ use Packstub\Flow\Support\Placeholders;
 class ForEachLoop extends Action implements Iterates
 {
     use InterpolatesPlaceholders;
+
+    /**
+     * Payload keys the run itself relies on; an item may not replace them.
+     * ("model" stays allowed: the record actions check every record they
+     * are handed.)
+     */
+    public const RESERVED_KEYS = ['tenant', 'last', 'outputs', 'loop', 'secrets', 'flow_depth'];
 
     public function getName(): string
     {
@@ -91,7 +99,22 @@ class ForEachLoop extends Action implements Iterates
 
     public function getItemKey(array $config): string
     {
-        return trim((string) ($config['item_key'] ?? '')) ?: 'item';
+        $key = trim((string) ($config['item_key'] ?? '')) ?: 'item';
+
+        if (in_array(strtolower($key), self::RESERVED_KEYS, true)) {
+            throw new WorkflowException(__('packstub-flow::flow.records.reserved_item_key', ['node' => $this->getName(), 'key' => $key]));
+        }
+
+        return $key;
+    }
+
+    public function getConfigProblems(array $config, string $label): array
+    {
+        $key = trim((string) ($config['item_key'] ?? ''));
+
+        return in_array(strtolower($key), self::RESERVED_KEYS, true)
+            ? [__('packstub-flow::flow.records.reserved_item_key', ['node' => $label, 'key' => $key])]
+            : [];
     }
 
     public function getMaxIterations(array $config): int

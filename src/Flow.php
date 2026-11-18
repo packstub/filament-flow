@@ -2,6 +2,7 @@
 
 namespace Packstub\Flow;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Packstub\Flow\Engine\Dispatcher;
 use Packstub\Flow\Engine\Graph;
@@ -15,6 +16,7 @@ use Packstub\Flow\Models\WorkflowStep;
 use Packstub\Flow\Models\WorkflowTrigger;
 use Packstub\Flow\Models\WorkflowVersion;
 use Packstub\Flow\Models\WorkflowWait;
+use Packstub\Flow\Support\RecordGuard;
 use Packstub\Flow\Support\Tenancy;
 use Packstub\Flow\Support\WorkflowTransfer;
 
@@ -180,6 +182,35 @@ class Flow
     public function resolveTenantUsing(?\Closure $resolver): static
     {
         Tenancy::resolveUsing($resolver);
+
+        return $this;
+    }
+
+    /**
+     * Scope the record actions' queries to a tenant yourself, for models
+     * whose link to the tenant is not a relationship named after it (see
+     * packstub-flow.records). Return true when the query is scoped, or when
+     * the model is shared by every tenant on purpose; false to let Flow use
+     * the relationship.
+     *
+     * @param  (\Closure(Builder<Model>, Model): bool)|null  $scope
+     */
+    public function scopeRecordsUsing(?\Closure $scope): static
+    {
+        RecordGuard::scopeUsing($scope);
+
+        return $this;
+    }
+
+    /**
+     * Models the record actions (Find, Create and Update record) may use,
+     * in addition to packstub-flow.records.models.
+     *
+     * @param  array<int, class-string<Model>>  $models
+     */
+    public function recordModels(array $models): static
+    {
+        RecordGuard::register($models);
 
         return $this;
     }

@@ -341,6 +341,17 @@ return [
         'missing_setting' => 'Node ":node": the setting ":setting" is required.',
     ],
 
+    'records' => [
+        'choose_model' => ':node: choose a record type.',
+        'not_allowed' => ':node: workflows may not use :model records. Add the model to packstub-flow.records.models (or FlowPlugin::make()->recordModels([...])) if workflow authors may read and write it.',
+        'not_scoped' => ':node: :model records have no relationship to the tenant, so a tenant\'s workflow cannot use them. Add the relationship (named in packstub-flow.tenancy.relationship, or after the tenant model) or scope the model with Flow::scopeRecordsUsing().',
+        'other_tenant' => ':node: this :model record belongs to another tenant.',
+        'tenant_missing' => 'This workflow belongs to a tenant that no longer exists, so it cannot use records.',
+        'not_a_relation' => ':node: [:relation] is not a relationship of :model (the method must declare a relationship return type, such as HasMany).',
+        'force_not_allowed' => ':node: [:attribute] is not fillable on :model, and "Bypass mass-assignment protection" is off for this app (packstub-flow.records.force_fill) and never applies to a tenant\'s workflow. Add it to $fillable instead.',
+        'reserved_item_key' => 'Node ":node": the item name ":key" is used by the run itself; choose another one.',
+    ],
+
     'node_settings' => [
         'title' => 'Node settings',
         'general' => 'General',

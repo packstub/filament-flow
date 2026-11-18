@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Facade;
  * @method static array<string, mixed> export(\Packstub\Flow\Models\Workflow $workflow)
  * @method static \Packstub\Flow\Models\Workflow import(array<string, mixed>|string $data, array<string, mixed> $attributes = [])
  * @method static \Packstub\Flow\NodeRegistry registry()
+ * @method static \Packstub\Flow\Flow scopeRecordsUsing(?\Closure $scope)
+ * @method static \Packstub\Flow\Flow recordModels(array<int, class-string<\Illuminate\Database\Eloquent\Model>> $models)
  * @method static \Packstub\Flow\Flow register(string $class)
  * @method static class-string<\Packstub\Flow\Models\Workflow> workflowModel()
  * @method static class-string<\Packstub\Flow\Models\WorkflowTrigger> triggerModel()

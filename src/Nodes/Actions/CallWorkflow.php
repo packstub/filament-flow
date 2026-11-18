@@ -8,6 +8,7 @@ use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Facades\Flow;
 use Packstub\Flow\Nodes\Action;
 use Packstub\Flow\Nodes\Triggers\WorkflowCalled;
+use Packstub\Flow\Support\RecordGuard;
 use Packstub\Flow\Support\Tenancy;
 
 /**
@@ -52,6 +53,13 @@ class CallWorkflow extends Action
 
         if (! $workflow) {
             throw new WorkflowException('The workflow to call no longer exists.');
+        }
+
+        // A tenant's run calls the tenant's own workflows and the global ones only.
+        $tenant = RecordGuard::tenant();
+
+        if ($tenant !== null && ! $workflow->isGlobal() && ($workflow->tenant_type !== $tenant->getMorphClass() || (string) $workflow->tenant_id !== (string) $tenant->getKey())) {
+            throw new WorkflowException('The workflow to call belongs to another tenant.');
         }
 
         if (! $workflow->is_active) {

@@ -6,14 +6,13 @@ use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use Packstub\Flow\Exceptions\WorkflowException;
 use Packstub\Flow\Nodes\Action;
+use Packstub\Flow\Nodes\Concerns\FillsRecords;
 use Packstub\Flow\Nodes\Concerns\InterpolatesPlaceholders;
-use Packstub\Flow\Support\ModelFinder;
 use Packstub\Flow\Support\Placeholders;
+use Packstub\Flow\Support\RecordGuard;
 
 /**
  * Creates a record — on its own, or through a relationship of the record
@@ -21,6 +20,7 @@ use Packstub\Flow\Support\Placeholders;
  */
 class CreateRecord extends Action
 {
+    use FillsRecords;
     use InterpolatesPlaceholders;
 
     public function getName(): string
@@ -43,7 +43,7 @@ class CreateRecord extends Action
         return [
             Select::make('model_class')
                 ->label(__('packstub-flow::flow.nodes.record.model'))
-                ->options(fn (): array => ModelFinder::options())
+                ->options(fn (): array => RecordGuard::options())
                 ->searchable()
                 ->required(),
             TextInput::make('relation')
@@ -59,10 +59,7 @@ class CreateRecord extends Action
                 ->label(__('packstub-flow::flow.nodes.create_record.silently'))
                 ->helperText(__('packstub-flow::flow.nodes.create_record.silently_help'))
                 ->default(true),
-            Toggle::make('force')
-                ->label(__('packstub-flow::flow.nodes.update_record.force'))
-                ->helperText(__('packstub-flow::flow.nodes.update_record.force_help'))
-                ->default(false),
+            static::forceToggle(),
             Toggle::make('use_as_model')
                 ->label(__('packstub-flow::flow.nodes.create_record.use_as_model'))
                 ->helperText(__('packstub-flow::flow.nodes.create_record.use_as_model_help'))
@@ -79,25 +76,19 @@ class CreateRecord extends Action
         ];
     }
 
-    public function handle(array $config, array $payload): void
+    public function getConfigProblems(array $config, string $label): array
     {
         $class = $config['model_class'] ?? null;
 
-        if (! is_string($class) || ! is_a($class, Model::class, true)) {
-            throw new WorkflowException('Create record: choose a record type.');
-        }
+        return filled($class) && ! RecordGuard::allows($class) ? [RecordGuard::notAllowedMessage((string) $class, $label)] : [];
+    }
 
-        $attributes = [];
+    public function handle(array $config, array $payload): void
+    {
+        $name = $this->getName();
+        $class = RecordGuard::assertAllowed($config['model_class'] ?? null, $name);
 
-        foreach ((array) ($config['attributes'] ?? []) as $key => $value) {
-            if ($key === '') {
-                continue;
-            }
-
-            $attributes[$key] = is_string($value) && Placeholders::isSingle($value)
-                ? Placeholders::raw($value, $payload)
-                : $this->interpolate(is_string($value) ? $value : Placeholders::stringify($value), $payload);
-        }
+        $attributes = $this->attributesFrom($config, $payload);
 
         $relation = trim((string) ($config['relation'] ?? ''));
         $parent = $payload['model'] ?? null;
@@ -105,32 +96,26 @@ class CreateRecord extends Action
 
         if ($relation !== '') {
             if (! $parent instanceof Model) {
-                throw new WorkflowException("Create record: the relationship [{$relation}] needs a record in the payload.");
+                throw new WorkflowException("{$name}: the relationship [{$relation}] needs a record in the payload.");
             }
 
-            if (! method_exists($parent, $relation) || ! ($relationship = $parent->{$relation}()) instanceof Relation) {
-                throw new WorkflowException("Create record: [{$relation}] is not a relationship of ".$parent::class.'.');
-            }
+            // The parent must be a record this run may use, and the method a
+            // declared relationship (never delete() or any other method).
+            RecordGuard::assertAllowed($parent::class, $name);
+            RecordGuard::assertOwned($parent, $name);
+            $relationship = RecordGuard::relation($parent, $relation, $name);
         }
 
         /** @var Model $record */
         $record = $relationship ? $relationship->getRelated()->newInstance() : new $class;
 
-        if ($config['force'] ?? false) {
-            $record->forceFill($attributes);
-        } else {
-            try {
-                $record->fill($attributes);
-            } catch (MassAssignmentException $exception) {
-                throw new WorkflowException("Create record: {$exception->getMessage()}. Add the attribute to \$fillable or enable \"Bypass mass-assignment protection\" on the node.");
-            }
+        // The relationship decides the model: it must be allowed as well.
+        RecordGuard::assertAllowed($record::class, $name);
 
-            foreach (array_keys($attributes) as $attribute) {
-                if (! array_key_exists($attribute, $record->getAttributes()) && ! $record->isFillable($attribute)) {
-                    throw new WorkflowException("Create record: [{$attribute}] is not fillable on ".$record::class.'. Add it to $fillable or enable "Bypass mass-assignment protection" on the node.');
-                }
-            }
-        }
+        $this->fillRecord($record, $attributes, $config);
+
+        // Whatever the attributes said, a tenant's run creates the tenant's records.
+        RecordGuard::attachTenant($record);
 
         $save = function () use ($record, $relationship): void {
             if ($relationship && method_exists($relationship, 'save')) {
@@ -140,7 +125,7 @@ class CreateRecord extends Action
             }
         };
 
-        ($config['silently'] ?? true) ? Model::withoutEvents($save) : $save();
+        $this->saveWithinTenant($record, fn () => ($config['silently'] ?? true) ? Model::withoutEvents($save) : $save(), throughParent: $relationship !== null && method_exists($relationship, 'save'));
 
         if ($config['use_as_model'] ?? false) {
             $this->setPayloadValue('model', $record);

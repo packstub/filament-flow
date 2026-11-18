@@ -38,6 +38,9 @@ FlowPlugin::make()
     ->withoutRunsPage()
     ->withoutApprovalsPage()
 
+    // Models Find / Create / Update record may use (default: the trigger models)
+    ->recordModels([App\Models\Order::class, App\Models\Note::class])
+
     // Multi-tenancy: which tenant a payload belongs to, and a plan limit
     ->resolveTenantUsing(fn (array $payload) => $payload['model']?->team)
     ->maxWorkflows(fn (?Team $team) => $team?->plan->workflows)
@@ -48,6 +51,8 @@ FlowPlugin::make()
 | `triggers()`, `actions()`, `conditions()` | `[]` | Class names; duplicates are ignored |
 | `without()` | `[]` | Removes classes from the registry, whatever list they came from |
 | `models()` | `[]` | Class names of Eloquent models |
+| `recordModels()` | `[]` | Models the record actions may use; see [Security](security.md#which-models-the-record-actions-may-use) |
+| `scopeRecordsUsing()` | `null` | Scope the record actions to a tenant yourself; see [Security](security.md#tenants) |
 | `navigationGroup()` | `navigation.group` (`null`) | |
 | `navigationIcon()` | `navigation.icon` (`heroicon-o-bolt`) | |
 | `navigationSort()` | `navigation.sort` (`null`) | |
@@ -258,6 +263,22 @@ The route is registered by the package service provider, outside any panel, so i
 ```
 
 Models offered by the **Record created / updated / deleted** triggers, in addition to every model in `app/Models` that uses `HasWorkflows` and the plugin's `models([...])`. List models that live elsewhere here. Remember that only models with the trait fire on their own.
+
+### Record actions
+
+```php
+'records' => [
+    'models' => null,
+    'force_fill' => (bool) env('PACKSTUB_FLOW_FORCE_FILL', false),
+],
+```
+
+| Key | |
+| --- | --- |
+| `models` | The models **Find records**, **Create record** and **Update record** may use. `null`: the models offered to the record triggers (above). A list: exactly those, plus the plugin's `recordModels([...])` |
+| `force_fill` | Offer **Bypass mass-assignment protection** on the record actions, in runs without a tenant only. Off by default |
+
+What these guard against, and how the record actions stay inside a tenant: [Security](security.md).
 
 ### Nodes
 

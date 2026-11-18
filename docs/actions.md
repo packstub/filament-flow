@@ -220,9 +220,9 @@ Sets attributes on the record that started the run — the `model` in the payloa
 | --- | --- |
 | Attributes | Attribute / value pairs; placeholders allowed in values. A value that is exactly one placeholder keeps its type (`{{ webhook.total }}` writes a number, `{{ missing }}` writes `null`) |
 | Save without firing events | On by default |
-| Bypass mass-assignment protection | Off by default |
+| Bypass mass-assignment protection | Shown only when the app turns on `records.force_fill`; never applies in a tenant's run |
 
-Attributes go through the model's `$fillable` / `$guarded` rules: writing a guarded attribute fails the run with a message naming it. Turn on **Bypass mass-assignment protection** to use `forceFill()` instead — only when everyone who can edit workflows may write any column. The action exposes the saved changes as `{{ last.changes.status }}`. With **Save without firing events** on, the record is saved with `saveQuietly()`: no Eloquent events, no observers, and no **Record updated** trigger — which keeps a workflow that reacts to updates from starting itself again. Turn it off when you want observers and other workflows to see the change.
+Attributes go through the model's `$fillable` / `$guarded` rules: writing a guarded attribute fails the run with a message naming it. **Bypass mass-assignment protection** uses `forceFill()` instead, only in an app that allows it ([Security](security.md#mass-assignment)). The record must be of a model the app allows for the record actions and, in a tenant's run, the tenant's ([Security](security.md)). The action exposes the saved changes as `{{ last.changes.status }}`. With **Save without firing events** on, the record is saved with `saveQuietly()`: no Eloquent events, no observers, and no **Record updated** trigger — which keeps a workflow that reacts to updates from starting itself again. Turn it off when you want observers and other workflows to see the change.
 
 The action fails the run when the payload has no record, and does nothing when no attributes are configured.
 
@@ -232,14 +232,14 @@ Creates a record — on its own, or through a relationship of the record that st
 
 | Setting | |
 | --- | --- |
-| Record type | The model class |
-| Through relationship | Optional: a `hasMany` / `morphMany` relationship of `{{ model }}` (`notes`); the new record is created on it, so the foreign key is set for you |
+| Record type | The model class, one of the models the app allows ([Security](security.md#which-models-the-record-actions-may-use)) |
+| Through relationship | Optional: a `hasMany` / `morphMany` relationship of `{{ model }}` (`notes`); the new record is created on it, so the foreign key is set for you. The method must declare its relationship return type (`: HasMany`) |
 | Attributes | Attribute / value pairs; placeholders allowed, a bare placeholder keeps its type |
 | Create without firing events | On by default (`Model::withoutEvents()`), so a **Record created** trigger does not start another workflow |
-| Bypass mass-assignment protection | Off by default; otherwise attributes must be fillable |
+| Bypass mass-assignment protection | Shown only when the app turns on `records.force_fill`; otherwise attributes must be fillable |
 | Continue with the new record as `{{ model }}` | The nodes after this one see the new record instead of the original |
 
-Exposes `{{ last.id }}`, `{{ last.type }}` and `{{ last.record.<attribute> }}`.
+Exposes `{{ last.id }}`, `{{ last.type }}` and `{{ last.record.<attribute> }}`. In a tenant's run the new record belongs to the tenant, whatever the attributes say.
 
 ## Assign owner
 
@@ -269,12 +269,12 @@ Queries records for a **For each** loop: "orders unpaid for three days", "users 
 
 | Setting | |
 | --- | --- |
-| Record type | The model class |
+| Record type | The model class, one of the models the app allows ([Security](security.md#which-models-the-record-actions-may-use)) |
 | Conditions | Attribute, operator, value — all must match. Operators: equals, does not equal, greater / less than (or equal), contains, does not contain, is one of, is not one of, is null, is not null, is a date before / after. Values accept placeholders (a bare placeholder keeps its type); the date operators accept relative dates: `-3 days`, `now`, `next monday` |
 | Order by / Direction | Optional |
 | Limit | 100 by default, never more than `max_records` (config, 1000) |
 
-The action changes nothing, so a [test run](runs.md#test-runs) executes it for real. Exposes `{{ last.count }}`, `{{ last.ids }}` and `{{ last.records }}` — the step log keeps the count and the first ids; the branch gets the records.
+In a tenant's run it finds the tenant's records only. The action changes nothing, so a [test run](runs.md#test-runs) executes it for real. Exposes `{{ last.count }}`, `{{ last.ids }}` and `{{ last.records }}` — the step log keeps the count and the first ids; the branch gets the records.
 
 ## For each
 
@@ -285,7 +285,7 @@ Runs the nodes on its **Each item** output once per item of a list, then continu
 | Setting | |
 | --- | --- |
 | Items | A placeholder for a list — `{{ last.records }}` after **Find records**, `{{ webhook.items }}`, or comma-separated text |
-| Item name | The current item is `{{ item }}` (or the name you choose: `{{ order.reference }}`) |
+| Item name | The current item is `{{ item }}` (or the name you choose: `{{ order.reference }}`); `tenant`, `last`, `outputs`, `loop`, `secrets` and `flow_depth` are taken by the run |
 | Maximum iterations | The run fails when the list is longer (100 by default, never more than `max_records`) |
 
 Inside the loop body, `{{ loop.index }}` (from 0), `{{ loop.number }}` (from 1), `{{ loop.count }}`, `{{ loop.first }}` and `{{ loop.last }}` are available too; a **Wait** inside the body pauses that iteration only. Outputs made inside the body do not leak to the **Done** branch, which sees `{{ last.count }}` — the number of items. Loops nest.
