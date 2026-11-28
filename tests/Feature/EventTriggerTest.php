@@ -1,5 +1,8 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Packstub\Flow\Listeners\DispatchEventTriggers;
 use Packstub\Flow\Nodes\Triggers\EventFired;
 use Packstub\Flow\Support\Placeholders;
 use Packstub\Flow\Tests\Fixtures\OrderShipped;
@@ -51,4 +54,20 @@ it('matches subclasses and tolerates a leading backslash', function (): void {
     expect($trigger->matches(['event_class' => '\\'.OrderShipped::class], ['event' => $event]))->toBeTrue()
         ->and($trigger->matches(['event_class' => stdClass::class], ['event' => $event]))->toBeFalse()
         ->and($trigger->matches([], ['event' => $event]))->toBeFalse();
+});
+
+it('does not query the trigger table before it exists', function (): void {
+    // a failed query would abort the surrounding transaction on PostgreSQL (a migration's)
+    Schema::drop(config('packstub-flow.tables.triggers', 'flow_workflow_triggers'));
+    DispatchEventTriggers::flush();
+    $selects = [];
+    DB::connection()->beforeExecuting(function (string $sql) use (&$selects): void {
+        if (str_starts_with($sql, 'select * from')) {
+            $selects[] = $sql;
+        }
+    });
+
+    event(new stdClass);
+
+    expect($selects)->toBe([]);
 });

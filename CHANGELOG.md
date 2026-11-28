@@ -2,6 +2,12 @@
 
 All notable changes to `packstub/filament-flow` are documented here.
 
+## Unreleased
+
+### Fixed
+
+- Migrations no longer fail on PostgreSQL when the Event trigger's listener runs before the flow tables exist.
+
 ## 1.7.0 — 2026-11-18
 
 **Upgrading:** Find records, Create record and Update record now work only on the models your app allows: by default the models offered to the record triggers (`HasWorkflows`, `models_for_triggers`, `->models()`); list others in the new `records.models` config key or with `FlowPlugin::make()->recordModels([...])`. In a tenant's run they only see and write that tenant's records, through the model's relationship to the tenant. **Bypass mass-assignment protection** is off unless you set `records.force_fill` (`PACKSTUB_FLOW_FORCE_FILL=true`), and never applies to a tenant's workflow. A **Through relationship** method must declare its relationship return type (`: HasMany`). See [Security](docs/security.md).
