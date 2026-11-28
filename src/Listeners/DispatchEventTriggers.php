@@ -86,6 +86,16 @@ class DispatchEventTriggers
         static::$loading = true;
 
         try {
+            // A missing table is checked through the schema, never by a failing
+            // query: on PostgreSQL that would abort the surrounding transaction
+            // (a migration's), so every statement after it would fail.
+            $trigger = new (Flow::triggerModel());
+            if (! $trigger->getConnection()->getSchemaBuilder()->hasTable($trigger->getTable())) {
+                static::$loadedAt = time();
+
+                return static::$watched = [];
+            }
+
             $classes = Cache::remember(self::CACHE_KEY, now()->addHour(), function (): array {
                 return Flow::triggerModel()::query()
                     ->where('type', EventFired::class)
